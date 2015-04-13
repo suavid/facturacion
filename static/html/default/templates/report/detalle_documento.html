@@ -1,0 +1,54 @@
+<<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+	<p>
+		{timestamp}
+	</p>
+	<div style="text-align: center;">
+		<h3>{nombre_empresa}</h3>
+		{direccion_empresa}
+	</div>
+	<p>
+		Detalle de documento No. {nodoc} [Tarjeta de costos]
+	</p>
+	<table style="text-align: center;">
+		<tr>
+			<th style="padding: 8px; border-bottom: solid 1px #000;">Linea</th>
+			<th style="padding: 8px; border-bottom: solid 1px #000;">Estilo</th>
+			<th style="padding: 8px; border-bottom: solid 1px #000;">Color</th>
+			<th style="padding: 8px; border-bottom: solid 1px #000;">Corrida</th>
+			<th style="padding: 8px; border-bottom: solid 1px #000;">Codigo de origen</th>
+			<th style="padding: 8px; border-bottom: solid 1px #000;">Genero</th>
+			<th style="padding: 8px; border-bottom: solid 1px #000;">Marca</th>
+			<th style="padding: 8px; border-bottom: solid 1px #000;">Tacon</th>
+			<th style="padding: 8px; border-bottom: solid 1px #000;">Suela</th>
+			<th style="padding: 8px; border-bottom: solid 1px #000;">Descripcion</th>
+			<th style="padding: 8px; border-bottom: solid 1px #000;">Catalogo</th>
+			<th style="padding: 8px; border-bottom: solid 1px #000;">No. Pagina</th>
+			<th style="padding: 8px; border-bottom: solid 1px #000;">Ingresado el</th>
+		</tr>
+	<!-- START detalle -->
+		<tr>
+			<td style="padding: 8px;">{LINEA}</td>
+			<td style="padding: 8px;">{CESTILO}</td>
+			<td style="padding: 8px;">{CCOLOR}</td>
+			<td style="padding: 8px;">
+				{RUN1} - {RUN2}
+			</td>
+			<td style="padding: 8px;">{CODORIGEN}</td>
+			<td style="padding: 8px;">{GENERO}</td>
+			<td style="padding: 8px;">{MARCA}</td>
+			<td style="padding: 8px;">{TACON}</td>
+			<td style="padding: 8px;">{SUELA}</td>
+			<td style="padding: 8px;">{DESCRIP}</td>
+			<td style="padding: 8px;">{CATALOGO}</td>
+			<td style="padding: 8px;">{PAGINA}</td>
+			<td style="padding: 8px;">{FEINGRESA}</td>
+		</tr>
+	<!-- END detalle -->
+	</table>
+</body>
+</html>

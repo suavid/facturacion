@@ -1,0 +1,130 @@
+<style type="text/css">
+    #bBtn
+    {
+        background: #ffb76b; /* Old browsers */
+        background: -moz-linear-gradient(top,  #ffb76b 0%, #ffa73d 50%, #ff7c00 51%, #ff7f04 100%); /* FF3.6+ */
+        background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ffb76b), color-stop(50%,#ffa73d), color-stop(51%,#ff7c00), color-stop(100%,#ff7f04)); /* Chrome,Safari4+ */
+        background: -webkit-linear-gradient(top,  #ffb76b 0%,#ffa73d 50%,#ff7c00 51%,#ff7f04 100%); /* Chrome10+,Safari5.1+ */
+        background: -o-linear-gradient(top,  #ffb76b 0%,#ffa73d 50%,#ff7c00 51%,#ff7f04 100%); /* Opera 11.10+ */
+        background: -ms-linear-gradient(top,  #ffb76b 0%,#ffa73d 50%,#ff7c00 51%,#ff7f04 100%); /* IE10+ */
+        background: linear-gradient(to bottom,  #ffb76b 0%,#ffa73d 50%,#ff7c00 51%,#ff7f04 100%); /* W3C */
+        filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffb76b', endColorstr='#ff7f04',GradientType=0 ); /* IE6-9 */
+    }
+
+    #bBtn:hover{
+        cursor: pointer;
+    }
+
+    #bBtn:active{
+        transform: scale(0.99);
+    }
+
+</style>
+<h3 style="position:fixed;">Revisado por: <strong>{username}</strong></h3>
+
+
+<div style="width:400px;margin: 0 auto;">
+    <div class="input-control text">
+        Cliente
+        <input type="text" id="cliente" readonly="readonly"/>
+    </div>
+    <br/>
+    <br/>
+    <div class="input-control text">
+        Factura
+        <input type="text" style="width:40%;" id="serie" value="FC3" />
+        <input type="text" style="width:40%;" id="numero" onblur="datos();" placeholder="Numero de factura"/>
+    </div>
+    <br/>
+    <div class="input-control text">
+        Fecha
+        <input type="text" id="fecha" readonly="readonly" />
+    </div>
+</div>
+<br/>
+<div id="bBtn" style="width:700px;height:100px;display:block;font-size:24px;">
+    Linea: <span id="linea"></span> Estilo: <span id="estilo"></span> Color: <span id="color"></span> Talla: <span id="talla"></span> 
+    <br/>
+    <div style="font-size:15px;text-align:right;margin-right:15px;">Pares: <input type="text" id="salientes"/>
+        <br/>
+    </div>
+    <div id="bBtn1" style="color:white;font-size:20px;text-align:center;">
+        Aceptar
+    </div>
+</div>
+<h3>Total piezas por salir</h3>
+<span id="total_piezas" style="width:200px;height:100px;background:#D3D3D3;display:block;font-size:80px;font-weight:bold;text-align:center">0</span>
+<script type="text/javascript">
+
+    $(document).ready(function() {
+        window.cacheSalida = [];
+        window.contator = 0;
+        $('#bBtn1 ').bind("click", function() {
+            pares = $('#salientes').val().trim();
+            if (isNaN(pares) || parseInt(pares) <= 0 || pares == "")
+            {
+
+                alert("Cantidad invalida");
+            } else
+            {
+                pares = parseInt(pares);
+                actual = parseInt($('#total_piezas').html().trim());
+                if (actual > 0)
+                {
+                    $('#total_piezas').html(actual - pares);
+                    actual = actual - pares;
+                    if (actual <= 0)
+                    {
+                        window.contator = 0;
+                        $('#linea').html("");
+                        $('#estilo').html("");
+                        $('#color').html("");
+                        $('#talla').html("");
+                        window.cacheSalida = {};
+                    }
+                    set_info();
+                }
+            }
+        });
+    });
+
+    function datos()
+    {
+        uri = "/facturacion/factura/datos_despacho";
+        data = {
+            "serie": $('#serie').val().trim(),
+            "numero": $('#numero').val().trim()
+        };
+
+        obt = $.post(uri, data, function(d) {
+            if (d != null) {
+                window.contator = 0;
+                $('#total_piezas').html(d.total_pares);
+                $('#fecha').val(d.fecha);
+                $('#cliente').val(d.nombre_cliente);
+                window.cacheSalida = d.detalle;
+                set_info();
+            } else
+            {
+                $('#total_piezas').html("0");
+                $('#cliente').val("");
+                window.contator = 0;
+                $('#linea').html("");
+                $('#fecha').val("");
+                $('#estilo').html("");
+                $('#color').html("");
+                $('#talla').html("");
+            }
+        }, "json");
+    }
+
+    function set_info()
+    {
+        $('#linea').html(window.cacheSalida[window.contator].linea);
+        $('#estilo').html(window.cacheSalida[window.contator].estilo);
+        $('#color').html(window.cacheSalida[window.contator].color);
+        $('#talla').html(window.cacheSalida[window.contator].talla);
+        window.contator++;
+    }
+</script>
+

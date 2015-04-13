@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title></title>
+        <meta charset="utf8"  /> 
+        <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
+    </head>
+    <body class="metro">
+        <script>
+            $(document).ready(function() {
+                var url = new url_handler();
+                url.initialize();
+                if (url.isKey('error_id'))
+                    if (url.getValue('error_id') == 2)
+                        alert("Fallo de autenticación")
+            });
+        </script>
+        <style>
+            .sp * {
+                margin: 5px;
+            }
+        </style>
+        <div id="contenido">
+            <form action="/{systemModuleName}/login/login" method="post">
+                <fieldset style="padding:50px;" class="sp">
+                    <div class="input-control text span5">
+                        <h1>Iniciar sesi&oacute;n</h1>
+                        <h3>Facturación</h3>
+                        <input type="text" class="with-helper" id="usuario" name="usuario"  placeholder="Nombre de usuario" />
+                        <br/>
+                        <input type="password" id="clave" name="clave" placeholder="Clave de acceso"/>
+                        <br/>
+                        <input type="submit" name="enviar" style="width:125px;" value="Iniciar sesi&oacute;n"  class="button default" />
+                    </div>
+                </fieldset>
+            </form>
+            <footer>
+            </footer>
+    </body>
+</html>

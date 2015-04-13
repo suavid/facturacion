@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>
+        </title>
+        <link rel="shortcut icon" type="image/x-icon" href="../favicon.ico" />
+    </head>
+    <body class="metro">
+        <style type="text/css">
+
+        #blsBScreen{
+            position: fixed;
+            z-index: 1000000;
+            height: 100%;
+            width: 100%;
+            background: #000;
+            -ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+            filter: alpha(opacity=50);
+            -moz-opacity:0.5;
+            -khtml-opacity: 0.5;
+            opacity: 0.5;
+            display: none;
+        }
+
+        #blsMScreen{
+            min-height: 300px;
+            width: 100%;
+            position: fixed;
+            z-index: 1000001;
+            margin-top: 150px;
+            display: none;
+        }
+
+        #blsMessage{ 
+            margin: 0 auto;
+            margin-top: 100px;
+        }
+
+        </style>        
+        <noscript>
+        Para que el sistema trabaje correctamente necesita tener activado Javascript,
+        si usted puede leer este mensaje significa que javascript se encuentra desactivado.
+        Active Javascript y recarge la p&aacute;gina; si no sabe como activarlo contacte 
+        con el administrador.
+        </noscript>
+        <div id="blsBScreen"></div>
+        <div id="blsMScreen" class="bg-blue">
+            <div id="blsMessage" class="span5"> 
+                <p class="fg-white" style="font-size: 20px; text-align: center;"> 
+                    Por favor, espere un momento
+                    <br />
+                    <br />
+                </p>
+                <div style="text-align: center;"><img src="../static/img/loader_screen.gif" style="width: 32px;"></div> 
+            </div>
+        </div>
+        <script>
+
+            function porfavor_espere(){
+                $('#blsBScreen').css('display', 'blocK');
+                $('#blsMScreen').css('display', 'blocK');
+            } 
+
+            function gracias_por_esperar(){
+                $('#blsBScreen').css('display', 'none');
+                $('#blsMScreen').css('display', 'none');  
+            }
+
+            $(document).ready(function() {
+                //var noti = setInterval( notificaciones , 1000 );
+                //var bloq = setInterval( bloqueo , 500 );
+                
+
+                /* INBOX */
+                setInterval(function(){
+
+                    var uri = "/nymsa/modulo/inboxPendientes";
+                    $.post(uri, {}, function(resp){
+
+                        $("#inboxPending").html(resp.noleidos);
+
+                    },"json");
+
+                }, 500);
+
+                var messages_handler = new url_handler();
+                messages_handler.initialize();
+                if (messages_handler.isKey('error')) {
+
+                    if (messages_handler.getValue('error') == 1530) {
+                        $.Dialog({
+                            overlay: true,
+                            shadow: true,
+                            flat: true,
+                            icon: '<i class="icon-warning"></i>',
+                            title: 'ACCESO RESTRINGIDO',
+                            content: '',
+                            onShow: function(_dialog){
+                                var content = _dialog.children('.content');
+                                content.html('<p style="padding: 15px;">No posee autorización para visualizar el contenido</p>');
+                            }
+                        });
+                    }
+                }
+            });
+
+            function inboxPreview(){
+                var uri = "/nymsa/modulo/inboxPreview";
+
+                $.post(uri, {}, function(mensajes){
+                    agregarMensajes(mensajes);
+                }, "json");
+            }
+
+            function agregarMensajes(mensajes){
+                $('#loader').remove();
+                
+                for(var i = 0; i < mensajes.length; i++){
+                    if(mensajes[i].leido == 1){
+                        var li = $('<li style="padding: 5px;" onclick="readInbox('+mensajes[i].id+')"><p>'+mensajes[i].titulo+'</p><span style="color: #636363; font-size: 10px;">De: '+mensajes[i].remitente+' - Enviado el: '+mensajes[i].fecha+'</span></li>');
+                        $('#bandeja').append(li);
+                    }else{
+                        var li = $('<li style="padding: 5px;" onclick="readInbox('+mensajes[i].id+')"><p style="font-weight: bold;">'+mensajes[i].titulo+' (Sin leer)</p><span style="color: #636363; font-size: 10px;">De: '+mensajes[i].remitente+' - Enviado el: '+mensajes[i].fecha+'</span></li>');
+                        $('#bandeja').append(li);
+                    }
+                }
+            }
+
+            function readInbox(id){
+                location.href = "/nymsa/modulo/inboxRead?inboxId="+id;
+            }
+
+            
+            function ver_detalle_producto(){
+
+                window.open('/{systemModuleName}/inventario/detalle_de_producto?estilo=' + $('#navBusquedaProducto').val() , '_blank')
+            }
+        </script>
+        <div>
+            <nav class="navigation-bar white fixed-top" >
+                <nav class="navigation-bar-content">
+                    <a href="/{systemModuleName}/compras/principal" class="element brand">
+                        <i class="icon-home"></i>
+                        Inicio
+                    </a>
+                    <span class="element-divider place-left"></span> 
+
+                    <a class="element brand" href="{back_url}"><i class="icon-arrow-left-3"></i></a>
+                    
+
+                    <a class="element" href="/facturacion/factura/cajas"><i class="icon-list"></i> Cajas</a>
+                    <a class="element" href="/facturacion/factura/series"><i class="icon-list"></i> Series</a>
+                    <a class="element" href="/facturacion/factura/nuevo"><i class="icon-list"></i> Facturar</a>
+                    <a class="element" href="/facturacion/factura/anular"><i class="icon-list"></i> Anular factura</a>
+                    <a class="element" href="/facturacion/factura/cambios"><i class="icon-list"></i> Cambios</a>
+                    <a class="element" href="/facturacion/factura/notas_remision"><i class="icon-list"></i> Notas de remisión</a>
+                    
+                    <div class="element">
+                        <a class="dropdown-toggle" href="#"><i class="icon-plus-2"></i> Más</a>
+                        <ul class="dropdown-menu" data-role="dropdown">
+                            <!--<li><a href="/{systemModuleName}/inventario/catalogos"><i class="icon-broadcast"></i> Campañas</a></li>-->
+                          
+                        </ul>
+                    </div>
+                    
+                    <span class="element-divider"></span>
+                    
+                    <div class="element place-right">
+                        <a class="dropdown-toggle" href="#">
+                            <span class="icon-cog"></span>
+                        </a>
+                        <ul class="dropdown-menu place-right" data-role="dropdown">
+                            <!--<li><a href="/{systemModuleName}/modulo/cuenta">Cuenta</a></li>-->
+                            <div class="divider"></div>
+                            <li><a href="/{systemModuleName}/logout/user">Salir</a></li>
+                        </ul>
+                    </div>
+                    <span class="element-divider place-right"></span>
+                    <button class="element place-right">
+                        Bienvenido/a {username}
+                    </button>
+                    <div class="element place-right" >
+                        <a href="javascript: void(0);" class="dropdown-toggle" onclick="inboxPreview();"><i class="icon-mail"></i></a>
+                        <span id="inboxPending" class="fg-white" style="background: red; border-radius: 100px; width: 18px; height: 18px; display: blocK;text-align: center; font-size: 12px;font-weight: bold; float: right; position: relative; left: -14px;display:none; ">0</span>
+                        <ul class="dropdown-menu place-right" id="bandeja" data-role="dropdown" style="padding: 10px; ">
+                             <li onclick="location.href='/nymsa/modulo/inboxRead?inboxId=0&Compose=true'"><i class="icon-plus-2"></i> Redactar mensaje </li>   
+                            <img id="loader" src="../static/img/loader.gif" />
+                        </ul>   
+                    </div>
+                </nav>
+            </nav> 
+            <br/>
+            <br/>
+
+
+            <div class="page-region" style="padding-left:30px; padding-top: 50px;">
+                {content}
+            </div>
+
+        </div>
+    </body>
+</html>

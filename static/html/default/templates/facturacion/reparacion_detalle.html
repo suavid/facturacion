@@ -1,0 +1,183 @@
+<style>
+    #info-bar input,#info-bar select{
+        margin: 0px;
+    }
+
+    #info-titles{
+        padding: 10px;
+    }
+
+    #info-bar{
+        margin-top: 50px;
+        margin-bottom: 10px;
+        margin-right: 20px;
+        border: solid 1px #D3D3D3;
+        padding: 10px;
+        height: 60px;
+    }
+
+    #info-titles p{
+        width: 70px;
+        margin: 2px;
+        float: left;
+        text-align: center;
+    }
+</style>
+
+<h3>Cliente: {nombre_cliente}</h3>
+<hr/>
+<h4>Detalle de reparación</h4>
+<div class="input-control text" id="info-bar">		 
+    <select id="bLinea" style="width:130px;" > 
+        <!-- START lineas -->
+        <option value="{id}">[{id}] | {nombre}</option>
+        <!-- END lineas -->
+    </select>
+    <input type="text" id="bEstilo" style="width:70px;" />		
+    <input type="text" id="bColor" style="width:70px;" />
+    <input type="text" id="bTalla" style="width:70px;">		 
+    <input type="text" id="bCantidad" style="width:70px;"/>
+    <input type="text" id="bDescripcion" style="width:230px;"/>
+    <button onfocus="agregar_producto(event);" onclick="agregar_producto(event);" id="Enter"><i class="icon-enter-2"></i></button>
+</div>
+<div id="info-titles">
+    <p style="padding-right:130px;">Linea</p> 
+    <p>Estilo</p> 
+    <p>Color</p> 
+    <p>Talla</p>
+    <p>cantidad</p>
+    <p>Descripcion</p> 
+</div>
+<form enctype="multipart/form-data" class="formulario">
+    <br/>
+    <br/>
+    <input name="archivo" type="file" id="imagen" />
+    <p>Nota: recuerde seleccionar una imagen del estado actual del producto</p>
+</form>
+<!--div para visualizar mensajes-->
+<div class="messages"></div><br /><br />
+<!--div para visualizar en el caso de imagen-->
+<div class="showImage"></div>
+<br/>
+<br/>
+<br/>
+<br/>
+<h4>Reparaciones pendientes</h4>
+<div id="bigbox" style="margin:15px;display:!none;">
+    <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+
+    </div>
+</div>
+
+<script type="text/javascript" >
+
+    var grid_demo_id = "reparacion_grid";
+
+
+    var dsOption = {
+        fields: [
+            {name: 'linea'},
+            {name: 'estilo'},
+            {name: 'color'},
+            {name: 'talla'},
+            {name: 'cantidad'},
+            {name: 'descripcion'}
+        ],
+        recordType: 'object'
+    }
+
+    var colsOption = [
+        {id: 'linea', header: "Linea", width: 80},
+        {id: 'estilo', header: "Estilo", width: 100},
+        {id: 'talla', header: "Talla", width: 100},
+        {id: 'color', header: "Color", width: 100},
+        {id: 'cantidad', header: "Cantidad", width: 100},
+        {id: 'descripcion', header: "Descripcion", width: 290}
+
+    ];
+
+
+    var gridOption = {
+        id: grid_demo_id,
+        loadURL: '/facturacion/inventario/cargar_cfd?tblname=detalle_reparacion&field=id_reparacion&value={cambio}',
+        saveURL: '/facturacion/inventario/actualizar?tblname=detalle_reparacion',
+        width: "772", //"100%", // 700,
+        height: "260", //"100%", // 330,
+        container: 'gridbox',
+        replaceContainer: true,
+        encoding: 'UTF-8', // Sigma.$encoding(), 
+        dataset: dsOption,
+        columns: colsOption,
+        clickStartEdit: true,
+        defaultRecord: {'id': "00", 'nombre': ""},
+        pageSize: 10,
+        toolbarContent: 'reload | del save | filter | nav state'
+    };
+
+
+    var mygrid = new Sigma.Grid(gridOption);
+    Sigma.Util.onLoad(function() {
+        mygrid.render();
+    });
+
+</script>
+<script>
+    function agregar_producto(event) {
+        event.target.disabled = true; // evitar pulsaciones dobles
+        uri = "/facturacion/factura/elemento_reparacion";
+        var _linea = $('#bLinea').val().trim();
+        var _estilo = $('#bEstilo').val().trim();
+        var _color = $('#bColor').val().trim();
+        var _talla = $('#bTalla').val().trim();
+        var _cantidad = $('#bCantidad').val().trim();
+        var _descripcion = $('#bDescripcion').val().trim();
+        var _reparacion = {cambio};
+
+        data = {
+            linea: _linea,
+            estilo: _estilo,
+            color: _color,
+            talla: _talla,
+            cantidad: _cantidad,
+            descripcion: _descripcion,
+            id_reparacion: _reparacion
+        };
+
+        var error = false;
+
+        if (isNaN(_cantidad) || _cantidad <= 0) {
+            error = true;
+            alert('Error: Ingrese una cantidad valida');
+        }
+
+        if (_descripcion == "") {
+            error = true;
+            alert("Error: Debe proporcionar una descripcion del problema");
+        }
+
+        if (_estilo == "" || _color == "" || _talla == "") {
+            error = true;
+            alert("Error: Asegurese que los datos del producto esten completos")
+        }
+
+        if (!error) {
+            res = $.post(uri, data, function(d) {
+                $('#bLinea').focus();
+                if (d.existe) {
+                    var grid = Sigma.$grid("reparacion_grid");
+                    grid.reload();
+                } else {
+                    alert("Este producto no esta registrado en el sistema");
+                }
+
+                // liberar bloqueo 
+                $('#Enter').removeAttr('disabled', 'disabled');
+
+            }, "json");
+        } else {
+
+            // liberar bloqueo 
+            $('#Enter').removeAttr('disabled', 'disabled');
+        }
+    }
+</script>

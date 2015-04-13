@@ -1,0 +1,164 @@
+<h3>Cambio de producto</h3>
+<div style="display:table;">
+    <div style="width:300px;text-align:right;float:left;">
+        # (Nuevo = 0) 
+        <div class="input-control text">
+            <input type="text" style="text-align:center" id="id_cambio" value="0" onchange="cargar_cambio();" /><br/><br/>
+        </div>
+        Cliente
+        <div class="input-control text"> 
+            <input type="text" id="codigo_cliente" style="text-align:center" onchange="obtenerDatos();" /><br/><br/>
+        </div>
+        Fecha 
+        <div class="input-control text">
+            <input type="text" id="fecha" style="text-align:center" value="{fecha}" onblur="crear();" />
+        </div>
+    </div>
+    <div style="width:400px;text-align:right;float:left;padding-left:10px;">
+        Cliente
+        <div class="input-control text"> 
+            <input type="text" id="nombre_cliente" style="width:70%;" readonly="readonly" />
+        </div>
+        <br/>
+    </div>
+</div>
+<br/>
+<br/>
+<h3>Cambios pendientes</h3>
+<hr/>
+<div id="bigbox" style="margin:15px;display:!none;">
+    <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+
+    </div>
+</div>
+<script>
+
+    $(document).ready(function() {
+        window.cliente_vl = false;
+    });
+
+    function cargar_cambio() {
+        uri = "/facturacion/factura/cargar_cambio";
+        data = {"cambio": $('#id_cambio').val().trim()};
+        rq = $.post(uri, data, function(d) {
+            if (d != null) {
+                $('#codigo_cliente').val(d.codigo_cliente);
+                $('#fecha').val(d.fecha);
+                $('#codigo_cliente').change();
+            } else {
+                $('#codigo_cliente').val("");
+                $('#fecha').val("");
+            }
+
+        }, "json");
+    }
+
+    function obtenerDatos() {
+        var uri = "/facturacion/cliente/datosCliente";
+        var idCliente = $('#codigo_cliente').val();
+        var ajaxRequest = $.post(uri, {cliente: idCliente}, function(data) {
+            if (data.STATUS == "OK") {
+                window.cliente_vl = true;
+                $('#nombre_cliente').val(data.primer_nombre + " " + data.segundo_nombre + " " + data.primer_apellido + " " + data.segundo_apellido);
+            } else {
+                window.cliente_vl = false;
+                $('#nombre_cliente').val("");
+            }
+        }, "json");
+    }
+
+    function crear()
+    {
+        if (window.cliente_vl) {
+
+            id = $('#id_cambio').val().trim();
+            cliente = $('#codigo_cliente').val().trim();
+            fecha = $('#fecha').val().trim();
+
+            uri = "/" + ["facturacion", "factura", "salvar_cambio", id, cliente, fecha].join("/");
+            location.href = uri;
+
+        } else {
+            $('#codigo_cliente').val("");
+            $('#codigo_cliente').focus();
+        }
+    }
+</script>
+
+<script type="text/javascript" >
+
+    function en_factura_render(value, record, columnObj, grid, colNo, rowNo) {
+        if (record['en_factura'] == 0)
+            return 'NO';
+        else
+            return 'SI';
+    }
+
+    function editable_render(value, record, columnObj, grid, colNo, rowNo) {
+        if (record['editable'] == 0)
+            return 'SI';
+        else
+            return 'NO';
+    }
+
+    function facturado_render(value, record, columnObj, grid, colNo, rowNo) {
+        if (record['activo'] == 0)
+            return 'SI';
+        else
+            return 'NO';
+    }
+
+    var grid_demo_id = "cambio_grid";
+
+
+    var dsOption = {
+        fields: [
+            {name: 'numero'},
+            {name: 'cliente'},
+            {name: 'fecha'},
+            {name: 'en_factura'},
+            {name: 'editable'}
+        ],
+        recordType: 'object'
+    }
+
+    var colsOption = [
+        {id: 'id', header: "# Cambio", width: 100},
+        {id: 'cliente', header: "Cliente", width: 100},
+        {id: 'fecha', header: "Fecha", width: 100},
+        {id: 'editable', header: "Aplicado?", width: 100, renderer: editable_render},
+        {id: 'en_factura', header: "En pedido?", width: 100, renderer: en_factura_render},
+        {id: 'activo', header: "Facturado?", width: 100, renderer: facturado_render},
+        {id: 'caja', header: "Caja", width: 100},
+        {id: 'serie', header: "Serie", width: 100},
+        {id: 'pedido', header: "# Pedido", width: 100},
+        {id: 'factura', header: "Factura que aplica", width: 100},
+    ];
+
+
+    var gridOption = {
+        id: grid_demo_id,
+        loadURL: '/facturacion/grid_tables/dsvdiah',
+        saveURL: '',
+        width: "1010", //"100%", // 700,
+        height: "260", //"100%", // 330,
+        container: 'gridbox',
+        replaceContainer: true,
+        encoding: 'UTF-8', // Sigma.$encoding(), 
+        dataset: dsOption,
+        columns: colsOption,
+        clickStartEdit: true,
+        defaultRecord: {'id': "00", 'nombre': ""},
+        pageSize: 10,
+        allowCustomSkin: true,
+        skin: 'mac',
+        toolbarContent: 'reload | filter | nav state'
+    };
+
+
+    var mygrid = new Sigma.Grid(gridOption);
+    Sigma.Util.onLoad(function() {
+        mygrid.render();
+    });
+
+</script>

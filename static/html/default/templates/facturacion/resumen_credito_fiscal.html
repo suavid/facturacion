@@ -1,0 +1,60 @@
+<script type="text/javascript" >
+
+    var grid_demo_id = "genero_grid";
+
+
+    var dsOption = {
+        fields: [
+            {name: 'serie'},
+            {name: 'id'},
+            {name: 'caja'},
+            {name: 'pedido'},
+            {name: 'fecha'},
+            {name: 'tipo'},
+            {name: 'estado'},
+            {name: 'subtotal'},
+            {name: 'descuento'},
+            {name: 'total'}
+        ],
+        recordType: 'object'
+    }
+
+    var colsOption = [
+        {id: 'serie', header: "Serie ", width: 80},
+        {id: 'id', header: "No. Factura", width: 80},
+        {id: 'caja', header: "Caja", width: 50},
+        {id: 'pedido', header: "# pedido", width: 100},
+        {id: 'fecha', header: "Fecha emision", width: 100},
+        {id: 'tipo', header: "Tipo de factura", width: 100},
+        {id: 'estado', header: "Estado de factura", width: 100},
+        {id: 'subtotal', header: "Subtotal", width: 100},
+        {id: 'descuento', header: "Descuento", width: 100},
+        {id: 'total', header: "Total", width: 100}
+
+    ];
+
+
+    var gridOption = {
+        id: grid_demo_id,
+        loadURL: '/facturacion/factura/resumenFiscal',
+        saveURL: '',
+        width: "100%", //"100%", // 700,
+        height: "260", //"100%", // 330,
+        container: 'gridbox',
+        replaceContainer: true,
+        encoding: 'UTF-8', // Sigma.$encoding(), 
+        dataset: dsOption,
+        columns: colsOption,
+        clickStartEdit: true,
+        defaultRecord: {'id': "00", 'nombre': ""},
+        pageSize: 30,
+        toolbarContent: 'reload | filter | nav state'
+    };
+
+
+    var mygrid = new Sigma.Grid(gridOption);
+    Sigma.Util.onLoad(function() {
+        mygrid.render();
+    });
+
+</script>

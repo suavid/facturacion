@@ -1,0 +1,503 @@
+<style>
+    #info-bar input,#info-bar select{
+        margin: 0px;
+    }
+
+    #info-titles{
+        padding: 10px;
+    }
+
+    #info-bar{
+        margin-top: 50px;
+        margin-bottom: 10px;
+        margin-right: 20px;
+        border: solid 1px #D3D3D3;
+        padding: 10px;
+        height: 60px;
+    }
+
+    #info-titles p{
+        width: 70px;
+        margin: 2px;
+        float: left;
+        text-align: center;
+    }
+</style>
+
+<script>
+
+    function obtenerDatos() {
+        var uri = "/facturacion/cliente/datosCliente";
+        var idCliente = $('#codigo_cliente').val();
+        var ajaxRequest = $.post(uri, {cliente: idCliente}, function(data) {
+            if (data.STATUS == "OK") {
+                $('#codigo_cliente').css('border-color', '#D3D3D3');
+                $('#nombre_cliente').val(data.primer_nombre + " " + data.segundo_nombre + " " + data.primer_apellido + " " + data.segundo_apellido);
+                $('#direccion_cliente').val(data.direccions);
+                $('#telefono_cliente').val(data.telefono);
+                $('#bPorcentaje').val(data.descuento);
+                $('#bBodega').removeAttr('disabled');
+                $('#bBodega').focus();
+            } else {
+                $('#codigo_cliente').val("");
+                $('#codigo_cliente').focus();
+                $('#codigo_cliente').css('border-color', '#FF0000');
+            }
+        }, "json");
+    }
+
+    function seleccionarBodega() {
+        if ($('#bBodega').val().trim() == "") {
+            $('#bLinea').attr("disabled", "disabled");
+            $('#bEstilo').attr("disabled", "disabled");
+            $('#bColor').attr("disabled", "disabled");
+            $('#bTalla').attr("disabled", "disabled");
+            $('#bCantidad').attr("disabled", "disabled");
+        } else {
+
+            var uri = '/facturacion/inventario/facBodega';
+            var BODEGA = $('#bBodega').val().trim();
+            var ajaxRequest = $.post(uri, {bodega: BODEGA}, function(data) {
+                if (data.STATUS == 'OK') {
+                    $('#bLinea').removeAttr("disabled");
+                    window.CLINEA = data.linea;
+                    $('#bLinea').focus();
+                    $('#bBodega').css('border-color', '#D3D3D3');
+                    $('#bLinea option').remove();
+                    for (var i = 0; i < window.CLINEA.length; i++) {
+                        $('#bLinea').append('<option>' + window.CLINEA[i] + '</option>');
+                    }
+                    $('#bLinea').change();
+                } else {
+                    $('#bBodega').val("");
+                    $('#bBodega').focus();
+                    $('#bBodega').css('border-color', '#FF0000');
+                    $('#bLinea').attr("disabled", "disabled");
+                    $('#bEstilo').attr("disabled", "disabled");
+                    $('#bColor').attr("disabled", "disabled");
+                    $('#bTalla').attr("disabled", "disabled");
+                    $('#bCantidad').attr("disabled", "disabled");
+                }
+            }, "json");
+        }
+    }
+
+    function seleccionarLinea() {
+        if ($('#bLinea').val().trim() == "") {
+            $('#bEstilo').attr("disabled", "disabled");
+            $('#bColor').attr("disabled", "disabled");
+            $('#bTalla').attr("disabled", "disabled");
+            $('#bCantidad').attr("disabled", "disabled");
+        } else {
+            var uri = '/facturacion/inventario/facLinea';
+            var BODEGA = $('#bBodega').val().trim();
+            var LINEA = $('#bLinea').val().trim();
+            var ajaxRequest = $.post(uri, {bodega: BODEGA, linea: LINEA}, function(data) {
+                if (data.STATUS == 'OK') {
+                    $('#bEstilo').removeAttr("disabled");
+                    window.CESTILO = data.estilo;
+                    $('#bEstilo').focus();
+                    $('#bLinea').css('border-color', '#D3D3D3');
+                    $('#bEstilo option').remove();
+                    for (var i = 0; i < window.CESTILO.length; i++) {
+                        $('#bEstilo').append('<option>' + window.CESTILO[i] + '</option>');
+                    }
+                    $('#bEstilo').change();
+                } else {
+                    $('#bLinea').val("");
+                    $('#bLinea').focus();
+                    $('#bLinea').css('border-color', '#FF0000');
+                    $('#bEstilo').attr("disabled", "disabled");
+                    $('#bColor').attr("disabled", "disabled");
+                    $('#bTalla').attr("disabled", "disabled");
+                    $('#bCantidad').attr("disabled", "disabled");
+                }
+            }, "json");
+        }
+    }
+
+    function seleccionarEstilo() {
+        if ($('#bEstilo').val().trim() == "") {
+            $('#bColor').attr("disabled", "disabled");
+            $('#bTalla').attr("disabled", "disabled");
+            $('#bCantidad').attr("disabled", "disabled");
+        } else {
+            var uri = '/facturacion/inventario/facEstilo';
+            var BODEGA = $('#bBodega').val().trim();
+            var LINEA = $('#bLinea').val().trim();
+            var ESTILO = $('#bEstilo').val().trim();
+            var ajaxRequest = $.post(uri, {bodega: BODEGA, linea: LINEA, estilo: ESTILO}, function(data) {
+                if (data.STATUS == 'OK') {
+                    $('#bColor').removeAttr("disabled");
+                    window.CCOLOR = data.ccolor;
+                    $('#bColor').focus();
+                    $('#bEstilo').css('border-color', '#D3D3D3');
+                    $('#bColor option').remove();
+                    for (var i = 0; i < window.CCOLOR.length; i++) {
+                        $('#bColor').append('<option>' + window.CCOLOR[i] + '</option>');
+                    }
+                    $('#bColor').change();
+                } else {
+                    $('#bEstilo').val("");
+                    $('#bEstilo').focus();
+                    $('#bEstilo').css('border-color', '#FF0000');
+                    $('#bColor').attr("disabled", "disabled");
+                    $('#bTalla').attr("disabled", "disabled");
+                    $('#bCantidad').attr("disabled", "disabled");
+                }
+            }, "json");
+        }
+    }
+
+    function seleccionarColor() {
+        if ($('#bColor').val().trim() == "") {
+            $('#bTalla').attr("disabled", "disabled");
+            $('#bCantidad').attr("disabled", "disabled");
+        } else {
+            var uri = '/facturacion/inventario/facColor';
+            var BODEGA = $('#bBodega').val().trim();
+            var LINEA = $('#bLinea').val().trim();
+            var ESTILO = $('#bEstilo').val().trim();
+            var COLOR = $('#bColor').val().trim();
+            var ajaxRequest = $.post(uri, {bodega: BODEGA, linea: LINEA, estilo: ESTILO, color: COLOR}, function(data) {
+                if (data.STATUS == 'OK') {
+                    $('#bTalla').removeAttr("disabled");
+                    window.CTALLA = data.talla;
+                    $('#bTalla').focus();
+                    $('#bColor').css('border-color', '#D3D3D3');
+                    $('#bTalla option').remove();
+                    for (var i = 0; i < window.CTALLA.length; i++) {
+                        $('#bTalla').append('<option>' + window.CTALLA[i] + '</option>');
+                    }
+                    $('#bTalla').change();
+                } else {
+                    $('#bTalla').attr("disabled", "disabled");
+                    $('#bCantidad').attr("disabled", "disabled");
+                }
+            }, "json");
+        }
+    }
+
+    function seleccionarTalla() {
+        if ($('#bTalla').val().trim() == "") {
+            $('#bCantidad').attr("disabled", "disabled");
+        } else {
+            var uri = '/facturacion/inventario/facTalla';
+            var BODEGA = $('#bBodega').val().trim();
+            var LINEA = $('#bLinea').val().trim();
+            var ESTILO = $('#bEstilo').val().trim();
+            var COLOR = $('#bColor').val().trim();
+            var TALLA = $('#bTalla').val().trim();
+            var ajaxRequest = $.post(uri, {bodega: BODEGA, linea: LINEA, estilo: ESTILO, color: COLOR, talla: TALLA}, function(data) {
+                if (data.STATUS == "OK") {
+                    $('#bCantidad').removeAttr("disabled");
+                    $('#bCantidad').focus();
+                    $('#bPrecio').val(data.PRECIO.precio);
+                    $('#bTalla').css('border-color', '#D3D3D3');
+                } else {
+                    $('#bCantidad').attr("disabled", "disabled");
+                }
+            }, "json");
+        }
+    }
+
+    function agregarCompra(event) {
+        event.preventDefault();
+        var BODEGA = $('#bBodega').val().trim();
+
+        var ESTILO = $('#bEstilo').val().trim();
+        var COLOR = $('#bColor').val().trim();
+        var LINEA = $('#bLinea').val().trim();
+        var TALLA = $('#bTalla').val().trim();
+
+        var CANTIDAD = parseInt($('#bCantidad').val().trim());
+        var PRECIO = parseFloat($('#bPrecio').val().trim());
+        var PORCENTAJE = parseFloat($('#bPorcentaje').val().trim());
+        var DESCRIPCION = LINEA + "-" + ESTILO + "-" + COLOR + "-" + TALLA;
+
+        var CLIENTE = $('#codigo_cliente').val().trim();
+        $('#codigo_cliente').attr("disabled", "disabled");
+
+        var uri = '/facturacion/factura/insertar_remision';
+        var SUBTOTAL = 0;
+        var DESC = 0;
+
+        if ($('#SUBTOTAL').val().trim() != "")
+            SUBTOTAL = parseFloat($('#SUBTOTAL').val().trim());
+        if ($('#DESCUENTO').val().trim() != "")
+            DESC = parseFloat($('#DESCUENTO').val().trim());
+
+        $('#bBodega').val("");
+        $('#bLinea').val("");
+        $('#bEstilo').val("");
+        $('#bColor').val("");
+        $('#bTalla').val("");
+        $('#bPrecio').val("");
+        $('#bCantidad').val("");
+        $('#bDescuento').val("");
+        $('#bImporte').val("");
+        $('#bEstilo').attr("disabled", "disabled");
+        $('#bColor').attr("disabled", "disabled");
+        $('#bLinea').attr("disabled", "disabled");
+        $('#bTalla').attr("disabled", "disabled");
+        $('#bCantidad').attr("disabled", "disabled");
+
+        var data = {
+            bodega: BODEGA,
+            estilo: ESTILO,
+            color: COLOR,
+            linea: LINEA,
+            talla: TALLA,
+            cantidad: CANTIDAD,
+            descripcion: DESCRIPCION,
+            cliente: CLIENTE,
+            factura: {numero_factura},
+            precio: PRECIO,
+            porcentaje: PORCENTAJE
+        };
+
+        var ajaxRequest = $.post(uri, data, function(response) {
+            if (response.STATUS == "OK") {
+
+                var grid = Sigma.$grid("factura_grid");
+
+                $('#SUBTOTAL').val((SUBTOTAL * 1) + (CANTIDAD * PRECIO));
+                $('#DESCUENTO').val((((DESC * 1).toFixed(2) * 1) + ((CANTIDAD * PRECIO * (PORCENTAJE / 100) * -1).toFixed(2)) * 1).toFixed(2));
+                $('#TOTAL').val(($('#SUBTOTAL').val().trim() * 1) + ($('#DESCUENTO').val().trim() * 1));
+
+                grid.reload();
+
+            } else if (response.STATUS == "OUT_OF_STOCK") {
+                alert("PRODUCTO AGOTADO");
+            } else {
+                alert("HA OCURRIDO UN ERROR");
+            }
+        }, "json");
+
+        $('#bBodega').removeAttr("disabled");
+        $('#bBodega').focus()
+    }
+
+    function crearFactura(event) {
+        var s = confirm("Esta seguro de querer ejecutar esta compra?");
+        if (s) {
+            event.preventDefault();
+            var NoFactura = $('#NoFactura').html().trim();
+            var Subtotal = parseFloat($('#SUBTOTAL').val().trim());
+            var Descuento = parseFloat($('#DESCUENTO').val());
+            var Total = parseFloat($('#TOTAL').val().trim());
+            var Flete = 'N';
+            if ($('#FLETE').attr('checked')) {
+                Flete = 'S';
+            }
+            var vestilos = window.open('/facturacion/factura/imprimir/' + NoFactura + '/' + Subtotal + '/' + Descuento + '/' + Total + '/' + Flete, this.target, 'width=300,height=400');
+            location.href = "/facturacion/factura/cerrarFactura/" + NoFactura;
+        }
+
+    }
+
+    function seleccionarCantidad() {
+        var cantidad = $('#bCantidad').val().trim();
+        var porcentaje = $('#bPorcentaje').val().trim();
+        var precio = $('#bPrecio').val().trim();
+        var importe = precio * cantidad;
+        var descuento = importe * (porcentaje / 100);
+        $('#bImporte').val(importe);
+        $('#bDescuento').val(descuento * -1);
+    }
+
+    var grid_demo_id = "factura_grid";
+
+    var dsOption = {
+        fields: [
+            {name: 'descripcion'},
+            {name: 'precio'},
+            {name: 'cantidad'},
+            {name: 'porcentaje'},
+            {name: 'descuento'},
+            {name: 'importe'},
+            {name: 'id_factura'}
+        ],
+        recordType: 'object'
+    }
+
+    var colsOption = [
+        {id: 'descripcion', header: "Descripcion", width: 450},
+        {id: 'precio', header: "Precio", width: 80},
+        {id: 'cantidad', header: "Cantidad", width: 80},
+        {id: 'porcentaje', header: "%", width: 80},
+        {id: 'descuento', header: "Descuento", width: 80},
+        {id: 'importe', header: "Importe", width: 80}
+    ];
+
+
+    var gridOption = {
+        id: grid_demo_id,
+        loadURL: '/facturacion/factura/cargar_remision/{numero_factura}',
+        saveURL: '',
+        width: "100%", //"100%", // 700,
+        height: "260", //"100%", // 330,
+        container: 'gridbox',
+        replaceContainer: true,
+        encoding: 'UTF-8', // Sigma.$encoding(), 
+        dataset: dsOption,
+        columns: colsOption,
+        clickStartEdit: true,
+        defaultRecord: {'id': "00", 'nombre': ""},
+        pageSize: 10,
+        toolbarContent: 'nav state'
+    };
+
+
+    var mygrid = new Sigma.Grid(gridOption);
+    Sigma.Util.onLoad(function() {
+        mygrid.render();
+        Sigma.$('bigbox4').style.display = "none";
+        Sigma.$('bigbox3').style.display = "none";
+        Sigma.$('bigbox2').style.display = "none";
+    });
+
+</script>
+<section>
+    <!-- encabezado -->
+    <h3>Caja {numero_caja}</h3>
+    <h3>Factura No. <span id="NoFactura">{numero_factura}</span></h3>
+    <hr/>
+
+    <!-- formulario de factura -->
+    <form>
+
+        <!-- datos generales -->
+        <div style="display:table;">
+
+            <table style="width:500px;float:left;">
+                <tr>
+                    <td>
+                        Codigo: 
+                    </td>
+                    <td>
+                        <input type="text" id="codigo_cliente" onchange="obtenerDatos();" style="width:100%;"/>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        Nombre cliente: 
+                    </td>
+                    <td>
+                        <input type="text" id="nombre_cliente" style="width:100%;" disabled="disabled" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        Telefono: 
+                    </td>
+                    <td>
+                        <input type="text" id="telefono_cliente" style="width:100%;" disabled="disabled" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        Direcci&oacute;n de entrega: 
+                    </td>
+                    <td>
+                        <input type="text" id="direccion_cliente" style="width:100%;" disabled="disabled" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        Agente: 
+                    </td>
+                    <td>
+                        <input type="text" style="width:100%;" disabled="disabled" />
+                    </td>
+                </tr>
+                <tr>
+                    <td>	
+                        D&iacute;as cr&eacute;dito: 
+                    </td>
+                    <td>	
+                        <input type="text" style="width:100%;" disabled="disabled" />
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        Concepto 
+                    </td>
+                    <td>	
+                        <input type="text" style="width:100%;" value="COMPRA" disabled="disabled" />
+                    </td>
+                </tr>
+            </table>
+
+            <div style="border: solid 1px #D3D3D3; padding: 40px;float:left;margin:40px;">
+                <input type="checkbox" /> Cr&eacute;dito
+                <br/>
+                <br/>
+                <input type="checkbox" checked="checked" /> Contado
+                <br/>
+                <br/>
+                <input type="checkbox" /> Transitorio
+            </div>
+
+        </div>
+        <!-- busqueda del producto -->
+
+        <div class="input-control text" id="info-bar">
+
+            <input type="text" id="bBodega" style="width:70px;" onchange="seleccionarBodega();" disabled="disabled" />
+
+            <select id="bLinea" style="width:70px;" ondblclick="verLineas();" onchange="seleccionarLinea();" disabled="disabled"></select> 
+
+            <select type="text" id="bEstilo" style="width:70px;" ondblclick="verEstilos();" onchange="seleccionarEstilo();" disabled="disabled"></select> 
+
+            <select type="text" id="bColor" style="width:70px;" ondblclick="verColores();" onchange="seleccionarColor();" disabled="disabled"></select> 
+
+            <select type="text" id="bTalla" style="width:70px;" ondblclick="verTallas();" onchange="seleccionarTalla();" disabled="disabled"></select> 
+
+            <input type="text" id="bPrecio" style="width:70px;" readonly/>
+
+            <input type="text" id="bCantidad" style="width:70px;" onchange="seleccionarCantidad();" disabled="disabled" />
+
+            <input type="text" id="bPorcentaje" style="width:70px;" readonly/>
+
+            <input type="text" id="bDescuento" style="width:70px;" readonly/>
+
+            <input type="text" id="bImporte" style="width:70px;" readonly/>
+
+            <input type="text" id="bSerie" style="width:70px;" readonly/>
+
+            <button onfocus="agregarCompra(event);" onclick="agregarCompra(event);">Confirmar</button>
+        </div>
+        <div id="info-titles">
+            <p>Bodega</p>
+            <p>Linea</p> 
+            <p>Estilo</p> 
+            <p>Color</p> 
+            <p>Talla</p>
+            <p>Precio</p>
+            <p>Cantidad</p> 
+            <p>%</p>
+            <p>Descuento</p> 
+            <p>Importe</p> 
+            <p>Serie garant&iacute;a</p> 
+        </div>
+
+    </form>
+    <br/><br/><br/><br/>
+    <form style="text-align:right;">
+        <div>
+            <div style="padding:10px;">
+                (+) Flete <input type="checkbox" id="FLETE"/>
+            </div>
+            Subtotal <input type="text" id="SUBTOTAL" readonly style="width:75px;" />
+            (-) Descuento <input type="text" id="DESCUENTO" readonly style="width:75px;" />
+            Total <input type="text" readonly id="TOTAL" style="width:75px;" />
+            <button class="bg-color-blue fg-color-white" onclick="crearFactura(event);">Efectuar compra</button>
+        </div>
+    </form>
+
+    <section>

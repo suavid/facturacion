@@ -1,0 +1,135 @@
+<h3>Reparaciones</h3>
+<hr/>
+<div style="display:table;">
+    <div style="width:300px;text-align:right;float:left; margin-top:20px;">
+        # reparacion (0 = nuevo)
+        <input type="text" value="0" id="id_reparacion" onchange="cargar_reparacion();" style="text-align:center;" />
+        <br/>
+        <br/>
+        Cliente: 
+        <input type="text" id="codigo_cliente" style="text-align:center;" onchange="obtenerDatos();" /> 
+        <br/>
+        <br/>
+        Nombre:
+        <input type="nombre" id="nombre_cliente" disabled="disabled">
+        <br/>
+        <br/>
+        Fecha:
+        <input type="text" id="fecha" value="{fecha}" style="text-align:center;" />
+        <br/>
+        <br/>
+        <button onblur="crear_reparacion();" onclick="crear_reparacion();">Abrir</button>
+    </div>
+
+
+    <div id="bigbox" style="margin:15px;display:!none;float:left;margin-left:30px;">
+        <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+
+        </div>
+    </div>
+</div>
+<script type="text/javascript" >
+
+    $(document).ready(function() {
+        window.cliente_vl = false;
+        $('#codigo_cliente').bind('keyup', _valCode);
+    });
+
+    function _valCode() {
+        codigoCli = $('#codigo_cliente').val().trim();
+        if (isNaN(codigoCli)) {
+            $('#codigo_cliente').val("");
+        }
+    }
+
+    var grid_demo_id = "reparacion_grid";
+
+
+    var dsOption = {
+        fields: [
+            {name: 'id'},
+            {name: 'cliente'},
+            {name: 'fecha'}
+        ],
+        recordType: 'object'
+    }
+
+    var colsOption = [
+        {id: 'id', header: "# reparacion", width: 100},
+        {id: 'cliente', header: "Cliente", width: 100},
+        {id: 'fecha', header: "Fecha", width: 100}
+
+    ];
+
+
+    var gridOption = {
+        id: grid_demo_id,
+        loadURL: '/facturacion/inventario/cargar?tblname=reparacion',
+        saveURL: '',
+        width: "300", //"100%", // 700,
+        height: "260", //"100%", // 330,
+        container: 'gridbox',
+        replaceContainer: true,
+        encoding: 'UTF-8', // Sigma.$encoding(), 
+        dataset: dsOption,
+        columns: colsOption,
+        clickStartEdit: true,
+        defaultRecord: {'id': "00", 'nombre': ""},
+        pageSize: 10,
+        toolbarContent: 'reload | filter | nav state'
+    };
+
+
+    var mygrid = new Sigma.Grid(gridOption);
+    Sigma.Util.onLoad(function() {
+        mygrid.render();
+    });
+
+    function obtenerDatos() {
+        var uri = "/facturacion/cliente/datosCliente";
+        var idCliente = $('#codigo_cliente').val();
+        var ajaxRequest = $.post(uri, {cliente: idCliente}, function(data) {
+            if (data.STATUS == "OK") {
+                window.cliente_vl = true;
+                $('#nombre_cliente').val(data.primer_nombre + " " + data.segundo_nombre + " " + data.primer_apellido + " " + data.segundo_apellido);
+            } else {
+                window.cliente_vl = false;
+                $('#nombre_cliente').val("");
+                alert("cliente no existe");
+            }
+        }, "json");
+    }
+
+    function crear_reparacion() {
+        if (window.cliente_vl) {
+
+            id = $('#id_reparacion').val().trim();
+            cliente = $('#codigo_cliente').val().trim();
+            fecha = $('#fecha').val().trim();
+
+            uri = "/" + ["facturacion", "factura", "salvar_reparacion", id, cliente, fecha].join("/");
+            location.href = uri;
+
+        } else {
+            $('#codigo_cliente').val("");
+            $('#codigo_cliente').focus();
+        }
+    }
+
+    function cargar_reparacion() {
+        uri = "/facturacion/factura/cargar_reparacion";
+        data = {"reparacion": $('#id_reparacion').val().trim()};
+        rq = $.post(uri, data, function(d) {
+            if (d != null) {
+                $('#codigo_cliente').val(d.codigo_cliente);
+                $('#fecha').val(d.fecha);
+                $('#codigo_cliente').change();
+            } else {
+                $('#codigo_cliente').val("");
+                $('#fecha').val("");
+            }
+
+        }, "json");
+    }
+
+</script>

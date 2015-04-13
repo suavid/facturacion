@@ -1,0 +1,225 @@
+<h3>Cambio de producto</h3>
+<hr/>
+<button class="btns" onclick="cancelar_cambio();">Cancelar cambio</button>
+<a href="/facturacion/report/imprimir_ticket_cambio/{cambio}" target="_blank" class="button">Imprimir</a> 
+<button class="btns" type="button" id="appl" onclick="aplicar();" class="success">Aplicar</button>
+<div style="clear: both;"></div>
+<div style="width: 500px;float: left;">
+    <br/>
+    <br/>
+    <h3>Facturas del mes de {nombre_cliente}</h3>
+    <hr/>
+    {paginacion_str}
+    <table id="arbol" style="margin-top:15px;text-align: center;" class="table">
+        <tr><th>No. Factura</th><th>Caja</th><th>Fecha de facturación</th><th>Monto</th><th></th></tr>
+        <!-- START general -->
+            <tr><td>{nofac}</td><td>{caja}</td><td>{fefac}</td><td>${total}</td><td><button class="btns" type="button" onclick="cargar_detalle({nofac}, '{fefac}');">Ver detalle</button></td></tr>
+        <!-- END general -->
+    </table>
+</div>
+<div style="width: 500px;float: left;margin-left: 30px;">
+    <br/>
+    <br/>
+    <h3>Detalle</h3>
+    <hr/>
+    <div id="detalle">
+
+    </div>
+</div>
+<div style="clear: both;"></div>
+<div id="bigbox" style="margin:15px;display:!none;">
+    <div id="gridbox" style="border:0px solid #cccc/facturacion/factura/cambioscc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+
+    </div>
+</div>
+
+<script>
+
+    $(document).ready(function(){
+        window.cache = [];
+        if("{editable}"!="1"){
+            $('.btns').attr("disabled", "disabled");
+        }
+
+        var f = new Date();
+        var dia  = f.getDate();
+        var mes  = f.getMonth();
+        var anio = f.getFullYear();
+
+        window.fechaActual = anio+"-"+mes+"-"+dia;
+        window._nofacC = null;
+
+    });
+    
+   function restarFechas(f1,f2)
+    {
+         var aFecha1 = f1.split('-'); 
+         var aFecha2 = f2.split('-'); 
+         var fFecha1 = Date.UTC(aFecha1[0],aFecha1[1]-1,aFecha1[2]); 
+         var fFecha2 = Date.UTC(aFecha2[0],aFecha2[1]-1,aFecha2[2]); 
+         var dif = fFecha2 - fFecha1;
+         var dias = Math.floor(dif / (1000 * 60 * 60 * 24)); 
+         return dias;
+    }
+
+    function cancelar_cambio(){
+        if (confirm("esta seguro?")){
+            uri = "/facturacion/factura/cancelar_cambio";
+            data = {"cambio": {cambio}};
+            res = $.post(uri, data, function(d){
+                if (d.exito){
+                    alert("Cambio cancelado");
+                    location.href = "/facturacion/factura/cambios";
+                } else{
+                    alert("Error!: ya se ha aplicado, no se puede cancelar");
+                }
+            }, "json");
+        }
+    }
+
+    function aplicar(){
+        location.href = "/facturacion/factura/aplicar_devolucion/{cambio}";
+    }
+
+    function cargar_detalle(nofac, fefac)
+    {
+        var uri  = "/facturacion/factura/detalle_fac";
+        var data = { "nofac": nofac };
+        var dias = restarFechas(window.fechaActual, fefac);
+        
+        if(dias < 0){
+             window._nofacC = nofac;
+            $.Dialog({
+                    overlay: true,
+                    shadow: true,
+                    flat: true,
+                    title: 'Aviso!',
+                    content: '',
+                    width:500,
+                    onShow: function(_dialog){
+                        var content = _dialog.children('.content');
+                        html = ['<div style="padding:30px;">',
+                            '<br/>',
+                            '<h4>Plazo de 30 días caducado, necesita autorizacion</h4>',
+                            '<input type="password" id="pass" /> <button type="button" onclick="auth();"> Autorizar</button>',
+                            '<br/>',
+                            '<br/>',
+                            '</div>'].join("");
+                        content.html(html);
+                    }
+                });
+        }else{
+            $.post(uri, data, function(response){
+                $('#detalle').html(response.html);
+            }, "json");
+        }
+    }
+
+    function auth()
+    {
+        pass = $('#pass').val();
+        uri  = "/facturacion/modulo/autorizacion";
+        data = {"clave":pass};
+        res  = $.post(uri, data, function(d){
+            if (d.auth){
+                if( window._nofacC!=null){
+                    var uri  = "/facturacion/factura/detalle_fac";
+                    var data = { "nofac": window._nofacC };
+                    $.post(uri, data, function(response){
+                        $('#detalle').html(response.html);
+                    }, "json");
+                }
+            } else{
+                alert("No tiene autorizacion");
+            }
+        }, "json");
+        
+        $.Dialog.close();
+    }
+
+    function validarNumero(e){
+        var val = $(e.target).val();
+        if(isNaN(val)){
+            $(e.target).val("");
+        }
+    }
+
+    function devolver(event, linea, estilo, color, talla, nofac, cantidad, precio, id){
+    //alert(talla);
+        devueltos = $(id).val();
+        if (!isNaN(cantidad))
+        {
+            cantidad = parseInt(cantidad);
+            uri = "/facturacion/factura/devolver";
+            data = {
+                "bodega"  :1,
+                "linea"   :linea,
+                "estilo"  :estilo,
+                "color"   :color,
+                "talla"   :talla,
+                "cantidad":devueltos,
+                "precio"  :precio,
+                "factura" :nofac,
+                "cambio"  :{cambio}
+            };
+            //alert(JSON.stringify(data));
+            if (devueltos <= cantidad){
+                request = $.post(uri, data, function(d){
+                    if (d.message != null){ alert(d.message); }
+                    var grid = Sigma.$grid("cambio_grid");
+                    grid.reload();
+                }, "json");
+            } else{
+                alert("Fuera de rango");
+            }
+        }
+    }
+</script>
+<script type="text/javascript" >
+
+    var grid_demo_id = "cambio_grid";
+    
+    var dsOption = {
+        fields :[
+            {name : 'id'  },
+            {name : 'nombre'  },
+            {name : 'encargado'  },
+            {name : 'descripcion'  }
+        ],
+        recordType : 'object'
+    }
+
+    var colsOption = [
+        {id: 'bodega', header: "Bodega", width :100 },
+        {id: 'linea', header: "Linea", width :100 },
+        {id: 'estilo', header: "Estilo", width :100 },
+        {id: 'color', header: "Color", width :100 },
+        {id: 'talla', header: "Talla", width :100 },
+        {id: 'factura', header: "# Factura", width :100 },
+        {id: 'cantidad', header: "Devuelve", width :100 }
+    ];
+           
+    var gridOption = {
+        id : grid_demo_id,
+        loadURL : '/facturacion/inventario/cargar_cfd?tblname=devolucion&field=cambio&value={cambio}',
+        saveURL : '',
+        width: "705", //"100%", // 700,
+        height: "260", //"100%", // 330,
+        container : 'gridbox',
+        replaceContainer : true,
+        encoding : 'UTF-8', // Sigma.$encoding(), 
+        dataset : dsOption,
+        columns : colsOption,
+        clickStartEdit : true,
+        defaultRecord : {'id':"00", 'nombre':""},
+        pageSize:10,
+        allowCustomSkin: true,
+        skin: 'mac',
+        toolbarContent : 'reload | filter | nav state'
+    };
+            
+    var mygrid = new Sigma.Grid(gridOption);
+    Sigma.Util.onLoad(function(){
+        mygrid.render();
+    });
+</script>

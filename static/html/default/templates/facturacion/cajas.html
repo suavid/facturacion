@@ -1,0 +1,256 @@
+<h3>Mantenimiento de cajas</h3>
+<hr/>
+<span id="msg" style="position:fixed; color: red;"></span>
+<form method="post" action="/facturacion/factura/guardar_caja">
+    <div style="display:table;">
+        <div style="float:left;width:300px;margin:15px;text-align:right;">
+            # Caja
+            <input type="text" style="width:150px;" name="id" id="id_" onchange="cargar_datos();" />
+            <br/>
+            Nombre caja
+            <input type="text" style="width:150px;" name="nombre" id="nombre" />
+            <br/>
+            Formato facturas
+            <input type="text" style="width:150px;" name="f_factura" id="f_factura"/>
+            <br/>
+            Formato F. de Exp
+            <input type="text" style="width:150px;" name="f_exp" id="f_exp" />
+            <br/>
+            Formato despachos
+            <input type="text" style="width:150px;" name="f_despacho" id="f_despacho" />
+            <br/>
+            Formato notas credito 
+            <input type="text" style="width:150px;" name="f_nota_credito" id="f_nota_credito" />
+            <br/>
+            Formato notas debito
+            <input type="text" style="width:150px;" name="f_nota_debito" id="f_nota_debito"  />
+            <br/>
+            Formato recibos
+            <input type="text" style="width:150px;" name="f_recibo" id="f_recibo" />
+            <br/>
+            Encargado
+            <select style="width:150px;" name="encargado" id="encargado" >
+                <!-- START usuario -->
+                <option value="{usuario}">
+                    {usuario}
+                </option>
+                <!-- END usuario -->
+            </select>
+            <br/>
+            Ultimo pedido
+            <input type="text" style="width:150px;" id="ultimo_pedido" />
+            <br/>
+            Ultimo Cambio
+            <input type="text" style="width:150px;" id="ultimo_cambio" />
+            <br/>
+            Bodega que utiliza
+            <select style="width:150px;" name="bodega_por_defecto" id="bodega_por_defecto" >
+                <!-- START bodega -->
+                <option value="{id}">
+                    {nombre}
+                </option>
+                <!-- END bodega -->
+            </select>
+            <br/>
+        </div>
+
+        <div style="float:left;width:300px;margin:15px;text-align:right;">
+            Serie factura
+            <select style="width:150px;" name="serie_factura" id="serie_factura" onchange="set_serie(event);" >
+                <!-- START s_factura -->
+                <option value="{id}">
+                    {serie} | {descripcion}
+                </option>
+                <!-- END s_factura -->
+            </select>
+            <br/>
+            Serie notas credito
+            <select style="width:150px;" name="serie_nota_credito" id="serie_nota_credito" onchange="set_serie(event);" >
+                <!-- START s_credito -->
+                <option value="{id}">
+                    {serie} | {descripcion}
+                </option>
+                <!-- END s_credito -->
+            </select>
+            <br/>
+            Serie recibo
+            <select style="width:150px;" name="serie_recibo" id="serie_recibo" onchange="set_serie(event);" >
+                <!-- START s_recibo -->
+                <option value="{id}">
+                    {serie} | {descripcion}
+                </option>
+                <!-- END s_recibo -->
+            </select>
+            <br/>
+            Serie ticket
+            <select style="width:150px;" name="serie_ticket" id="serie_ticket" onchange="set_serie(event);" >
+                <!-- START s_ticket -->
+                <option value="{id}">
+                    {serie} | {descripcion}
+                </option>
+                <!-- END s_ticket -->
+            </select>
+            <br/>
+            Serie credito fiscal
+            <select style="width:150px;" name="serie_credito_fiscal" id="serie_credito_fiscal" onchange="set_serie(event);" >
+                <!-- START s_cf -->
+                <option value="{id}">
+                    {serie} | {descripcion}
+                </option>
+                <!-- END s_cf -->
+            </select>
+            <br/>
+            Serie nota de remisión
+            <select style="width:150px;" name="serie_nota_remision" id="serie_nota_remision" onchange="set_serie(event);" >
+                <!-- START s_nr -->
+                <option value="{id}">
+                    {serie} | {descripcion}
+                </option>
+                <!-- END s_nr -->
+            </select>
+            <br/>
+            <input type="hidden" name="codigo_factura" id="codigo_factura" />
+            <input type="hidden" name="codigo_nota_credito" id="codigo_nota_credito" />
+            <input type="hidden" name="codigo_recibo" id="codigo_recibo" />
+            <input type="hidden" name="codigo_nota_remision" id="codigo_nota_remision" />
+            <input type="hidden" name="codigo_ticket" id="codigo_ticket" />
+            <input type="hidden" name="codigo_credito_fiscal" id="codigo_credito_fiscal" />
+            <br/>
+            Permiso para cambiar bodega
+            <input type="checkbox" style="width:150px;" name="p_cambio_bodega" id="p_cambio_bodega" />
+            <br/>
+            <br/>
+
+        </div>
+    </div>
+    <div style="text-align: right; width: 600px;"> 
+        <button class="primary">Guardar</button>
+    </div>
+</form>
+
+<script type="text/javascript">
+
+    $(function() {
+        $('#serie_factura').change();
+        $('#serie_nota_credito').change();
+        $('#serie_recibo').change();
+        $('#serie_ticket').change();
+        $('#serie_credito_fiscal').change();
+        $('#serie_nota_remision').change();
+    });
+
+    function set_serie(event)
+    {
+
+        name = $(event.target).attr("name");
+
+        destino = name;
+        destino = destino.replace("serie", "codigo");
+
+        codigo = $('#' + name + ' option:selected').text().trim();
+        codigo = codigo.split("|")[0].trim();
+
+        $('#' + destino).val(codigo);
+
+    }
+
+    function cargar_datos()
+    {
+        id = $('#id_').val().trim();
+
+        uri = "/facturacion/factura/cargar_datos_caja";
+
+        xrq = $.post(uri, {"id": id}, function(d) {
+
+            if (d != null)
+            {
+                $('#msg').html("Existe!");
+                $('#nombre').val(d.nombre);
+                $('#f_factura').val(d.f_factura);
+                $('#f_exp').val(d.f_exp);
+                $('#f_despacho').val(d.f_despacho);
+                $('#f_nota_credito').val(d.f_nota_credito);
+                $('#f_nota_debito').val(d.f_nota_debito);
+                $('#f_recibo').val(d.f_recibo);
+                $("#encargado option[value=" + d.encargado + "]").attr("selected", "selected");
+                $('#ultimo_pedido').val(d.ultimo_pedido);
+                $('#ultimo_cambio').val(d.ultimo_cambio);
+                $("#bodega_por_defecto option[value=" + d.bodega_por_defecto + "]").attr("selected", "selected");
+                $("#serie_factura option[value=" + d.serie_factura + "]").attr("selected", "selected");
+                $("#serie_nota_credito option[value=" + d.serie_nota_credito + "]").attr("selected", "selected");
+                $("#serie_recibo option[value=" + d.serie_recibo + "]").attr("selected", "selected");
+                $("#serie_ticket option[value=" + d.serie_ticket + "]").attr("selected", "selected");
+                if (d.p_cambio_bodega == 1)
+                    $('#p_cambio_bodega').attr("checked", "checked");
+                else
+                    $('#p_cambio_bodega').removeAttr("checked");
+            }
+            else
+            {
+                $('#msg').html("");
+            }
+
+        }, "json");
+
+    }
+
+    var grid_demo_id = "bodega_grid";
+
+    var dsOption = {
+        fields: [
+            {name: 'id'},
+            {name: 'nombre'},
+            {name: 'encargado'},
+            {name: 'codigo_factura'},
+            {name: 'codigo_nota_credito'},
+            {name: 'codigo_recibo'},
+            {name: 'codigo_ticket'},
+            {name: 'bodega_por_defecto'}
+        ],
+        recordType: 'object'
+    }
+
+    var colsOption = [
+        {id: 'id', header: "Codigo", width: 70},
+        {id: 'nombre', header: "Nombre", width: 150},
+        {id: 'encargado', header: "Encargado", width: 100},
+        {id: 'codigo_factura', header: "Factura", width: 100},
+        {id: 'codigo_nota_credito', header: "Nota de credito", width: 100},
+        {id: 'codigo_credito_fiscal', header: "Credito Fiscal", width: 100},
+        {id: 'codigo_recibo', header: "Recibo", width: 100},
+        {id: 'codigo_ticket', header: "Descripcion", width: 100},
+        {id: 'bodega_por_defecto', header: "Bodega", width: 100}
+
+    ];
+
+
+    var gridOption = {
+        id: grid_demo_id,
+        loadURL: '/facturacion/inventario/cargar?tblname=caja',
+        saveURL: '/facturacion/inventario/actualizar?tblname=caja',
+        width: "930", //"100%", // 700,
+        height: "260", //"100%", // 330,
+        container: 'gridbox',
+        replaceContainer: true,
+        encoding: 'UTF-8', // Sigma.$encoding(), 
+        dataset: dsOption,
+        columns: colsOption,
+        clickStartEdit: true,
+        defaultRecord: {'id': "00", 'nombre': ""},
+        pageSize: 10,
+        allowCustomSkin: true,
+        skin: 'mac',
+        toolbarContent: 'reload | del save | filter | nav state'
+    };
+
+
+    var mygrid = new Sigma.Grid(gridOption);
+    Sigma.Util.onLoad(function() {
+        mygrid.render();
+    });
+</script>
+    <div id="bigbox" style="margin:15px;display:!none;">
+        <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+
+        </div>
+    </div>

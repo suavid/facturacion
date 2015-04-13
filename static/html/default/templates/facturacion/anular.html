@@ -1,0 +1,233 @@
+<h3>Anulación de facturas</h3>
+<hr/>
+<span id="msg" style="position:fixed;"></span>
+<div style="display:table;">
+    <div style="float:left;width:300px;text-align:right;">
+        <div class="input-control text">
+            <input type="text" id="numero_caja" placeholder="Número de caja"/>
+        </div>
+        <br/>
+        <div class="input-control text">
+            <input type="text" id="serie_factura" placeholder="Serie de documento"/>
+        </div>
+        <br/>
+        <div class="input-control text">
+            <input type="text" id="numero_factura" onblur="cargar_datos();" placeholder="Número de factura"/>
+        </div>
+        <br/>
+        <div class="input-control text">
+            <input type="text" id="fecha_emision" placeholder="Fecha de emisión" readonly="readonly" />
+        </div>
+        <input type="hidden" id="referencia" />
+        <br/>
+    </div>
+
+    <div style="margin-left:40px;float:left;width:400px;text-align:right;">
+        <div class="input-control text">
+            <input type="text" id="nombre_cliente" placeholder="A nombre del cliente" style="width:100%;" readonly="readonly"/>
+        </div>
+        <div style="display:table;width:100%;">
+            <div style="float:left;width:40%;margin-right: 20px;margin-left: 60px;">
+                <div class="input-control text">
+                    <input type="text" id="monto_factura" placeholder="Por un monto de" readonly="readonly" />
+                </div>
+                <br/>
+                Anulado por
+                <div class="input-control text">
+                    <input type="text" value="{username}" disabled="disabled" id="usuario_activo" />
+                </div>
+                <br/>
+                <div class="input-control text">
+                    <input type="text" value="{time_stamp}" id="fecha_anulacion" />
+                </div>
+                <br/>
+            </div>
+            <div style="float:left;width:40%;">
+                <div class="input-control text">
+                    <input type="text" id="id_pedido" placeholder="Pedido No." readonly="readonly" />
+                </div>
+                <br/>
+                Anulado
+                <input type="checkbox" id="bAnulado" disabled="disabled" />
+                Crédito
+                <input type="checkbox" id="bCredito" disabled="disabled" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="bigbox" style="float:left;margin:15px;display:!none;width:700px;">
+    <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+
+    </div>
+</div>
+
+<button class="large success" id="btnAnular" style="float:left;" disabled="disabled" onclick="anular();"><i class="icon-cancel"></i> Anular </button>
+
+<script type="text/javascript">
+
+	$(document).ready(function(){
+		window.serie = null;
+		window.nofac = null;
+	});
+
+    var grid_demo_id = "factura_grid";
+
+    var dsOption = {
+        fields: [
+            {name: 'descripcion'},
+            {name: 'precio'},
+            {name: 'cantidad'},
+            {name: 'porcentaje'},
+            {name: 'descuento'},
+            {name: 'importe'},
+            {name: 'id_factura'},
+            {name: 'id'}
+        ],
+        recordType: 'object'
+    }
+
+    var colsOption = [
+        {id: 'descripcion', header: "Descripcion", width: 250},
+        {id: 'precio', header: "Precio", width: 80},
+        {id: 'cantidad', header: "Cantidad", width: 80},
+        {id: 'pordes', header: "%", width: 80},
+        {id: 'valdes', header: "Descuento", width: 80},
+        {id: 'importe', header: "Importe", width: 80}
+    ];
+
+
+    var gridOption = {
+        id: grid_demo_id,
+        loadURL: '',
+        saveURL: '',
+        width: "655", //"100%", // 700,
+        height: "260", //"100%", // 330,
+        container: 'gridbox',
+        replaceContainer: true,
+        encoding: 'UTF-8', // Sigma.$encoding(), 
+        dataset: dsOption,
+        columns: colsOption,
+        clickStartEdit: true,
+        defaultRecord: {'id': "00", 'nombre': ""},
+        pageSize: 10,
+        allowCustomSkin: true,
+        skin: 'mac',
+        toolbarContent: 'nav state'
+    };
+
+
+    var mygrid = new Sigma.Grid(gridOption);
+    Sigma.Util.onLoad(function() {
+        mygrid.render();
+    });
+
+    function cargar_datos()
+    {
+        numero_caja    = parseInt($('#numero_caja').val().trim( ));
+        numero_factura = parseInt($('#numero_factura').val().trim( ));
+        serie_factura  = $('#serie_factura').val().trim( );
+		
+		window.serie = serie_factura;
+		window.nofac = numero_factura;
+        
+		uri = "/facturacion/factura/datos_anulacion";
+
+        data = {
+            "numero_caja": numero_caja,
+            "numero_factura": numero_factura,
+            "serie_factura": serie_factura
+        };
+
+        datos_f = $.post(uri, data, function(d) {
+            if (!d.notfound)
+            {
+                $('#monto_factura').val(d.total);
+                $('#fecha_emision').val(d.fefac);
+                $('#nombre_cliente').val(d.nomcli);
+                $('#id_pedido').val(d.noped);
+                $('#referencia').val(d.referencia);
+                $('#msg').html("");
+                var grid = Sigma.$grid("factura_grid");
+                grid.loadURL = '/facturacion/factura/cargar_factura/' + d.serie+'/'+d.nofac;
+                grid.reload();
+                $('#btnAnular').removeAttr("disabled");
+                if (d.anulado == "VERDADERO")
+                {
+                    $('#bAnulado').attr("checked", "checked");
+                    $('#btnAnular').attr("disabled", "disabled");
+                }
+                else
+                {
+                    $('#bAnulado').removeAttr("checked");
+                    $('#btnAnular').removeAttr("disabled");
+                }
+                if (d.formapago == 2)
+                {
+                    $('#bCredito').attr("checked", "checked");
+                }
+                else
+                {
+                    $('#bCredito').removeAttr("checked");
+                }
+            }
+            else
+            {
+				alert("No existe factura!");
+                $('#btnAnular').removeAttr("disabled");
+                $('#referencia').val("");
+                $('#bAnulado').removeAttr("checked");
+                $('#bCredito').removeAttr("checked");
+                $('#msg').html("No existe!");
+                $('#monto_factura').val("");
+                $('#fecha_emision').val("");
+                $('#nombre_cliente').val("");
+                $('#id_pedido').val("");
+                $('#msg').html("");
+                var grid = Sigma.$grid("factura_grid");
+                grid.loadURL = '/facturacion/factura/cargar_detalle/' + 0;
+                grid.reload();
+                $('#btnAnular').attr("disabled", "disabled");
+            }
+        }, "json");
+    }
+
+    function anular()
+    {
+        /* proceso de facturacion al contado */
+
+        factura = $('#referencia').val().trim(); // numero de factura a procesar
+
+        uri = "/facturacion/factura/p_anular"; // url de proceso de anulacion
+
+        resource = [uri, window.nofac].join("/");
+
+        info = {
+            "fecha": $('#fecha_anulacion').val().trim(),
+            "usuario": $('#usuario_activo').val().trim(),
+			"serie": window.serie,
+			"nofac": window.nofac
+        };
+
+        request = $.post(resource, info, function(data) {
+            $('#msg').html("No existe!");
+            $('#bAnulado').removeAttr("checked");
+            $('#bCredito').removeAttr("checked");
+            $('#numero_factura').val("");
+            $('#numero_remision').val("");
+            $('#serie_factura').val("");
+            $('#monto_factura').val("");
+            $('#fecha_emision').val("");
+            $('#nombre_cliente').val("");
+            $('#id_pedido').val("");
+            $('#msg').html("");
+            var grid = Sigma.$grid("factura_grid");
+            grid.loadURL = '/facturacion/factura/cargar_detalle/' + 0;
+            grid.reload();
+            $('#btnAnular').attr("disabled", "disabled");
+
+        }, "json");
+    }
+</script>
+
+

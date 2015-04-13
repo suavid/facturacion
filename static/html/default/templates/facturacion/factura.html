@@ -1,0 +1,63 @@
+<html>
+    <body>
+        <style>
+            table{
+                border:solid 1px #000;
+                box-shadow: 1px 1px 2px #000;
+            }
+
+            table td{
+                border-collapse: collapse;
+                padding: 15px;
+            }
+
+            table tr{
+                border: solid 1px #000;
+            }
+        </style>
+        <h3>Factura No {NoFactura}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <td>
+                        Descripcion
+                    </td>
+                    <td>
+                        Cantidad
+                    </td>
+                    <td>
+                        Precio
+                    </td>
+                    <td>
+                        Porcentaje
+                    </td>
+                    <td>
+                        Descuento
+                    </td>
+                    <td>
+                        Importe
+                    </td>
+                </tr>
+            </thead>
+            <!-- START detalle -->
+            <tr>
+                <td>{descripcion}</td>
+                <td>{cantidad}</td>
+                <td>${precio}</td>
+                <td>%{porcentaje}</td>
+                <td>${descuento}</td>
+                <td>${importe}</td>
+            </tr>
+            <!-- END detalle -->
+        </table>
+        <p>
+            (+) Subtotal: {_subtotal}
+            <br/>
+            (+) Flete: {_flete}
+            <br/>
+            (-) Descuento: {_descuento}
+            <br/>
+            Total: {_total}
+        </p>
+    </body>
+</html>

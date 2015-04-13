@@ -1,0 +1,49 @@
+<style type="text/css">
+    .tool-panel
+    {
+        background: #ffffff; /* Old browsers */
+        background: -moz-linear-gradient(top,  #ffffff 0%, #e5e5e5 100%); /* FF3.6+ */
+        background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#ffffff), color-stop(100%,#e5e5e5)); /* Chrome,Safari4+ */
+        background: -webkit-linear-gradient(top,  #ffffff 0%,#e5e5e5 100%); /* Chrome10+,Safari5.1+ */
+        background: -o-linear-gradient(top,  #ffffff 0%,#e5e5e5 100%); /* Opera 11.10+ */
+        background: -ms-linear-gradient(top,  #ffffff 0%,#e5e5e5 100%); /* IE10+ */
+        background: linear-gradient(to bottom,  #ffffff 0%,#e5e5e5 100%); /* W3C */
+        filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#e5e5e5',GradientType=0 ); /* IE6-9 */
+
+        padding: 30px;
+        margin: 20px;
+
+    }
+</style>
+
+<div class="tool-panel">
+    <h2>Transacciones <i class=" icon-loop"></i> </h2>
+    <span style="font-size:16px;"><a href="javascript:void(0);" id="facturar" onclick="location.href = '/nymsa/factura/nuevo'"> Facturacion </a></span>
+    <br/>
+    <span style="font-size:16px;"><a href="javascript:void(0);" id="anular" onclick="location.href = '/nymsa/factura/anular'"> Anular facturas </a></span>
+    <br/>
+    <span style="font-size:16px;"><a href="javascript:void(0);" style="display:none;" id="cambios" onclick="location.href = '/nymsa/factura/cambios'"> Cambios</a></span>
+    <br/>
+    <span style="font-size:16px;"><a href="javascript:void(0);" id="notas_remision" onclick="location.href = '/nymsa/factura/notas_remision'"> Notas de remision</a></span>  
+</div>
+
+<div class="tool-panel">
+    <h2>Mantenimientos <i class=" icon-tools"></i> </h2>
+    <span style="font-size:16px;"><a href="javascript:void(0);" id="cajas" onclick="location.href = '/nymsa/factura/cajas'"> Cajas</a></span>
+    <br/>
+    <span style="font-size:16px;"><a href="javascript:void(0);" id="series" onclick="location.href = '/nymsa/factura/series'"> Series </a></span>
+    <br/>
+    <span style="font-size:16px;"><a href="javascript:void(0);" style="display:none;" id="descuentos" onclick="location.href = '/nymsa/factura/descuentos'"> Descuentos </a></span>
+</div>
+
+<div class="tool-panel">
+    <h2>Reportes </h2>
+    <span style="font-size:16px;"><a href="javascript:void(0);" id="salidas" onclick="location.href = '/nymsa/factura/reportediarioventas'"> Diario de ventas</a></span>
+</div>
+
+<div class="tool-panel">
+    <h2>Otros </h2>
+    <span style="font-size:16px;"><a href="javascript:void(0);" id="salidas" style="display:none;" onclick="location.href = '/nymsa/factura/salidas'"> Salida de mercaderia</a></span>
+    <br/>
+    <span style="font-size:16px;"><a href="javascript:void(0);" id="salidas" style="display:none;" onclick="location.href = '/nymsa/factura/reparaciones'"> Reparaciones</a></span>
+</div>

@@ -1,0 +1,24 @@
+<table class="table" style="text-align:center;">
+	<tr>
+		<th>Linea</th>
+		<th>Estilo</th>
+		<th>Color</th>
+		<th>Talla</th>
+		<th>Cantidad</th>
+		<th>Precio</th>
+		<th>Devuelve</th>
+		<th></th>
+	</tr>
+	<!-- START detalle -->
+		<tr>
+			<td>{linea}</td>
+			<td>{estilo}</td>
+			<td>{color}</td>
+			<td>{talla}</td>
+			<td>{cantidad}</td>
+			<td>{precio}</td>
+			<td><input id="f{fid}" style="width: 50px;" value="{devueltos}" onkeyup="validarNumero(event);" type="text" /></td>
+			<td><a href="javascript: void(0);" onclick="devolver(event, {linea}, {estilo}, {color}, {talla}, {nofac}, {cantidad}, {precio},'#f{fid}')">Aplicar cambio</a></td>
+		</tr>
+	<!-- END detalle -->
+</table>

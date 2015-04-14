@@ -271,6 +271,8 @@ class facturaView {
         page()->addEstigma("n_caja", $data['id']);
         page()->addEstigma("t_caja", $data['nombre']);
         page()->addEstigma("serie_factura", $data['serie_factura']);
+        page()->addEstigma("bodega_por_defecto", $data['bodega_por_defecto']);
+        page()->addEstigma("p_cambio_bodega", $data['p_cambio_bodega']);
         page()->addEstigma("serie_credito_fiscal", $data['serie_credito_fiscal']);
         page()->addEstigma("codigo_serie_factura", $data['codigo_factura']);
         page()->addEstigma("numero_factura", $numero_factura);

@@ -1,60 +1,81 @@
-<h3>Mantenimiento de cajas</h3>
-<hr/>
-<span id="msg" style="position:fixed; color: red;"></span>
+<h2>Mantenimiento de cajas</h2>
+<br/>
+<br/>
+
 <form method="post" action="/facturacion/factura/guardar_caja">
+    <legend>Crear una nueva caja</legend>
     <div style="display:table;">
         <div style="float:left;width:300px;margin:15px;text-align:right;">
-            # Caja
-            <input type="text" style="width:150px;" name="id" id="id_" onchange="cargar_datos();" />
+            
+            <div class="input-control text">
+                <input type="text" name="id" id="id_" placeholder="No. Caja (0 = nuevo)" onchange="cargar_datos();" />
+            </div>
             <br/>
-            Nombre caja
-            <input type="text" style="width:150px;" name="nombre" id="nombre" />
+            <div class="input-control text">
+                <input type="text" name="nombre" placeholder="Nombre" id="nombre" required/>
+            </div>
             <br/>
-            Formato facturas
-            <input type="text" style="width:150px;" name="f_factura" id="f_factura"/>
+            <div class="input-control text">
+                <input type="text" placeholder="Formato facturas" name="f_factura" id="f_factura"/>
+            </div>
             <br/>
-            Formato F. de Exp
-            <input type="text" style="width:150px;" name="f_exp" id="f_exp" />
+            <div class="input-control text">
+                <input type="text" placeholder="Formato F. de Exp" name="f_exp" id="f_exp" />
+            </div>
             <br/>
-            Formato despachos
-            <input type="text" style="width:150px;" name="f_despacho" id="f_despacho" />
+            <div class="input-control text">
+                <input type="text" placeholder="Formato despachos" name="f_despacho" id="f_despacho" />
+            </div>
             <br/>
-            Formato notas credito 
-            <input type="text" style="width:150px;" name="f_nota_credito" id="f_nota_credito" />
+            <div class="input-control text"> 
+                <input type="text" placeholder="Formato notas de crédito" name="f_nota_credito" id="f_nota_credito" />
+            </div>
             <br/>
-            Formato notas debito
-            <input type="text" style="width:150px;" name="f_nota_debito" id="f_nota_debito"  />
+            <div class="input-control text">
+                <input type="text" placeholder="Formato notas de débito" name="f_nota_debito" id="f_nota_debito"  />
+            </div>
             <br/>
-            Formato recibos
-            <input type="text" style="width:150px;" name="f_recibo" id="f_recibo" />
-            <br/>
-            Encargado
-            <select style="width:150px;" name="encargado" id="encargado" >
-                <!-- START usuario -->
-                <option value="{usuario}">
-                    {usuario}
-                </option>
-                <!-- END usuario -->
-            </select>
-            <br/>
-            Ultimo pedido
-            <input type="text" style="width:150px;" id="ultimo_pedido" />
-            <br/>
-            Ultimo Cambio
-            <input type="text" style="width:150px;" id="ultimo_cambio" />
-            <br/>
-            Bodega que utiliza
-            <select style="width:150px;" name="bodega_por_defecto" id="bodega_por_defecto" >
-                <!-- START bodega -->
-                <option value="{id}">
-                    {nombre}
-                </option>
-                <!-- END bodega -->
-            </select>
+            <div class="input-control text">
+                <input type="text" placeholder="Formato recibos" name="f_recibo" id="f_recibo" />
+            </div>
             <br/>
         </div>
-
         <div style="float:left;width:300px;margin:15px;text-align:right;">
+            <div class="input-control select">
+                Encargado
+                <select style="width:150px;" name="encargado" id="encargado" >
+                    <!-- START usuario -->
+                    <option value="{usuario}">
+                        {usuario}
+                    </option>
+                    <!-- END usuario -->
+                </select>
+            </div>
+            <br/>
+            <div class="input-control text">
+                Ultimo pedido
+                <input type="text" style="width:150px;" id="ultimo_pedido" readonly="readonly" />
+            </div>
+            <br/>
+            <div class="input-control text">
+                Ultimo Cambio
+                <input type="text" style="width:150px;" id="ultimo_cambio" readonly="readonly"/>
+            </div>
+            <br/>
+            <div class="input-control select">
+                Bodega que utiliza
+                <select style="width:150px;" name="bodega_por_defecto" id="bodega_por_defecto" >
+                    <!-- START bodega -->
+                    <option value="{id}">
+                        {nombre}
+                    </option>
+                    <!-- END bodega -->
+                </select>
+            </div>
+            <br/>
+        </div>
+        <div style="float:left;width:300px;margin:15px;text-align:right;">
+            <div class="input-control select">
             Serie factura
             <select style="width:150px;" name="serie_factura" id="serie_factura" onchange="set_serie(event);" >
                 <!-- START s_factura -->
@@ -63,7 +84,9 @@
                 </option>
                 <!-- END s_factura -->
             </select>
+            </div>
             <br/>
+            <div class="input-control select">
             Serie notas credito
             <select style="width:150px;" name="serie_nota_credito" id="serie_nota_credito" onchange="set_serie(event);" >
                 <!-- START s_credito -->
@@ -72,7 +95,9 @@
                 </option>
                 <!-- END s_credito -->
             </select>
+            </div>
             <br/>
+            <div class="input-control select">
             Serie recibo
             <select style="width:150px;" name="serie_recibo" id="serie_recibo" onchange="set_serie(event);" >
                 <!-- START s_recibo -->
@@ -81,7 +106,9 @@
                 </option>
                 <!-- END s_recibo -->
             </select>
+            </div>
             <br/>
+            <div class="input-control select">
             Serie ticket
             <select style="width:150px;" name="serie_ticket" id="serie_ticket" onchange="set_serie(event);" >
                 <!-- START s_ticket -->
@@ -90,7 +117,9 @@
                 </option>
                 <!-- END s_ticket -->
             </select>
+            </div>
             <br/>
+            <div class="input-control select">
             Serie credito fiscal
             <select style="width:150px;" name="serie_credito_fiscal" id="serie_credito_fiscal" onchange="set_serie(event);" >
                 <!-- START s_cf -->
@@ -99,7 +128,9 @@
                 </option>
                 <!-- END s_cf -->
             </select>
+            </div>
             <br/>
+            <div class="input-control select">
             Serie nota de remisión
             <select style="width:150px;" name="serie_nota_remision" id="serie_nota_remision" onchange="set_serie(event);" >
                 <!-- START s_nr -->
@@ -108,6 +139,7 @@
                 </option>
                 <!-- END s_nr -->
             </select>
+            </div>
             <br/>
             <input type="hidden" name="codigo_factura" id="codigo_factura" />
             <input type="hidden" name="codigo_nota_credito" id="codigo_nota_credito" />
@@ -116,15 +148,20 @@
             <input type="hidden" name="codigo_ticket" id="codigo_ticket" />
             <input type="hidden" name="codigo_credito_fiscal" id="codigo_credito_fiscal" />
             <br/>
-            Permiso para cambiar bodega
-            <input type="checkbox" style="width:150px;" name="p_cambio_bodega" id="p_cambio_bodega" />
+            <div class="input-control checkbox" style="text-align: left;">
+                <label>
+                    <input type="checkbox" name="p_cambio_bodega" id="p_cambio_bodega" />
+                    <span class="check"></span>
+                    Permiso para cambiar bodega
+                </label>
+            </div>
             <br/>
             <br/>
 
         </div>
     </div>
-    <div style="text-align: right; width: 600px;"> 
-        <button class="primary">Guardar</button>
+    <div style="width: 600px; padding-left: 15px;"> 
+        <button class="primary large" type="submit">Guardar caja</button>
     </div>
 </form>
 
@@ -164,7 +201,7 @@
 
             if (d != null)
             {
-                $('#msg').html("Existe!");
+                //$('#msg').html("Existe!");
                 $('#nombre').val(d.nombre);
                 $('#f_factura').val(d.f_factura);
                 $('#f_exp').val(d.f_exp);
@@ -228,8 +265,8 @@
         id: grid_demo_id,
         loadURL: '/facturacion/inventario/cargar?tblname=caja',
         saveURL: '/facturacion/inventario/actualizar?tblname=caja',
-        width: "930", //"100%", // 700,
-        height: "260", //"100%", // 330,
+        width: "923", //"100%", // 700,
+        height: "360", //"100%", // 330,
         container: 'gridbox',
         replaceContainer: true,
         encoding: 'UTF-8', // Sigma.$encoding(), 
@@ -249,6 +286,10 @@
         mygrid.render();
     });
 </script>
+    <br/>
+    <br/>
+    <h3>Mis cajas</h3>
+    <hr/>
     <div id="bigbox" style="margin:15px;display:!none;">
         <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
 

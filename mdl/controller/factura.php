@@ -13,7 +13,7 @@ class facturaController extends controller {
         if (!Session::ValidateSession())
             HttpHandler::redirect(DEFAULT_DIR);
         //if (!isset($_SESSION['factura']))
-        //    HttpHandler::redirect('/nymsa/modulo/listar');
+        //    HttpHandler::redirect('/facturacion/modulo/listar');
     }
 
     public function principal() {
@@ -318,7 +318,7 @@ class facturaController extends controller {
         } else {
             $id = $id_cambio;
         }
-        HttpHandler::redirect('/nymsa/factura/cambios_detalle?id=' . $id);
+        HttpHandler::redirect('/facturacion/factura/cambios_detalle?id=' . $id);
     }
 
     public function salvar_reparacion($id_reparacion, $cliente, $fecha) {
@@ -336,7 +336,7 @@ class facturaController extends controller {
         } else {
             $id = $id_reparacion;
         }
-        HttpHandler::redirect('/nymsa/factura/reparacion_detalle?id=' . $id);
+        HttpHandler::redirect('/facturacion/factura/reparacion_detalle?id=' . $id);
     }
 
     public function cancelar_cambio() {
@@ -359,7 +359,7 @@ class facturaController extends controller {
         if ($oCambio->get_attr('editable') == 1) {
             $this->model->get_child('devolucion')->aplicar_devolucion($cambio);
         }
-        HttpHandler::redirect('/nymsa/factura/cambios');
+        HttpHandler::redirect('/facturacion/factura/cambios');
     }
 
     public function cambios_detalle() {
@@ -383,7 +383,7 @@ class facturaController extends controller {
 
         import('scripts.paginacion');
         $numeroRegistros = $this->model->cantidadFacturas($cliente);
-        $url_filtro = "/nymsa/factura/cambios_detalle?id=".$id_cambio."&";
+        $url_filtro = "/facturacion/factura/cambios_detalle?id=".$id_cambio."&";
         list($paginacion_str, $limitInf, $tamPag) = paginar($numeroRegistros, $url_filtro);
         $cache[0] = $this->model->facturas_cliente($cliente, $limitInf, $tamPag);
         
@@ -525,7 +525,7 @@ class facturaController extends controller {
         $serie->change_status($_POST);
         $serie->save();
 
-        HttpHandler::redirect('/nymsa/factura/series');
+        HttpHandler::redirect('/facturacion/factura/series');
     }
 
     public function guardar_caja() {
@@ -542,7 +542,7 @@ class facturaController extends controller {
         $caja->get($id);
         $caja->change_status($data);
         $caja->save();
-        HttpHandler::redirect('/nymsa/factura/cajas');
+        HttpHandler::redirect('/facturacion/factura/cajas');
     }
 
     public function datos_anulacion() {
@@ -655,10 +655,10 @@ class facturaController extends controller {
         list($tieneCaja, $data) = $this->model->tieneCaja(Session::singleton()->getUser());
 
         if (!$tieneCaja)
-            HttpHandler::redirect('/nymsa/factura/principal?error=900');
+            HttpHandler::redirect('/facturacion/factura/principal?error=900');
 
-        $cache[0] = $this->model->get_child('bodega')->get_list();
-        $cache[1] = $this->model->get_child('linea')->get_list();
+        $cache[0] = $this->model->get_child('bodega')->get_list('','', array('nombre'));
+        $cache[1] = $this->model->get_child('linea')->get_list('','', array('nombre'));
         $cache[2] = $this->model->get_sibling('modulo')->obtener_actualizables();
         $numero_factura = $data['ultimo_pedido'] + 1;
         $this->view->formulario_facturacion($numero_factura, $cache, $data);
@@ -675,7 +675,7 @@ class facturaController extends controller {
         list($tieneCaja, $data) = $this->model->tieneCaja(Session::singleton()->getUser());
 
         if (!$tieneCaja)
-            HttpHandler::redirect('/nymsa/factura/principal?error=900');
+            HttpHandler::redirect('/facturacion/factura/principal?error=900');
 
         $cache[0] = $this->model->get_child('bodega')->get_list();
         $cache[1] = $this->model->get_child('linea')->get_list();
@@ -718,13 +718,13 @@ class facturaController extends controller {
 
     public function cerrarFactura($NoFactura) {
         $this->model->cerrarFactura($NoFactura);
-        HttpHandler::redirect('/nymsa/factura/principal');
+        HttpHandler::redirect('/facturacion/factura/principal');
     }
 
     public function getData() {
         mysqli_connect("localhost", "root", "") or
                 die("Could not connect: " . mysqli_error());
-        mysqli_select_db("nymsa_test") or
+        mysqli_select_db("facturacion_test") or
                 die("Could not select database: " . mysqli_error());
         //Execute a sql query.
         $sql = "select * from factura";

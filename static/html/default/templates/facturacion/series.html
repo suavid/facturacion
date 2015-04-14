@@ -1,4 +1,7 @@
-<h3>Mantenimiento de series</h3>
+<h2>Mantenimiento de series</h2>
+<br/>
+<br/>
+<p><strong>Importante:</strong> Las series no admiten edición o eliminación, verifique los datos antes de guardarlos.</p>
 <hr/>
 <form method="post" action="/facturacion/factura/guardar_serie">
     <div style="display:table;">
@@ -20,13 +23,13 @@
             <br/>
             Serie: <div class="input-control text"><input type="text" name="serie" id="serie" onchange="check_serie();" required="required" /></div>
             <br/>
-            Descripcion: <div class="input-control text"><input type="text" name="descripcion" required="required" /></div>
+            Descripción: <div class="input-control text"><input type="text" name="descripcion" required="required" /></div>
         </div>
 
         <div style="width:300px;float:left;margin:10px;">
-            # Resolucion: <div class="input-control text"><input type="text" name="resolucion" /></div>
+            # Resolución: <div class="input-control text"><input type="text" name="resolucion" /></div>
             <br/>
-            Fecha resolucion: <div class="input-control text"><input type="text" name="fecha_resolucion" /></div>
+            Fecha resolución: <div class="input-control text"><input type="text" name="fecha_resolucion" /></div>
             <br/>
             Autorizado del: <div class="input-control text"><input type="text" value="0" name="del" /></div>
             <br/>
@@ -34,7 +37,7 @@
         </div>
 
         <div style="width:300px;float:left;margin:10px;">
-            Ultimo utilizado: <div class="input-control text"><input type="text" disabled="disabled" /></div>
+            Último utilizado: <div class="input-control text"><input type="text" disabled="disabled" /></div>
             <br/>
             <br/>
             <br/>
@@ -101,8 +104,8 @@
         id: grid_demo_id,
         loadURL: '/facturacion/inventario/cargar?tblname=serie',
         saveURL: '/facturacion/inventario/actualizar?tblname=serie',
-        width: "1010", //"100%", // 700,
-        height: "260", //"100%", // 330,
+        width: "1003", //"100%", // 700,
+        height: "360", //"100%", // 330,
         container: 'gridbox',
         replaceContainer: true,
         encoding: 'UTF-8', // Sigma.$encoding(), 
@@ -113,7 +116,7 @@
         pageSize: 10,
         allowCustomSkin: true,
         skin: 'mac',
-        toolbarContent: 'reload | del save | filter | nav state'
+        toolbarContent: 'reload | filter | nav state'
     };
 
 

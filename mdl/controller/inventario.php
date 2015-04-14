@@ -2828,6 +2828,62 @@ class inventarioController extends controller {
         echo json_encode($dat);
     }
 
+    public function cargar_consulta_producto() {
+        header('Content-type:text/javascript;charset=UTF-8');
+        $json = json_decode(stripslashes($_POST["_gt_json"]));
+        $pageNo = $json->{'pageInfo'}->{'pageNum'};
+        $pageSize = 10; //10 rows per page
+
+        $filtros   = $_POST['filtros'];
+       
+        $temp = explode(',', $filtros);
+        $filtros = array();
+        foreach ($temp as $parts) {
+            $tt = explode(':', $parts);
+            $filtros[$tt[0]] = $tt[1];
+        }
+
+        /* CADENA DE CONDICION */
+        //*/
+        $fin = " WHERE precio > 0 AND ";
+        $keys = array_keys($filtros);
+        $values = array_values($filtros);
+        $str_ct = implode(' = \'$\' ? ', $keys);
+        $str_ct.= ' = \'$\' ';
+        $art = explode('?', $str_ct);
+        for ($i = 0; $i < count($art); $i++):
+            $art[$i] = str_replace('$', $values[$i], $art[$i]);
+        endfor;
+        $fin .= implode(' AND ', $art);
+
+        //*/  
+        //to get how many records totally.
+        $sql = "select count(*) as cnt from control_precio left join estado_bodega on control_estilo=estilo AND estado_bodega.linea = control_precio.linea AND estado_bodega.color = control_precio.color AND estado_bodega.talla = control_precio.talla join producto on control_precio.linea = producto.linea AND control_precio.control_estilo = producto.estilo  " . $fin;
+        $handle = mysqli_query(conManager::getConnection(), $sql);
+        $row = mysqli_fetch_object($handle);
+        $totalRec = $row->cnt;
+
+        //make sure pageNo is inbound
+        if ($pageNo < 1 || $pageNo > ceil(($totalRec / $pageSize))):
+            $pageNo = 1;
+        endif;
+
+        if ($json->{'action'} == 'load'):
+            $sql = "select control_estilo as estilo,control_precio.linea as linea,control_precio.color as color,control_precio.talla as talla,precio,costo,stock,bodega from control_precio left join estado_bodega on control_estilo=estilo AND estado_bodega.linea = control_precio.linea AND estado_bodega.color = control_precio.color AND estado_bodega.talla = control_precio.talla join producto on control_precio.linea = producto.linea AND control_precio.control_estilo = producto.estilo " . $fin . " limit  " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
+            
+            $handle = mysqli_query(conManager::getConnection(), $sql);
+            $retArray = array();
+            while ($row = mysqli_fetch_object($handle)):
+                $retArray[] = $row;
+            endwhile;
+            $data = json_encode($retArray);
+            $ret = "{data:" . $data . ",\n";
+            $ret .= "pageInfo:{totalRowNum:" . $totalRec . "},\n";
+            $ret .= "recordType : 'object'}";
+            echo $ret;
+        endif;
+    }
+
     public function cargar_detalle_traslado() {
         header('Content-type:text/javascript;charset=UTF-8');
         $json = json_decode(stripslashes($_POST["_gt_json"]));

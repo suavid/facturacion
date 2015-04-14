@@ -39,6 +39,10 @@
         window.lbl       = 0;
         window.nt        = false;
         window.cerrar    = false;
+        window.p_cambio_bodega = "{p_cambio_bodega}";
+        window.bodega = "{bodega_por_defecto}";
+
+        $("#bBodega option[value=" + bodega + "]").attr("selected", "selected");
         
         /* gestion de parametros en url */
         handler          = new url_handler();
@@ -89,12 +93,14 @@
 		if (window.editable){
 			uri = "/facturacion/factura/eliminar_detalle/" + id;
 			data = {  };
-			$.post(uri, data, function(data){
+			
+            $.post(uri, data, function(data){
 				var grid = Sigma.$grid("factura_grid");
 				grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
 				grid.reload();
 				cargar_totales();
 			}, "json");
+
 		} else{
 			alert("Este pedido ya fue procesado, no se puede editar");
 		}
@@ -181,6 +187,7 @@
 
     function reservar(){
         n_pedido = window.codPedido
+        
         if (parseInt(n_pedido) <= 0 || n_pedido == "")
         {
             alert("No se puede procesar");
@@ -269,30 +276,38 @@
 				window.codPedido = parseInt(d.No);
 				window.lbl = parseInt(d.ref);
 				$('#codigo_cliente').val(d.cliente);
-				cargar_cliente();
-				$('#fecha').val(d.fecha);
+				
+                cargar_cliente();
+				
+                $('#fecha').val(d.fecha);
 				$('#festado option').remove();
-				if(d.estado==1){
+				
+                if(d.estado==1){
 					$('#festado').append("<option>FACTURADO</option>");
 				}else{
 					$('#festado').append("<option>PENDIENTE</option>");
 				}
-				$('#ftipo option').remove();
-				if(d.tipo == 1)
+				
+                $('#ftipo option').remove();
+				
+                if(d.tipo == 1)
 					$('#ftipo').append("<option>CONTADO</option>");
 				if(d.tipo == 2)
 					$('#ftipo').append("<option>CREDITO</option>");
 				if(d.tipo == 0)
 					$('#ftipo').append("<option>PEDIDO</option>");		
-				$('#codigo_cliente').attr("disable", "disabled");
+				
+                $('#codigo_cliente').attr("disable", "disabled");
 				$('#fecha').attr("disable", "disabled");
 				$('#NoFactura').html(parseInt(d.ref) + 1);
-				obtenerDatosCliente(parseInt(d.cliente));
+				
+                obtenerDatosCliente(parseInt(d.cliente));
 				var grid = Sigma.$grid("factura_grid");
 				grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
 				grid.reload();
 				cargar_totales();
-				if (d.estado == 1)
+				
+                if (d.estado == 1)
 				{
 					desHabilitar();
 					if (d.flete == 1) $('#FLETE').attr('checked', 'checked');
@@ -583,6 +598,8 @@
         encoding : 'UTF-8', // Sigma.$encoding(), 
         dataset : dsOption,
         columns : colsOption,
+        allowCustomSkin: true,
+        skin: 'mac',
         clickStartEdit : true,
         defaultRecord : {'id':"00", 'nombre':""},
         pageSize:10,
@@ -596,7 +613,9 @@
             
     function habilitar()
     {
-        $('#bBodega').removeAttr("disabled");
+        if(window.p_cambio_bodega == "1")
+            $('#bBodega').removeAttr("disabled");
+
         $('#bLinea').removeAttr("disabled");
         $('#bEstilo').removeAttr("disabled");
         $('#bColor').removeAttr("disabled");
@@ -691,72 +710,84 @@
     }
 
     var patron_dui = new Array(8, 1);
-            var patron_nit = new Array(4, 6, 3, 1);
-            var patron_telefono = new Array(4, 4);
-            var patron_fecha = new Array(4, 2, 2);
-            function mascara(d, sep, pat, nums){
-            if (d.valant != d.value){
+    var patron_nit = new Array(4, 6, 3, 1);
+    var patron_telefono = new Array(4, 4);
+    var patron_fecha = new Array(4, 2, 2);
+    
+    function mascara(d, sep, pat, nums){
+        if (d.valant != d.value){
             val = d.value
-                    largo = val.length
-                    val = val.split(sep)
-                    val2 = ''
-                    for (r = 0; r < val.length; r++){
-            val2 += val[r]
+            largo = val.length
+            val = val.split(sep)
+            val2 = ''
+            for (r = 0; r < val.length; r++){
+                val2 += val[r]
             }
+            
             if (nums){
-            for (z = 0; z < val2.length; z++){
-            if (isNaN(val2.charAt(z))){
-            letra = new RegExp(val2.charAt(z), "g")
-                    val2 = val2.replace(letra, "")
+                for (z = 0; z < val2.length; z++){
+                    if (isNaN(val2.charAt(z))){
+                        letra = new RegExp(val2.charAt(z), "g")
+                        val2 = val2.replace(letra, "")
+                    }
+                }
             }
-            }
-            }
+            
             val = ''
-                    val3 = new Array()
-                    for (s = 0; s < pat.length; s++){
-            val3[s] = val2.substring(0, pat[s])
-                    val2 = val2.substr(pat[s])
+            val3 = new Array()
+        
+            for (s = 0; s < pat.length; s++){
+                val3[s] = val2.substring(0, pat[s])
+                val2 = val2.substr(pat[s])
             }
+        
             for (q = 0; q < val3.length; q++){
-            if (q == 0){
-            val = val3[q]
+                if (q == 0){
+                    val = val3[q]
+                }else{
+                    if (val3[q] != ""){
+                        val += sep + val3[q]
+                    }
+                }
             }
-            else{
-            if (val3[q] != ""){
-            val += sep + val3[q]
-            }
-            }
-            }
+            
             d.value = val
-                    d.valant = val
-            }
-            }
+            d.valant = val
+        }
+    }
 
     function updateInfo(){
-    var info = [];
-            var empty = false;
-            $('.itemActUser').each(function(){
-    var _valor = $(this).val().trim();
+        var info = [];
+        var empty = false;
+        $('.itemActUser').each(function(){
+            var _valor = $(this).val().trim();
             var _campo = $(this).attr('id');
             if (_valor == "") empty = true;
+            
             var data = {
-            campo: _campo,
-                    valor: _valor
+                campo: _campo,
+                valor: _valor
             };
+            
             info.push(data);
-    });
-            if (empty) alert('Todos los campos son obligatorios');
-            else{
+        });
+            
+        if (empty){
+
+            alert('Todos los campos son obligatorios');  
+        } 
+        else{
             var uri = '/facturacion/modulo/efectuar_actualizacion';
-                    var send = {
-                    update: JSON.stringify(info),
-                            cliente: $('#codigo_cliente').val().trim()
-                    };
-                    var scp = $.post(uri, send, function(d){
-                    $('#wact').css('display', 'none');
-                            $('#codigo_cliente').blur();
-                    }, "json");
-            }
+            var send = {
+                update: JSON.stringify(info),
+                cliente: $('#codigo_cliente').val().trim()
+            };
+                    
+            $.post(uri, send, function(d){
+                $('#wact').css('display', 'none');
+                $('#codigo_cliente').blur();
+            }, "json");
+        }
     }
 
 </script>
@@ -791,7 +822,7 @@
 </div>
 <section style="max-width:1100px;margin:0 auto;">
     <!-- encabezado -->
-    <h3>Pedidos</h3>
+    <h2>Pedidos</h2>
     <hr/>
     <div style="text-align:right;padding-right:40px;">
         <div class="toolbar transparent">
@@ -808,7 +839,8 @@
     <form>
         <div style="display:table;">
             <div style="width:600px;float:left;margin-right: 10px;margin-bottom: 20px;">
-                <ul style="list-style:none;display:table;text-align:left;width:550px;font-size:12px;background:#F3F3F3;">
+            <h5>Datos del pedido</h5>
+                <ul style="list-style:none;display:table;text-align:left;width:550px;font-size:12px;">
                     <li style="float:left;width:100px;">
                         # Pedido
                         <br/>
@@ -839,15 +871,15 @@
                         </select>
                     </li>
                 </ul>
-				<p>Datos del cliente</p>
 				<hr/>
+                <h5>Datos del cliente</h5>
                 <table style="width:600px;">
                     <tr>
                         <td>
                             <table>
                                 <tr>
                                     <td>
-                                        Nombre cliente&nbsp;&nbsp;&nbsp; 
+                                       Cliente &nbsp;&nbsp;&nbsp; 
                                     </td>
                                     <td>
                                         <input type="text" id="nombre_cliente" style="width:100%;" readonly />
@@ -855,7 +887,7 @@
                                 </tr>
                                 <tr>
                                     <td>
-                                        Direcci&oacute;n: 
+                                        Direcci&oacute;n
                                     </td>
                                     <td>
                                         <input type="text" id="direccion" style="width:100%;" readonly />
@@ -867,7 +899,7 @@
                                     </td>
                                     <td>
                                         <select style="width:100%;" readonly>
-                                            <option>Nd</option>
+                                            <option>ND</option>
                                         </select>
                                     </td>
                                 </tr>
@@ -905,22 +937,22 @@
                 </table>
             </div>
 			
-            <div style="width:400px;background:#F3F3F3;padding:15px;float:left;">
-				<p>Estado del cliente</p>
+            <div style="width:400px;background:#F3F3F3;padding:15px;float:left;margin-left: 20px;">
+				<h5>Estado de cuenta del  cliente</h5>
 				<hr/>
                 <div style="display:table;width:100%;">
                     <div style="float:left;">
                         <input type="text" id="credito" style="width:50px;" readonly="readonly" />
-                        Limite de credito
+                        Límite de crédito
 						<br/>
                         <input type="text" id="credito_usado" style="width:50px;" readonly="readonly" />
-                        Usado
+                        Deuda actual
 						<br/>
                         <input type="text" id="disponible" style="width:50px;" readonly="readonly" />
-                        Saldo
+                        Saldo disponible
 						<br/>
                         <input type="text" id="monto_extra" style="width:50px;" readonly="readonly" />
-                        Monto extra
+                        Monto refinanciado
 						<br/>
                     </div>
                     <div style="float:left;width:50%;margin-left: 20px;">
@@ -928,10 +960,10 @@
                         Bloqueado
 						<br/>
                         <input type="checkbox" id="tcredito" disabled="disabled" />
-                        Credito
+                        Tiene crédito
 						<br/>
                         <input type="checkbox" id="extra_credito" disabled="disabled" />
-                        Financiamiento extra
+                        Refinanciamiento
 						<br/>
                         <input type="checkbox" id="transitorio" disabled="disabled" />
                         Transitorio
@@ -948,15 +980,16 @@
 						<td><input type="text" id="telefono_casa" style="width:100px;" readonly="readonly" /></td>
 					</tr>
 					<tr>
-						<td>Tel celular</td>
-						<td>Tel oficina</td>
-						<td>Tel casa</td>
+						<td>Tel. móvilr</td>
+						<td>Tel. oficina</td>
+						<td>Tel. casa</td>
 					</tr>
 				</table>
             </div>
 
         </div>
-
+        <hr/>
+        <h5>Selección de producto</h5>
         <!-- busqueda del producto -->
         <div class="input-control text" id="info-bar">
 
@@ -1008,12 +1041,13 @@
     </form>
     <br/>
     <br/>
-    <div id="bigbox" style="margin:15px;display:!none;float:left;">
+    <hr/>
+    <div id="bigbox" style="margin-top: 10px; margin-right:25px;display:!none;float:left;">
         <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
 
         </div>
     </div>
-    <div style="width:250px;float:left;text-align:right;background:#F3F3F3;padding-right:30px;margin-top:20px;">
+    <div style="width:250px;float:left;text-align:right;background:#F3F3F3;padding-right:30px;margin-top:10px;margin-bottom: 30px;">
         <form>
             <div>
                 <h6>[Caja No. {n_caja} / {t_caja}]</h6>
@@ -1033,6 +1067,7 @@
                 <button class="bg-color-blue fg-color-white" type="button" onclick="facturacion();" id="buy" disabled="disabled">Efectuar compra</button>
             </div>
         </form>
+        <br/>   
     </div>
 
     <section>
@@ -1049,104 +1084,104 @@
         </div>
         <script type="text/javascript">
 
-                    function verificarExistencia(){
-                    var _linea = $('#bLinea').val().trim();
-                            var _estilo = $('#bEstilo').val().trim();
-                            var uri = '/facturacion/inventario/verificarExistencia';
-                            var data = {
-                            linea : _linea,
-                                    estilo: _estilo
-                            };
-                            var req = $.post(uri, data, function(d){
-                            if (!d.existe) alert("No existe el producto");
-                            }, "json");
-                    }
+            function verificarExistencia(){
+                var _linea = $('#bLinea').val().trim();
+                var _estilo = $('#bEstilo').val().trim();
+                var uri = '/facturacion/inventario/verificarExistencia';
+                var data = {
+                    linea : _linea,
+                    estilo: _estilo
+                };
+                
+                $.post(uri, data, function(d){
+                    if (!d.existe) alert("No existe el producto");
+                }, "json");
+            }
 
             function cargar_cliente(){
 
-            uri = "/facturacion/cliente/datos_credito";
-                    data = {
-
+                uri = "/facturacion/cliente/datos_credito";
+                
+                data = {
                     "cliente" : $('#codigo_cliente').val().trim()
-                    };
-                    v = $.post(uri, data, function(d){
-
+                };
+                
+                $.post(uri, data, function(d){
                     $('#telefono_celular').val(d.telefono_celular);
-                            $('#telefono_oficina').val(d.telefono_oficina);
-                            $('#telefono_casa').val(d.telefono_casa);
-                            $('#credito').val(d.credito);
-                            $('#nombre').val(d.nombre);
-                            $('#credito_usado').val(d.credito_usado);
-                            $('#disponible').val(parseFloat(d.credito - d.credito_usado).toFixed(2));
-                            $('#monto_extra').val(d.monto_extra);
-                            if (d.empleado == 1)
-                            $('#empleado').attr("checked", true);
-                            else
-                            $('#empleado').removeAttr("checked");
-                            if (d.tcredito == 1)
-                            $('#tcredito').attr("checked", true);
-                            else
-                            $('#tcredito').removeAttr("checked");
-                            if (d.transitorio == 1)
-                            $('#transitorio').attr("checked", true);
-                            else
-                            $('#transitorio').removeAttr("checked");
-                            if (d.bloqueado == 1)
-                            $('#bloqueado').attr("checked", true);
-                            else
-                            $('#bloqueado').removeAttr("checked");
-                            if (d.extra_credito == 1)
-                            $('#extra_credito').attr("checked", true);
-                            else
-                            $('#extra_credito').removeAttr("checked");
-                    }, "json");
+                    $('#telefono_oficina').val(d.telefono_oficina);
+                    $('#telefono_casa').val(d.telefono_casa);
+                    $('#credito').val(d.credito);
+                    $('#nombre').val(d.nombre);
+                    $('#credito_usado').val(d.credito_usado);
+                    $('#disponible').val(parseFloat(d.credito - d.credito_usado).toFixed(2));
+                    $('#monto_extra').val(d.monto_extra);
+                    if (d.empleado == 1)
+                        $('#empleado').attr("checked", true);
+                    else
+                        $('#empleado').removeAttr("checked");
+                    if (d.tcredito == 1)
+                        $('#tcredito').attr("checked", true);
+                    else
+                        $('#tcredito').removeAttr("checked");
+                    if (d.transitorio == 1)
+                        $('#transitorio').attr("checked", true);
+                    else
+                        $('#transitorio').removeAttr("checked");
+                    if (d.bloqueado == 1)
+                        $('#bloqueado').attr("checked", true);
+                    else
+                        $('#bloqueado').removeAttr("checked");
+                    if (d.extra_credito == 1)
+                        $('#extra_credito').attr("checked", true);
+                    else
+                        $('#extra_credito').removeAttr("checked");
+                }, "json");
             }
 
             function facturacion()
             {
-            if (($('#TOTAL').val().trim() * 1) > 0){
-            uri = "/facturacion/factura/esta_vacia/" + window.codPedido;
+                if (($('#TOTAL').val().trim() * 1) > 0){
+                    uri = "/facturacion/factura/esta_vacia/" + window.codPedido;
                     data = { };
-                    cq = $.post(uri, data, function(d){
+                    $.post(uri, data, function(d){
 
-                    if (d.vacia)
-                    {
-                    alert("Pedido vacio, no se puede procesar");
-                    }
-                    else
-                    {
-                    $.Dialog({
-                    overlay: true,
-                            shadow: true,
-                            flat: true,
-                            title: 'Opciones de facturacion',
-                            content: '',
-                            width:400,
-                            onShow: function(_dialog){
-                            var content = _dialog.children('.content');
+                        if (d.vacia)
+                        {
+                            alert("Pedido vacio, no se puede procesar");
+                        }
+                        else
+                        {
+                            $.Dialog({
+                                overlay: true,
+                                shadow: true,
+                                flat: true,
+                                title: 'Opciones de facturacion',
+                                content: '',
+                                width:400,
+                                onShow: function(_dialog){
+                                    var content = _dialog.children('.content');
                                     htmls = [
-                                            '<br/><br/><div style="text-align:center;">',
-                                            '<button class="shortcut" id="fcredito" onclick="facturar_credito();"><i class="icon-credit-card"></i>Crédito</button>',
-                                            '<button class="shortcut" id="fcontado" onclick="facturar_contado();"><i class="icon-dollar"></i>Contado</button>',
-                                            '<button class="shortcut" id="ffiscal" onclick="credito_fiscal();"><i class="icon-briefcase"></i>Crédito fiscal</button>',
-                                            '<button class="shortcut" id="fnota" onclick="nota_remision();"><i class="icon-tag"></i>Nota de remisión</button></div>'
+                                        '<br/><br/><div style="text-align:center;">',
+                                        '<button class="shortcut" id="fcredito" onclick="facturar_credito();"><i class="icon-credit-card"></i>Crédito</button>',
+                                        '<button class="shortcut" id="fcontado" onclick="facturar_contado();"><i class="icon-dollar"></i>Contado</button>',
+                                        '<button class="shortcut" id="ffiscal" onclick="credito_fiscal();"><i class="icon-briefcase"></i>Crédito fiscal</button>',
+                                        '<button class="shortcut" id="fnota" onclick="nota_remision();"><i class="icon-tag"></i>Nota de remisión</button></div>'
                                     ];
                                     if (window.nt) htmls.pop();
-                                    html = htmls.join("");
+                                        html = htmls.join("");
                                     content.html(html);
-                            }
-                    });
-                    }
+                                }
+                            });
+                        }
 
                     }, "json");
-            } else{
-            alert("No se puede procesar un saldo menor o igual a cero");
-            }
-
+                } else{
+                    alert("No se puede procesar un saldo menor o igual a cero");
+                }
             }
 
             function credito_fiscal(){
-			alert('actualmente este metodo de pago esta desactivado');
+                alert('actualmente este metodo de pago esta desactivado');
 				/*// verificar si cliente tiene credito fiscal
 				uri = "/facturacion/cliente/tiene_credito_fiscal";
                     data = {
@@ -1187,9 +1222,9 @@
 
 				factura = window.codPedido; // numero de factura a procesar
 
-                  uri = "/facturacion/factura/contado"; // url de proceso de facturacion contado
+                uri = "/facturacion/factura/contado"; // url de proceso de facturacion contado
 
-                  resource = [ uri, factura ].join("/");
+                resource = [ uri, factura ].join("/");
 				request = $.post(resource, { "serie": {serie_factura} }, function(data){
 
 					  // punto de respuesta de la peticion
@@ -1221,280 +1256,283 @@
 
             function cf_facturar_contado()
             {
-            /* proceso de facturacion al contado */
+                    /* proceso de facturacion al contado */
 
-            factura = window.codPedido; // numero de factura a procesar
+                    factura = window.codPedido; // numero de factura a procesar
 
                     uri = "/facturacion/factura/cf_contado"; // url de proceso de facturacion contado
 
                     resource = [ uri, factura ].join("/");
-                    request = $.post(resource, { "serie": {serie_credito_fiscal} }, function(data){
-
-                    // punto de respuesta de la peticion
-                    window.editable = false;
-                            imp();
-                            window.codPedido = 0;
-                            obtenerDatosCliente(0);
-                            //alert("No existe el pedido");
-                            var grid = Sigma.$grid("factura_grid");
-                            grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-                            grid.reload();
-                            $('#n_pedido').val("0");
-                            $('#codigo_cliente').val("0");
-                            $('#codigo_cliente').removeAttr("disabled");
-                            $('#fecha').removeAttr("disabled");
-                            $('#n_pedido').focus();
-                            desHabilitar();
-                            $.Dialog.close();
-                            $('#DESCUENTO').val("");
-                            $('#TOTAL').val("");
-                            $('#SUBTOTAL').val("");
+                    $.post(resource, { "serie": {serie_credito_fiscal} }, function(data){
+                        // punto de respuesta de la peticion
+                        window.editable = false;
+                        imp();
+                        window.codPedido = 0;
+                        obtenerDatosCliente(0);
+                                //alert("No existe el pedido");
+                        var grid = Sigma.$grid("factura_grid");
+                        grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
+                        grid.reload();
+                        $('#n_pedido').val("0");
+                        $('#codigo_cliente').val("0");
+                        $('#codigo_cliente').removeAttr("disabled");
+                        $('#fecha').removeAttr("disabled");
+                        $('#n_pedido').focus();
+                        desHabilitar();
+                        $.Dialog.close();
+                        $('#DESCUENTO').val("");
+                        $('#TOTAL').val("");
+                        $('#SUBTOTAL').val("");
                     }, "json");
             }
 
             function facturar_credito()
             {
-            /* proceso de facturacion al credito */
+                /* proceso de facturacion al credito */
 
-            factura = window.codPedido; // numero de factura a procesar
+                factura = window.codPedido; // numero de factura a procesar
 
-                    uri = "/facturacion/factura/credito"; // url de proceso de facturacion credito
+                uri = "/facturacion/factura/credito"; // url de proceso de facturacion credito
 
-                    resource = [ uri, factura ].join("/");
-                    request = $.post(resource, { "serie": {serie_factura} }, function(data){
+                resource = [ uri, factura ].join("/");
+                request = $.post(resource, { "serie": {serie_factura} }, function(data){
+                    
                     if (data.message != null) alert(data.message);
-                            // punto de respuesta de la peticion
-                            window.editable = false;
-                            imp();
-                            window.codPedido = 0;
-                            obtenerDatosCliente(0);
-                            //alert("No existe el pedido");
-                            var grid = Sigma.$grid("factura_grid");
-                            grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-                            grid.reload();
-                            $('#n_pedido').val("0");
-                            $('#codigo_cliente').val("0");
-                            $('#codigo_cliente').removeAttr("disabled");
-                            $('#fecha').removeAttr("disabled");
-                            $('#n_pedido').focus();
-                            desHabilitar();
-                            if (window.cerrar)
-                            window.close();
-                            $.Dialog.close();
-                            $('#DESCUENTO').val("");
-                            $('#TOTAL').val("");
-                            $('#SUBTOTAL').val("");
-                    }, "json");
+                    // punto de respuesta de la peticion
+                    window.editable = false;
+                    imp();
+                    window.codPedido = 0;
+                    obtenerDatosCliente(0);
+                    //alert("No existe el pedido");
+                    var grid = Sigma.$grid("factura_grid");
+                    grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
+                    grid.reload();
+                    $('#n_pedido').val("0");
+                    $('#codigo_cliente').val("0");
+                    $('#codigo_cliente').removeAttr("disabled");
+                    $('#fecha').removeAttr("disabled");
+                    $('#n_pedido').focus();
+                    desHabilitar();
+                    if (window.cerrar)
+                    window.close();
+                    $.Dialog.close();
+                    $('#DESCUENTO').val("");
+                    $('#TOTAL').val("");
+                    $('#SUBTOTAL').val("");
+                }, "json");
             }
 
             function cf_facturar_credito()
             {
-            /* proceso de facturacion al credito */
+                /* proceso de facturacion al credito */
 
-            factura = window.codPedido; // numero de factura a procesar
+                factura = window.codPedido; // numero de factura a procesar
 
-                    uri = "/facturacion/factura/cf_credito"; // url de proceso de facturacion credito
+                uri = "/facturacion/factura/cf_credito"; // url de proceso de facturacion credito
 
-                    resource = [ uri, factura ].join("/");
-                    request = $.post(resource, { "serie": {serie_credito_fiscal} }, function(data){
+                resource = [ uri, factura ].join("/");
+                request = $.post(resource, { "serie": {serie_credito_fiscal} }, function(data){
                     if (data.message != null) alert(data.message);
-                            // punto de respuesta de la peticion
-                            window.editable = false;
-                            imp();
-                            window.codPedido = 0;
-                            obtenerDatosCliente(0);
-                            //alert("No existe el pedido");
-                            var grid = Sigma.$grid("factura_grid");
-                            grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-                            grid.reload();
-                            $('#n_pedido').val("0");
-                            $('#codigo_cliente').val("0");
-                            $('#codigo_cliente').removeAttr("disabled");
-                            $('#fecha').removeAttr("disabled");
-                            $('#n_pedido').focus();
-                            desHabilitar();
-                            $.Dialog.close();
-                            $('#DESCUENTO').val("");
-                            $('#TOTAL').val("");
-                            $('#SUBTOTAL').val("");
-                    }, "json");
+                    // punto de respuesta de la peticion
+                    window.editable = false;
+                    imp();
+                    window.codPedido = 0;
+                    obtenerDatosCliente(0);
+                    //alert("No existe el pedido");
+                    var grid = Sigma.$grid("factura_grid");
+                    grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
+                    grid.reload();
+                    $('#n_pedido').val("0");
+                    $('#codigo_cliente').val("0");
+                    $('#codigo_cliente').removeAttr("disabled");
+                    $('#fecha').removeAttr("disabled");
+                    $('#n_pedido').focus();
+                    desHabilitar();
+                    $.Dialog.close();
+                    $('#DESCUENTO').val("");
+                    $('#TOTAL').val("");
+                    $('#SUBTOTAL').val("");
+                }, "json");
             }
 
             function nota_remision()
             {
-            /* proceso de facturacion al credito */
+                /* nt */
 
-            factura = window.codPedido; // numero de factura a procesar
+                factura = window.codPedido; // numero de factura a procesar
 
-                    uri = "/facturacion/factura/nota_remision"; // url de proceso de nota de remision
+                uri = "/facturacion/factura/nota_remision"; // url de proceso de nota de remision
 
-                    resource = [ uri, factura ].join("/");
-                    request = $.post(resource, { }, function(data){
+                resource = [ uri, factura ].join("/");
+                request = $.post(resource, { }, function(data){
                     if (data.message != null) alert(data.message);
-                            // punto de respuesta de la peticion
-                            window.editable = false;
-                            //imprimirFactura(); aca se imprime un documento especial
-                            window.codPedido = 0;
-                            obtenerDatosCliente(0);
-                            //alert("No existe el pedido");
-                            var grid = Sigma.$grid("factura_grid");
-                            grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-                            grid.reload();
-                            $('#n_pedido').val("0");
-                            $('#codigo_cliente').val("0");
-                            $('#codigo_cliente').removeAttr("disabled");
-                            $('#fecha').removeAttr("disabled");
-                            $('#n_pedido').focus();
-                            desHabilitar();
-                            $.Dialog.close();
-                            $('#DESCUENTO').val("");
-                            $('#TOTAL').val("");
-                            $('#SUBTOTAL').val("");
-                    }, "json");
+                    // punto de respuesta de la peticion
+                    window.editable = false;
+                    //imprimirFactura(); aca se imprime un documento especial
+                    window.codPedido = 0;
+                    obtenerDatosCliente(0);
+                    //alert("No existe el pedido");
+                    var grid = Sigma.$grid("factura_grid");
+                    grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
+                    grid.reload();
+                    $('#n_pedido').val("0");
+                    $('#codigo_cliente').val("0");
+                    $('#codigo_cliente').removeAttr("disabled");
+                    $('#fecha').removeAttr("disabled");
+                    $('#n_pedido').focus();
+                    desHabilitar();
+                    $.Dialog.close();
+                    $('#DESCUENTO').val("");
+                    $('#TOTAL').val("");
+                    $('#SUBTOTAL').val("");
+                }, "json");
             }
 
-		function cerrarResumen()
-         {
-			commit();
-            var grid = Sigma.$grid("genero3_grid");
-            grid.reload();
-            $('#resumenStock').css('display', 'none');
-         }
+            function cerrarResumen()
+            {
+                commit();
+                var grid = Sigma.$grid("genero3_grid");
+                grid.reload();
+                $('#resumenStock').css('display', 'none');
+            }
 
             function consulta()
             {
-            bodega = $('#bBodega').val().trim();
-                    linea = $('#bLinea').val().trim();
-                    estilo = $('#bEstilo').val().trim();
-                    color = $('#bColor').val().trim();
-                    talla = $('#bTalla').val().trim();
-                    var filtros = [];
-                    if (estilo != "") filtros.push(['estado_bodega.estilo', estilo].join(":"));
-                    if (linea != "") filtros.push(['estado_bodega.linea', linea].join(":"));
-                    if (color != "") filtros.push(['estado_bodega.color', color].join(":"));
-                    if (talla != "") filtros.push(['estado_bodega.talla', talla].join(":"));
-                    if (bodega != "") filtros.push(['bodega', bodega].join(":"));
-                    if (estilo != "" && color == "" && talla == ""){
-            var grid = Sigma.$grid("genero3_grid");
-                    grid.loadURL = '/facturacion/inventario/cargar_detalle_traslado?filtros=' + filtros;
+                bodega = $('#bBodega').val().trim();
+                linea = $('#bLinea').val().trim();
+                estilo = $('#bEstilo').val().trim();
+                color = $('#bColor').val().trim();
+                talla = $('#bTalla').val().trim();
+                var filtros = [];
+                if (estilo != "") filtros.push(['estado_bodega.estilo', estilo].join(":"));
+                if (linea != "") filtros.push(['estado_bodega.linea', linea].join(":"));
+                if (color != "") filtros.push(['estado_bodega.color', color].join(":"));
+                if (talla != "") filtros.push(['estado_bodega.talla', talla].join(":"));
+                if (bodega != "") filtros.push(['bodega', bodega].join(":"));
+                if (estilo != "" && color == "" && talla == ""){
+                    var grid = Sigma.$grid("genero3_grid");
+                    grid.loadURL = '/facturacion/inventario/cargar_consulta_producto?filtros=' + filtros;
                     grid.reload();
                     $('#resumenStock').css('display', 'block');
-            }
+                }
             }
 
             function input_render(value, record, columnObj, grid, colNo, rowNo){
-            string_ = record['linea'] + '_' + record['estilo'] + '_' + record['color'] + '_' + record['talla'] + '_' + record['costo'] + '_' + record['stock'] + '_' + record['precio'];
-                    return '<input type="text" value="0" class="items" id="' + string_ + '"/>';
+                string_ = record['linea'] + '_' + record['estilo'] + '_' + record['color'] + '_' + record['talla'] + '_' + record['costo'] + '_' + record['stock'] + '_' + record['precio'];
+                return '<input type="text" value="0" class="items" id="' + string_ + '"/>';
             }
 
             function stock_render(value, record, columnObj, grid, colNo, rowNo){
-            if (value == "" || value == " " || value == null){
-            return "0";
-            } else{
-            return value;
-            }
+                if (value == "" || value == " " || value == null){
+                    return "0";
+                } else{
+                    return value;
+                }
             }
 
             var grid_demo_id3 = "genero3_grid";
-                    var dsOption3 = {
-
-                    fields :[
+            
+            var dsOption3 = {
+                fields :[
                     {name : 'linea'  },
                     {name : 'estilo'  },
                     {name : 'color'  },
                     {name : 'talla'  },
                     {name : 'bodega'  },
                     {name : 'stock'  }
-                    ],
-                            recordType : 'object'
-                    }
+                ],
+                recordType : 'object'
+            }
 
             var colsOption3 = [
-            {id: 'linea', header: "Linea", width :100 },
-            {id: 'estilo', header: "Estilo", width :100},
-            {id: 'color', header: "Color", width :100},
-            {id: 'talla', header: "Talla", width :100},
-            {id: 'ingresan', header: "Ingresan", width :100, renderer:input_render},
-            {id: 'stock', header: "Stock", width :100, renderer:stock_render},
-            {id: 'costo', header: "Costo", width :100},
-            {id: 'precio', header: "Precio", width :100},
-            {id: 'bodega', header: "Bodega", width :100}
+                {id: 'linea', header: "Linea", width :100 },
+                {id: 'estilo', header: "Estilo", width :100},
+                {id: 'color', header: "Color", width :100},
+                {id: 'talla', header: "Talla", width :100},
+                {id: 'ingresan', header: "Ingresan", width :100, renderer:input_render},
+                {id: 'stock', header: "Stock", width :100, renderer:stock_render},
+                {id: 'costo', header: "Costo", width :100},
+                {id: 'precio', header: "Precio", width :100},
+                {id: 'bodega', header: "Bodega", width :100}
             ];
-                    var gridOption3 = {
-                    id : grid_demo_id3,
-                            loadURL : '',
-                            saveURL : '',
-                            width: "900", //"100%", // 700,
-                            height: "320", //"100%", // 330,
-                            container : 'gridbox6',
-                            replaceContainer : true,
-                            encoding : 'UTF-8', // Sigma.$encoding(), 
-                            dataset : dsOption3,
-                            columns : colsOption3,
-                            clickStartEdit : true,
-                            defaultRecord : {'id':"00", 'nombre':""},
-                            pageSize:20,
-                            toolbarContent : ' nav state'
-                    };
-                    var mygrid3 = new Sigma.Grid(gridOption3);
-                    Sigma.Util.onLoad(function(){
-                    mygrid3.render();
-                    });
+                    
+            var gridOption3 = {
+                id : grid_demo_id3,
+                loadURL : '',
+                saveURL : '',
+                width: "900", //"100%", // 700,
+                height: "320", //"100%", // 330,
+                container : 'gridbox6',
+                replaceContainer : true,
+                encoding : 'UTF-8', // Sigma.$encoding(), 
+                dataset : dsOption3,
+                columns : colsOption3,
+                clickStartEdit : true,
+                defaultRecord : {'id':"00", 'nombre':""},
+                pageSize:20,
+                toolbarContent : ' nav state'
+            };
+                    
+            var mygrid3 = new Sigma.Grid(gridOption3);
+            
+            Sigma.Util.onLoad(function(){
+                mygrid3.render();
+            });
 					
-				/* agrega productos a una factura de manera masiva */	
-				function commit()
-				{
-					info = [ ]; // datos de los productos a ser insertados al mismo tiempo
+			/* agrega productos a una factura de manera masiva */	
+			function commit()
+			{
+				info = [ ]; // datos de los productos a ser insertados al mismo tiempo
 					
-					$('.items').each(function(){
-						if ($(this).val().trim() != "" && $(this).val() > 0){
-							data = $(this).attr('id').split('_');
-							data_send = {
-								"linea":  	data[0],
-								"estilo": 	data[1],
-								"color": 	data[2],
-								"talla": 	data[3],
-								"costo":   	data[4],
-								"stock":   	data[5],
-								"precio":   	data[6],
-								"cantidad":   $(this).val(),
-								"total": 	parseInt($(this).val()) * parseFloat(data[4])
-							};
+				$('.items').each(function(){
+					if ($(this).val().trim() != "" && $(this).val() > 0){
+						data = $(this).attr('id').split('_');
+						data_send = {
+							"linea":  	data[0],
+							"estilo": 	data[1],
+							"color": 	data[2],
+							"talla": 	data[3],
+							"costo":   	data[4],
+							"stock":   	data[5],
+							"precio":   	data[6],
+							"cantidad":   $(this).val(),
+							"total": 	parseInt($(this).val()) * parseFloat(data[4])
+						};
 							
-							PORCENTAJE  = parseFloat($('#bPorcentaje').val());
-							BODEGA 	   = $('#bBodega').val();
-							CLIENTE 	   = $('#codigo_cliente').val();
-							DESCRIPCION = data_send.linea + "-" + data_send.estilo + "-" + data_send.color + "-" + data_send.talla;
-							chunck      = null;
-							chunck      = {};
-							chunck      = {
-								bodega:BODEGA,
-								estilo:data_send.estilo,
-								color:data_send.color,
-								linea:data_send.linea,
-								talla:data_send.talla,
-								cantidad:data_send.cantidad,
-								descripcion:DESCRIPCION,
-								cliente:CLIENTE,
-								factura:window.codPedido,
-								precio:data_send.precio,
-								porcentaje:PORCENTAJE
-							};
+						PORCENTAJE  = parseFloat($('#bPorcentaje').val());
+						BODEGA 	    = $('#bBodega').val();
+						CLIENTE 	= $('#codigo_cliente').val();
+						DESCRIPCION = data_send.linea + "-" + data_send.estilo + "-" + data_send.color + "-" + data_send.talla;
+						chunck      = null;
+						chunck      = {};
+						chunck      = {
+                            bodega:BODEGA,
+                            estilo:data_send.estilo,
+							color:data_send.color,
+							linea:data_send.linea,
+							talla:data_send.talla,
+							cantidad:data_send.cantidad,
+							descripcion:DESCRIPCION,
+							cliente:CLIENTE,
+							factura:window.codPedido,
+							precio:data_send.precio,
+							porcentaje:PORCENTAJE
+						};
 							
-							info.push(chunck);
-							$(this).val(0);
-						}
-					});
+						info.push(chunck);
+						$(this).val(0);
+					}
+				});
 								
-					send = { "productos": JSON.stringify(info) };
+				send = { "productos": JSON.stringify(info) };
 								
-					df = $.post('/facturacion/factura/insercionMultiple', send, function(dC){
-						var grid = Sigma.$grid("factura_grid");
-						grid.reload();
-						cargar_totales();
-						if (dC.error){ alert("No se agregaron algunos pedidos por falta de stock"); }
-					}, "json");
-				}
+				$.post('/facturacion/factura/insercionMultiple', send, function(dC){
+					var grid = Sigma.$grid("factura_grid");
+					grid.reload();
+					cargar_totales();
+					if (dC.error){ alert("No se agregaron algunos pedidos por falta de stock"); }
+				}, "json");
+			}
 
 
             function closePane(idPane){
@@ -1503,7 +1541,7 @@
                     'right':'-620px'
                   },500);
                 }
-              }
+            }
 
              function showPane(idPane){
                 $('.sidePane').animate({
@@ -1522,30 +1560,39 @@
         <!-- PANELES -->
         <div id="fpendientes" class="sidePane" style="width:600px;height:100%;background:#fff;position:fixed;top:0px;right:-620px;z-index:100000;box-shadow:-1px -1px 4px 1px #000;padding-left:20px;">
             <h3>Pedidos</h3>
-            <button onclick="closePane('fpendientes')">Cerrar</button>
+            <br/>
+            <br/>
             <div id="bigbox10" style="margin:15px;display:!none;float:left;">
                 <div id="gridbox10" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
 
                 </div>
             </div>
+            <br/>
+            <button onclick="closePane('fpendientes')" class="primary">Cerrar panel</button>
         </div>
         <div id="ffacturas" class="sidePane" style="width:600px;height:100%;background:#fff;position:fixed;top:0px;right:-620px;z-index:100000;box-shadow:-1px -1px 4px 1px #000;padding-left:20px;overflow: auto;">
             <h3>Facturas</h3>
-            <button onclick="closePane('ffacturas')">Cerrar</button>
+            <br/>
+            <br/>
             <div id="bigbox11" style="margin:15px;display:!none;float:left;">
                 <div id="gridbox11" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
 
                 </div>
             </div>
+            <br/>
+            <button onclick="closePane('ffacturas')" class="primary">Cerrar panel</button>
         </div>
         <div id="ffiscal" class="sidePane" style="width:600px;height:100%;background:#fff;position:fixed;top:0px;right:-620px;z-index:100000;box-shadow:-1px -1px 4px 1px #000;padding-left:20px;overflow: auto;">
             <h3>Crédito fiscal</h3>
-            <button onclick="closePane('ffiscal')">Cerrar</button>
+            <br/>
+            <br/>
             <div id="bigbox12" style="margin:15px;display:!none;float:left;">
                 <div id="gridbox12" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
 
                 </div>
             </div>
+            <br/>
+            <button onclick="closePane('ffiscal')" class="primary">Cerrar panel</button>
         </div>
 
 <script type="text/javascript" >
@@ -1583,14 +1630,16 @@
         id: pendientes_grid,
         loadURL: '/facturacion/factura/cargarPendientes',
         saveURL: '',
-        width: "550", //"100%", // 700,
-        height: "260", //"100%", // 330,
+        width: "543", //"100%", // 700,
+        height: "360", //"100%", // 330,
         container: 'gridbox10',
         replaceContainer: true,
         encoding: 'UTF-8', // Sigma.$encoding(), 
         dataset: dsOptionPendientes,
         columns: colsOptionPendientes,
         clickStartEdit: true,
+        allowCustomSkin: true,
+        skin: 'mac',
         defaultRecord: {'id': "00", 'nombre': ""},
         pageSize: 30,
         toolbarContent: 'reload | filter | nav state'
@@ -1650,13 +1699,15 @@
         loadURL: '/facturacion/factura/resumenFacturas',
         saveURL: '',
         width: "810", //"100%", // 700,
-        height: "260", //"100%", // 330,
+        height: "360", //"100%", // 330,
         container: 'gridbox11',
         replaceContainer: true,
         encoding: 'UTF-8', // Sigma.$encoding(), 
         dataset: dsOptionFacturas,
         columns: colsOptionFacturas,
         clickStartEdit: true,
+        allowCustomSkin: true,
+        skin: 'mac',
         defaultRecord: {'id': "00", 'nombre': ""},
         pageSize: 10,
         toolbarContent: 'reload | filter | nav state'
@@ -1708,11 +1759,13 @@
         loadURL: '/facturacion/factura/resumenFiscal',
         saveURL: '',
         width: "735", //"100%", // 700,
-        height: "260", //"100%", // 330,
+        height: "360", //"100%", // 330,
         container: 'gridbox12',
         replaceContainer: true,
         encoding: 'UTF-8', // Sigma.$encoding(), 
         dataset: dsOption,
+        allowCustomSkin: true,
+        skin: 'mac',
         columns: colsOption,
         clickStartEdit: true,
         defaultRecord: {'id': "00", 'nombre': ""},

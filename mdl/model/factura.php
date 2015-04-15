@@ -240,9 +240,10 @@ class facturaModel extends object {
 		$facmesh->set_attr('facturadop', '0');
 		$facmesh->set_attr('fefacturad', '');
 		$facmesh->set_attr('descuentop', '0');
-		
+		$Dserie = "";
+		$Dnofac = "";
 		$facmesh->save();
-		$kardex = $this->get_child('kardex');
+		//$kardex = $this->get_child('kardex');
 
 		// obtencion de los detalles de las facturas
 		$query = "SELECT * FROM detalle_factura WHERE id_factura=$id_factura";
@@ -263,6 +264,8 @@ class facturaModel extends object {
 			
 			$facmesd->get(0);
 			
+			$Dserie = $seriemd->get_attr('serie');
+			$Dnofac = $nofac;
 			$facmesd->set_attr('cordia','0');  // por el momento parece que no se usa
 			$facmesd->set_attr('caja',$this->get_attr('caja'));
 			$facmesd->set_attr('codtra','2A');
@@ -277,7 +280,7 @@ class facturaModel extends object {
 			$facmesd->set_attr('ccolor', $item['color']);
 			$facmesd->set_attr('talla', $item['talla']);
 			$facmesd->set_attr('precio', $item['precio']);
-			$facmesd->set_attr('costo','0');      // por el momento no se toma en cuenta, consultar si es necesario
+			$facmesd->set_attr('costo',$item['costo']);      // por el momento no se toma en cuenta, consultar si es necesario
 			$facmesd->set_attr('cantidad', $item['cantidad']);
 			$facmesd->set_attr('pordes', $item['pordes']);
 			$facmesd->set_attr('valdes','0');     // no se han implementado vales de descuento
@@ -300,7 +303,64 @@ class facturaModel extends object {
 			$facmesd->set_attr('descuentop','0'); // al parece no se ocupa
 			
 			$facmesd->save();
-			$kardex->generar_salida($item['linea'], $item['estilo'], $item['color'], $item['talla'], $item['cantidad'], "Facturacion de producto al contado");
+			
+			if(isInstalled("kardex")){
+				$linea = $item['linea'];
+				$estilo = $item['estilo'];
+				$color = $item['color'];
+				$talla = $item['talla'];
+				$cantidad = $item['cantidad'];
+				$prod = $this->get_child('producto');
+                $prod->get(array("estilo"=>$estilo, "linea"=>$linea));
+                $prov = $this->get_child('proveedor');
+                $prov->get($prod->proveedor);
+                data_model()->newConnection(HOST, USER, PASSWORD, "db_system");
+                data_model()->setActiveConnection(1);
+
+                $system = $this->get_child('system');
+                $system->get(1);
+
+				data_model()->newConnection(HOST, USER, PASSWORD, "db_kardex");
+                data_model()->setActiveConnection(2);
+				$kardex   = connectTo("kardex", "mdl.model.kardex", "kardex");
+				$articulo = connectTo("kardex", "objects.articulo", "articulo");
+				//$kardex->generar_salida($item['linea'], $item['estilo'], $item['color'], $item['talla'], $item['cantidad'], "Facturacion de producto al contado");
+
+				$articulo->nuevo_articulo($linea, $estilo, $color, $talla);
+                        
+                $dato_articulo = array(
+                    'codigo'=>$articulo->no_articulo($linea, $estilo, $color, $talla),
+                    'articulo'=>"$linea-$estilo-$color-$talla",
+                    'descripcion'=> $prod->descripcion
+                );
+
+                $dato_proveedor = array(
+                    'nombre_proveedor'=> $prov->nombre,
+                    'nacionalidad_proveedor'=> $prov->nacionalidad
+                );
+
+                $dato_salida = array(
+                    "sal_cantidad"=> $cantidad
+                );
+
+
+                $kardex->nueva_salida(
+                    date("Y-m-d"), 
+                    "FACTURA AL CONTADO", 
+                    $dato_articulo, 
+                    0, 
+                    1000, 
+                    0, 
+                    $dato_proveedor,
+                    $system->periodo_actual,
+                    0, 
+                    $dato_salida,
+                    "$Dserie-$Dnofac",
+                    $item['bodega']
+                );    
+				
+				data_model()->setActiveConnection(0);
+			}
 		}
 		
 		$query = "COMMIT";
@@ -345,7 +405,7 @@ class facturaModel extends object {
                 $cliente->set_attr('monto_extra', 0.0);
                 $cliente->set_attr('extra_credito', 0);
                 $cliente->save();
-                import('scripts.alias');
+                
 				
                 $this->get($id_factura);
                 $this->set_attr('fecha_vence', sumar_dias_habiles($this->get_attr('fecha'), $cliente->get_attr('dias_credito')));
@@ -399,7 +459,7 @@ class facturaModel extends object {
 				$facmesh->set_attr('ta_casa', $this->get_attr('ta_casa'));
 				$facmesh->set_attr('deposito', $this->get_attr('deposito'));
 				
-				// esta siendo facturado al contado
+				// esta siendo facturado al credito
 				$credito = '1';
 				
 				$facmesh->set_attr('credito', $credito); // si formapago == 2 poner credito a 1, caso contrario a cero
@@ -430,7 +490,7 @@ class facturaModel extends object {
 				$facmesh->set_attr('descuentop', '0');
 				
 				$facmesh->save();
-				$kardex = $this->get_child('kardex');
+				
 				
 				/* Apertura de una cuenta por pagar */
 				$ccdiah = $this->get_child('ccdiah');
@@ -494,7 +554,7 @@ class facturaModel extends object {
 					$facmesd->set_attr('ccolor', $item['color']);
 					$facmesd->set_attr('talla', $item['talla']);
 					$facmesd->set_attr('precio', $item['precio']);
-					$facmesd->set_attr('costo','0');      // por el momento no se toma en cuenta, consultar si es necesario
+					$facmesd->set_attr('costo', $item['costo']);      // por el momento no se toma en cuenta, consultar si es necesario
 					$facmesd->set_attr('cantidad', $item['cantidad']);
 					$facmesd->set_attr('pordes', $item['pordes']);
 					$facmesd->set_attr('valdes','0');     // no se han implementado vales de descuento
@@ -517,7 +577,65 @@ class facturaModel extends object {
 					$facmesd->set_attr('descuentop','0'); // al parece no se ocupa
 					
 					$facmesd->save();
-					$kardex->generar_salida($item['linea'], $item['estilo'], $item['color'], $item['talla'], $item['cantidad'], "Facturacion de producto al credito");
+					
+					if(isInstalled("kardex")){
+						$linea = $item['linea'];
+						$estilo = $item['estilo'];
+						$color = $item['color'];
+						$talla = $item['talla'];
+						$cantidad = $item['cantidad'];
+						$prod = $this->get_child('producto');
+		                $prod->get(array("estilo"=>$estilo, "linea"=>$linea));
+		                $prov = $this->get_child('proveedor');
+		                $prov->get($prod->proveedor);
+		                data_model()->newConnection(HOST, USER, PASSWORD, "db_system");
+		                data_model()->setActiveConnection(1);
+
+		                $system = $this->get_child('system');
+		                $system->get(1);
+
+						data_model()->newConnection(HOST, USER, PASSWORD, "db_kardex");
+		                data_model()->setActiveConnection(2);
+						$kardex   = connectTo("kardex", "mdl.model.kardex", "kardex");
+						$articulo = connectTo("kardex", "objects.articulo", "articulo");
+						//$kardex->generar_salida($item['linea'], $item['estilo'], $item['color'], $item['talla'], $item['cantidad'], "Facturacion de producto al contado");
+
+						$articulo->nuevo_articulo($linea, $estilo, $color, $talla);
+		                        
+		                $dato_articulo = array(
+		                    'codigo'=>$articulo->no_articulo($linea, $estilo, $color, $talla),
+		                    'articulo'=>"$linea-$estilo-$color-$talla",
+		                    'descripcion'=> $prod->descripcion
+		                );
+
+		                $dato_proveedor = array(
+		                    'nombre_proveedor'=> $prov->nombre,
+		                    'nacionalidad_proveedor'=> $prov->nacionalidad
+		                );
+
+		                $dato_salida = array(
+		                    "sal_cantidad"=> $cantidad
+		                );
+
+		                $Dserie = $seriemd->get_attr('serie');
+
+		                $kardex->nueva_salida(
+		                    date("Y-m-d"), 
+		                    "FACTURA AL CREDITO", 
+		                    $dato_articulo, 
+		                    0, 
+		                    1000, 
+		                    0, 
+		                    $dato_proveedor,
+		                    $system->periodo_actual,
+		                    0, 
+		                    $dato_salida,
+		                    "$Dserie-$nofac",
+		                    $item['bodega']
+		                );    
+						
+						data_model()->setActiveConnection(0);
+					}
 				}
 				
 				
@@ -614,43 +732,150 @@ class facturaModel extends object {
     }
 
     public function p_anular($serie, $nofac) {
-        $query = "SELECT bodega,linea,cestilo as estilo,ccolor as color,talla,cantidad FROM facmesd WHERE nofac=$nofac AND serie='$serie'";
-		data_model()->executeQuery($query);
-        $items = array();
-        while ($res = data_model()->getResult()->fetch_assoc()) {
-            $items[] = $res;
-        }
-        foreach ($items as $item) {
-            $bodega   = $item['bodega'];
-            $linea    = $item['linea'];
-            $estilo   = $item['estilo'];
-            $color    = $item['color'];
-            $talla    = $item['talla'];
-            $cantidad = $item['cantidad'];
-            $id = $this->get_child('estado_bodega')->referencia($linea, $estilo, $color, $talla);
-			$oBodega = $this->get_child('estado_bodega');
-			if($id!=0){
-				$oBodega->get($id);
-				$oBodega->set_attr('stock', $oBodega->get_attr('stock') + $cantidad);
-				$oBodega->save();
-			}else{
-				$oBodega->get(0);
-				$data = array();
-				$data['estilo'] = $item['estilo'];
-				$data['linea']  = $item['linea'];
-				$data['talla']  = $item['talla'];
-				$data['color']  = $item['color'];
-				$data['stock']  = $item['cantidad'];
-				$data['bodega'] = 1;
+    	// PRIMERO VERIFICAMOS SI LA FACTURA TIENE ES AL CREDITO O AL CONTADO. SI ES AL CREDITO DEBEMOS 
+    	// ACTUALIZAR EL ESTADO DEL CUENTA DEL CLIENTE. TAMBIEN SE DEBE COMPROBAR QUE EL CLIENTE NO HAYA
+    	// HECHO NINGUN ABONO A ESTA FACTURA, SI ALGUN ABONO HA SIDO REALIZADO YA NO SE PODRA ANULAR
+    	// LA FACTURA EN CUESTION
+    	$anulable = true;
+    	$facmesh = $this->get_child('facmesh');
+    	$facmesh->setVirtualId('nofac');
+    	$facmesh->get($nofac);
+    	$abonos = 0;
+    	$codigo_afiliado = $facmesh->rd_cod;
+    	$cliente = $this->get_sibling('cliente');
+    	$cliente->get($codigo_afiliado);
+    	$resp = array("msg"=>"Factura anulada con éxito");
+
+    	if($facmesh->credito){
+
+    		// TIENE CREDITO, VERIFICAMOS QUE NO HAYAN ABONOS O QUE NO ESTA EN MORA
+    		$query = "SELECT abonos, nmoras, monto FROM ccdiah WHERE nodoc = $nofac AND serie='$serie'";
+    		data_model()->executeQuery($query);
+    		$nmoras = 0;
+    		$monto = 0;
+    		while($row = data_model()->getResult()->fetch_assoc()){
+    			$abonos = $row['abonos'];
+    			$nmoras = $row['nmoras'];
+    			$monto  = $row['monto'];
+    		}
+
+    		if($abonos==0 && $nmoras==0){
+    			// EN ESTE PUNTO REDUCIMOS LA DEUDA DEL CLIENTE ELIMINANDO EL PAGO QUE SE DEBE REALIZAR
+    			$cliente->credito_usado = $cliente->credito_usado - $monto;
+    			$cliente->save();
+    			$query = "DELETE FROM ccdiah WHERE nodoc = $nofac AND serie='$serie'";
+    			data_model()->executeQuery($query);
+    		}else{
+    			$resp['msg'] = "Aviso: no se puede anular el documento porque ya posee abonos o moras pendientes";
+    			$anulable = false;
+    		}
+
+    	}
+
+    	if($anulable){
+
+	        $query = "SELECT bodega,linea,cestilo as estilo,ccolor as color,talla,cantidad, costo FROM facmesd WHERE nofac=$nofac AND serie='$serie'";
+			data_model()->executeQuery($query);
+	        $items = array();
+	        while ($res = data_model()->getResult()->fetch_assoc()) {
+	            $items[] = $res;
+	        }
+	        foreach ($items as $item) {
+	            $bodega   = $item['bodega'];
+	            $linea    = $item['linea'];
+	            $estilo   = $item['estilo'];
+	            $color    = $item['color'];
+	            $talla    = $item['talla'];
+	            $cantidad = $item['cantidad'];
+	            $costo 	  = $item['costo'];
+	            $id = $this->get_child('estado_bodega')->referencia($linea, $estilo, $color, $talla);
 				
-				$oBodega->change_status($data);
-				$oBodega->save();
-			}
+				$oBodega = $this->get_child('estado_bodega');
+				
+				if($id!=0){
+					$oBodega->get($id);
+					$oBodega->set_attr('stock', $oBodega->get_attr('stock') + $cantidad);
+					$oBodega->save();
+				}else{
+					$oBodega->get(0);
+					$data = array();
+					$data['estilo'] = $item['estilo'];
+					$data['linea']  = $item['linea'];
+					$data['talla']  = $item['talla'];
+					$data['color']  = $item['color'];
+					$data['stock']  = $item['cantidad'];
+					$data['bodega'] = 1;
+					
+					$oBodega->change_status($data);
+					$oBodega->save();
+				}
+
+				if(isInstalled("kardex")){
+                    
+	                $prod = $this->get_child('producto');
+	                $prod->get(array("estilo"=>$estilo, "linea"=>$linea));
+	                $prov = $this->get_child('proveedor');
+	                $prov->get($prod->proveedor);
+
+	                data_model()->newConnection(HOST, USER, PASSWORD, "db_system");
+	                data_model()->setActiveConnection(1);
+
+	                $system = $this->get_child('system');
+	                $system->get(1);
+
+	                data_model()->newConnection(HOST, USER, PASSWORD, "db_kardex");
+	                data_model()->setActiveConnection(2);
+	                $kardex   = connectTo("kardex", "mdl.model.kardex", "kardex");
+	                $articulo = connectTo("kardex", "objects.articulo", "articulo");
+	                $articulo->nuevo_articulo($linea, $estilo, $color, $talla);
+	                    
+	                $dato_articulo = array(
+	                    'codigo'=>$articulo->no_articulo($linea, $estilo, $color, $talla),
+	                    'articulo'=>"$linea-$estilo-$color-$talla",
+	                    'descripcion'=> $prod->descripcion
+	                );
+
+	                $dato_proveedor = array(
+	                    'nombre_proveedor'=> $prov->nombre,
+	                    'nacionalidad_proveedor'=> $prov->nacionalidad
+	                );
+
+	                $dato_entrada = array(
+	                    "ent_cantidad"=> $cantidad,
+	                    "ent_costo_unitario"=> $costo,
+	                    "ent_costo_total"=> $cantidad * $costo 
+	                );
+
+
+	                $kardex->nueva_entrada(
+	                    date("Y-m-d"), 
+	                    "ANULACION DE FACTURA", 
+	                    $dato_articulo, 
+	                    0, 
+	                    1000, 
+	                    0, 
+	                    $dato_proveedor,
+	                    $system->periodo_actual,
+	                    0, 
+	                    $dato_entrada,
+	                    "$serie-$nofac",
+	                    $bodega
+	                );        
+
+	                list($kcantidad, $kcosto_unitario, $kcosto_total) = $kardex->estado_actual($articulo->no_articulo($linea, $estilo, $color, $talla), $bodega); 
+
+	                data_model()->setActiveConnection(0);
+
+	                $this->get_child('control_precio')->cambiar_costo($linea, $estilo, $color, $talla, $kcosto_unitario);
+	            }
+	        }
+
+
+	        $query = "UPDATE facmesh SET anulado = 'VERDADERO' WHERE nofac=$nofac AND serie='$serie'";
+	        data_model()->executeQuery($query);
         }
 
-
-        $query = "UPDATE facmesh SET anulado = 'VERDADERO' WHERE nofac=$nofac AND serie='$serie'";
-        data_model()->executeQuery($query);
+        echo json_encode($resp);
     }
 
     public function datos_anulacion($numero_factura, $numero_caja, $serie_factura) {

@@ -442,6 +442,7 @@
 		
 		var CANTIDAD = parseInt($('#bCantidad').val().trim()); // cantidad que desea comprase
 		var PRECIO   = parseFloat($('#bPrecio').val().trim()); // precio del producto
+        var COSTO    = parseFloat($('#bCosto').val().trim()); // precio del producto
 		
 		var PORCENTAJE = parseFloat($('#bPorcentaje').val().trim());
 		
@@ -456,6 +457,7 @@
 		/* calculo del sobtotal y el descuento */
 		var SUBTOTAL = 0;
 		var DESC     = 0;
+
 		if ($('#SUBTOTAL').val().trim() != "") SUBTOTAL = parseFloat($('#SUBTOTAL').val().trim());
 		if ($('#DESCUENTO').val().trim() != "") DESC    = parseFloat($('#DESCUENTO').val().trim());
 		
@@ -471,24 +473,26 @@
 		
 		/* datos a enviar al servidor */
 		var data = {
-			bodega:BODEGA,
-			estilo:ESTILO,
-			color:COLOR,
-			linea:LINEA,
-			talla:TALLA,
-			cantidad:CANTIDAD,
-			descripcion:DESCRIPCION,
-			cliente:CLIENTE,
-			factura:window.codPedido,
-			precio:PRECIO,
-			porcentaje:PORCENTAJE
+			"bodega":BODEGA,
+			"estilo":ESTILO,
+			"color":COLOR,
+			"linea":LINEA,
+			"talla":TALLA,
+			"cantidad":CANTIDAD,
+			"descripcion":DESCRIPCION,
+			"cliente":CLIENTE,
+			"factura":window.codPedido,
+			"precio":PRECIO,
+            "costo":COSTO,
+			"porcentaje":PORCENTAJE
 		};
 		
+
 		
 		// petcion asincrona
 		var ajaxRequest = $.post(uri, data, function(response){
 			if (response.STATUS == "OK"){
-				/* la peticion se ha completado satisfactoriamente */
+				// la peticion se ha completado satisfactoriamente 
 				var grid = Sigma.$grid("factura_grid");
 				cargar_totales(); // atualizacion de totales de la factura
 				grid.reload();	// actualiza el grid de detalle
@@ -500,7 +504,7 @@
 				alert("HA OCURRIDO UN ERROR");
 			}
 		}, "json");
-				
+
 		$('#bBodega').removeAttr("disabled");
 		$('#bBodega').focus();
     }
@@ -521,6 +525,7 @@
                     $('#bCantidad').removeAttr("disabled");
                     $('#bCantidad').focus();
                     $('#bPrecio').val(data.PRECIO.precio);
+                    $('#bCosto').val(data.PRECIO.costo);
                     $('#bTalla').css('border-color', '#D3D3D3');
                 } else{
                     $('#bCantidad').attr("disabled", "disabled");
@@ -602,6 +607,8 @@
         skin: 'mac',
         clickStartEdit : true,
         defaultRecord : {'id':"00", 'nombre':""},
+        remotePaging: true,
+        autoLoad: true,
         pageSize:10,
         toolbarContent : 'nav state'
     };
@@ -980,7 +987,7 @@
 						<td><input type="text" id="telefono_casa" style="width:100px;" readonly="readonly" /></td>
 					</tr>
 					<tr>
-						<td>Tel. móvilr</td>
+						<td>Tel. móvil</td>
 						<td>Tel. oficina</td>
 						<td>Tel. casa</td>
 					</tr>
@@ -1010,6 +1017,7 @@
             <input type="text" id="bTalla" style="width:70px;padding: 0px;" onblur="consulta();" disabled="disabled" onchange="seleccionarTalla();" >
 
             <input type="text" id="bPrecio" style="width:70px;padding: 0px;" readonly/>
+            <input type="hidden" id="bCosto" style="width:70px;padding: 0px;" readonly/>
 
             <input type="text" id="bCantidad" style="width:70px;padding: 0px" onchange="seleccionarCantidad();"/>
 
@@ -1164,8 +1172,7 @@
                                         '<br/><br/><div style="text-align:center;">',
                                         '<button class="shortcut" id="fcredito" onclick="facturar_credito();"><i class="icon-credit-card"></i>Crédito</button>',
                                         '<button class="shortcut" id="fcontado" onclick="facturar_contado();"><i class="icon-dollar"></i>Contado</button>',
-                                        '<button class="shortcut" id="ffiscal" onclick="credito_fiscal();"><i class="icon-briefcase"></i>Crédito fiscal</button>',
-                                        '<button class="shortcut" id="fnota" onclick="nota_remision();"><i class="icon-tag"></i>Nota de remisión</button></div>'
+                                        '<button class="shortcut" id="ffiscal" onclick="credito_fiscal();"><i class="icon-briefcase"></i>Crédito fiscal</button>'
                                     ];
                                     if (window.nt) htmls.pop();
                                         html = htmls.join("");
@@ -1288,6 +1295,7 @@
 
             function facturar_credito()
             {
+
                 /* proceso de facturacion al credito */
 
                 factura = window.codPedido; // numero de factura a procesar
@@ -1469,7 +1477,9 @@
                 columns : colsOption3,
                 clickStartEdit : true,
                 defaultRecord : {'id':"00", 'nombre':""},
-                pageSize:20,
+                pageSize:10,
+                remotePaging: true,
+                autoLoad: false,
                 toolbarContent : ' nav state'
             };
                     
@@ -1516,7 +1526,8 @@
 							cliente:CLIENTE,
 							factura:window.codPedido,
 							precio:data_send.precio,
-							porcentaje:PORCENTAJE
+							porcentaje:PORCENTAJE,
+                            costo: data_send.costo
 						};
 							
 						info.push(chunck);
@@ -1525,9 +1536,10 @@
 				});
 								
 				send = { "productos": JSON.stringify(info) };
-								
+				
 				$.post('/facturacion/factura/insercionMultiple', send, function(dC){
-					var grid = Sigma.$grid("factura_grid");
+					//alert(dC.sql);
+                    var grid = Sigma.$grid("factura_grid");
 					grid.reload();
 					cargar_totales();
 					if (dC.error){ alert("No se agregaron algunos pedidos por falta de stock"); }
@@ -1640,6 +1652,8 @@
         clickStartEdit: true,
         allowCustomSkin: true,
         skin: 'mac',
+        remotePaging: true,
+        autoLoad: true,
         defaultRecord: {'id': "00", 'nombre': ""},
         pageSize: 30,
         toolbarContent: 'reload | filter | nav state'
@@ -1707,6 +1721,8 @@
         columns: colsOptionFacturas,
         clickStartEdit: true,
         allowCustomSkin: true,
+        remotePaging: true,
+        autoLoad: true,
         skin: 'mac',
         defaultRecord: {'id': "00", 'nombre': ""},
         pageSize: 10,
@@ -1766,6 +1782,8 @@
         dataset: dsOption,
         allowCustomSkin: true,
         skin: 'mac',
+        remotePaging: true,
+        autoLoad: true,
         columns: colsOption,
         clickStartEdit: true,
         defaultRecord: {'id': "00", 'nombre': ""},

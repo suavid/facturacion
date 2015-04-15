@@ -798,6 +798,7 @@ class facturaController extends controller {
 			$info['importe'] = $item->{"cantidad"} * $item->{"precio"};
 			$info['id_factura'] = $item->{"factura"};
 			$info['bodega'] = $item->{"bodega"};
+            $info['costo'] = $item->{"costo"};
 			$factura = $item->{"factura"};
 
 			$bodega = $item->{"bodega"};
@@ -814,7 +815,7 @@ class facturaController extends controller {
 			$info['color'] = $item->{"color"};
 			$info['talla'] = $item->{"talla"};
 
-            $query = "SELECT id_oferta FROM oferta_producto INNER JOIN oferta ON id_oferta = oferta.id WHERE linea=$linea AND estilo='{$estilo}' AND color=$color AND talla=$talla AND vencida = 1";
+            $query = "SELECT id_oferta FROM oferta_producto INNER JOIN oferta ON id_oferta = oferta.id WHERE linea=$linea AND estilo='{$estilo}' AND color=$color AND talla=$talla AND vencida = 0";
 			data_model()->executeQuery($query);
 
             $rep = array();
@@ -832,20 +833,22 @@ class facturaController extends controller {
                 $response[] = data_model()->getResult()->fetch_assoc();
             }
 
-
-            $info['porcentaje'] = $response[0]['descuento'] * 100;
+            if(isset($info['porcentaje']))
+                $info['porcentaje'] = $response[0]['descuento'] * 100;
+            else
+                $info['porcentaje'] = 0;
             $info['descuento']  = $info['importe'] * ($info['porcentaje'] / 100) ;
-            $info['importe']    = $info['porcentaje'] - $info['descuento'];
+            $info['importe']    = $info['importe'] - $info['descuento'];
 
             
-			$query = "SELECT stock FROM estado_bodega WHERE bodega=$bodega AND estilo=$estilo AND linea=$linea AND talla=$talla AND color=$color";
+			$query = "SELECT stock FROM estado_bodega WHERE bodega=$bodega AND estilo='$estilo' AND linea=$linea AND talla=$talla AND color=$color";
 			data_model()->executeQuery($query);
 			$s = data_model()->getResult()->fetch_assoc();
 			$stock = $s['stock'];
 
 			if ($stock >= $item->{"cantidad"}) {
 				$cantidad = $item->{"cantidad"};
-				$query = "UPDATE estado_bodega SET stock=(stock-$cantidad) WHERE bodega=$bodega AND estilo=$estilo AND linea=$linea AND talla=$talla AND color=$color";
+				$query = "UPDATE estado_bodega SET stock=(stock-$cantidad) WHERE bodega=$bodega AND estilo='$estilo' AND linea=$linea AND talla=$talla AND color=$color";
 				data_model()->executeQuery($query);
 				$detalle = $this->model->get_child('detalle_factura');
 				if ($this->model->existe($linea, $estilo, $color, $talla, $factura)) {
@@ -869,6 +872,7 @@ class facturaController extends controller {
 				// se actualizan los totales de la cabecera de factura
 				$query = "UPDATE factura SET iva = (iva + $mntiva), monto=( monto + $monto) , descuento=( descuento + $descuento), total=(total + ( $total + $descuento )), subtotal=(subtotal + $total)  WHERE id_factura=$factura";
 				data_model()->executeQuery($query);
+                //$ret['sql'] = $query;
 			} else {
 				$ret["error"] = true;
 			}
@@ -880,11 +884,13 @@ class facturaController extends controller {
      public function contado($id_factura) {
         $serie = $_POST['serie'];
         $this->model->contado($id_factura, $serie);
+        echo json_encode(array("msg"=>""));
      }
 
     public function cf_contado($id_factura) {
         $serie = $_POST['serie'];
         $this->model->cf_contado($id_factura, $serie);
+        echo json_encode(array("msg"=>""));
     }
 
     public function credito($id_factura) {
@@ -895,14 +901,17 @@ class facturaController extends controller {
     public function cf_credito($id_factura) {
         $serie = $_POST['serie'];
         $this->model->cf_credito($id_factura, $serie);
+        echo json_encode(array("msg"=>""));
     }
 
     public function nota_remision($id_factura) {
         $this->model->nota_remision($id_factura);
+        echo json_encode(array("msg"=>""));
     }
 
     public function reservar($id_factura) {
         $this->model->reservar($id_factura);
+        echo json_encode(array("msg"=>""));
     }
 
     public function p_anular() {
@@ -942,6 +951,7 @@ class facturaController extends controller {
 			
 			$d['descripcion'] = $_POST['descripcion'];
 			$d['precio'] 		= $_POST['precio'];
+            $d['costo']        = $_POST['costo'];
 			$d['cantidad'] 	= $_POST['cantidad'];
 			$d['porcentaje'] 	= $_POST['porcentaje'];
 			$d['importe'] 	= $cantidad * $_POST['precio'];

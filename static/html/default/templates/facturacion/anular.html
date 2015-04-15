@@ -194,39 +194,42 @@
 
     function anular()
     {
-        /* proceso de facturacion al contado */
+        if(confirm("Esta seguro que desea efectuar esta anulacion?")){
+            /* proceso de facturacion al contado */
 
-        factura = $('#referencia').val().trim(); // numero de factura a procesar
+            factura = $('#referencia').val().trim(); // numero de factura a procesar
 
-        uri = "/facturacion/factura/p_anular"; // url de proceso de anulacion
+            uri = "/facturacion/factura/p_anular"; // url de proceso de anulacion
 
-        resource = [uri, window.nofac].join("/");
+            resource = [uri, window.nofac].join("/");
 
-        info = {
-            "fecha": $('#fecha_anulacion').val().trim(),
-            "usuario": $('#usuario_activo').val().trim(),
-			"serie": window.serie,
-			"nofac": window.nofac
-        };
+            info = {
+                "fecha": $('#fecha_anulacion').val().trim(),
+                "usuario": $('#usuario_activo').val().trim(),
+    			"serie": window.serie,
+    			"nofac": window.nofac
+            };
 
-        request = $.post(resource, info, function(data) {
-            $('#msg').html("No existe!");
-            $('#bAnulado').removeAttr("checked");
-            $('#bCredito').removeAttr("checked");
-            $('#numero_factura').val("");
-            $('#numero_remision').val("");
-            $('#serie_factura').val("");
-            $('#monto_factura').val("");
-            $('#fecha_emision').val("");
-            $('#nombre_cliente').val("");
-            $('#id_pedido').val("");
-            $('#msg').html("");
-            var grid = Sigma.$grid("factura_grid");
-            grid.loadURL = '/facturacion/factura/cargar_detalle/' + 0;
-            grid.reload();
-            $('#btnAnular').attr("disabled", "disabled");
+            request = $.post(resource, info, function(data) {
+                //$('#msg').html("No existe!");
+                alert(data.msg);
+                $('#bAnulado').removeAttr("checked");
+                $('#bCredito').removeAttr("checked");
+                $('#numero_factura').val("");
+                $('#numero_remision').val("");
+                $('#serie_factura').val("");
+                $('#monto_factura').val("");
+                $('#fecha_emision').val("");
+                $('#nombre_cliente').val("");
+                $('#id_pedido').val("");
+                $('#msg').html("");
+                var grid = Sigma.$grid("factura_grid");
+                grid.loadURL = '/facturacion/factura/cargar_detalle/' + 0;
+                grid.reload();
+                $('#btnAnular').attr("disabled", "disabled");
 
-        }, "json");
+            }, "json");
+        }
     }
 </script>
 

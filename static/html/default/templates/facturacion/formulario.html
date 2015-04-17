@@ -84,22 +84,26 @@
 
     /* renderizado para el grid, permite la eliminacion de elementos en las facturas */
     function del_render(value, record, columnObj, grid, colNo, rowNo){
-		return '<a href="javascript:void(0);" onclick="delete_item(' + record['id'] + ')">Eliminar</a>';
+		return '<a href="javascript:void(0);" onclick="delete_item(' + record['id'] + ', '+ record['precio'] +')">Eliminar</a>';
     }
 
     /* gestion de eliminacion de items o productos del detalle de las facturas */
-    function delete_item(id)
+    function delete_item(id, precio)
     {
 		if (window.editable){
-			uri = "/facturacion/factura/eliminar_detalle/" + id;
-			data = {  };
-			
-            $.post(uri, data, function(data){
-				var grid = Sigma.$grid("factura_grid");
-				grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-				grid.reload();
-				cargar_totales();
-			}, "json");
+            if(precio > 0){
+    			uri = "/facturacion/factura/eliminar_detalle/" + id;
+    			data = {  };
+    			
+                $.post(uri, data, function(data){
+    				var grid = Sigma.$grid("factura_grid");
+    				grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
+    				grid.reload();
+    				cargar_totales();
+    			}, "json");
+            }else{
+                alert("Aviso: No se puede eliminar este elemento!");
+            }
 
 		} else{
 			alert("Este pedido ya fue procesado, no se puede editar");

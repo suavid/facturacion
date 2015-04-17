@@ -84,7 +84,7 @@
     function cargar_detalle(nofac, fefac)
     {
         var uri  = "/facturacion/factura/detalle_fac";
-        var data = { "nofac": nofac };
+        var data = { "nofac": nofac, "cambio":{cambio} };
         var dias = restarFechas(window.fechaActual, fefac);
         
         if(dias < 0){

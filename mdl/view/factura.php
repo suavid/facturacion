@@ -30,7 +30,7 @@ class facturaView {
         $this->load_settings();
         page()->setTitle('Descuentos');
         page()->addEstigma("username", $usuario);
-        page()->addEstigma('back_url', '/nymsa/factura/principal');
+        page()->addEstigma('back_url', '/facturacion/factura/principal');
         page()->addEstigma("TITULO", 'Descuentos');
         template()->addTemplateBit('content', 'facturacion/descuento.html');
         template()->parseOutput();
@@ -50,7 +50,7 @@ class facturaView {
         $this->load_settings();
         page()->setTitle('Notas de remision');
         page()->addEstigma("username", $usuario);
-        page()->addEstigma('back_url', '/nymsa/factura/principal');
+        page()->addEstigma('back_url', '/facturacion/factura/principal');
         page()->addEstigma("TITULO", 'Notas de remision');
         template()->addTemplateBit('content', 'facturacion/notas_remision.html');
         template()->parseOutput();
@@ -63,7 +63,7 @@ class facturaView {
         $this->load_settings();
         page()->setTitle('Resumen');
         page()->addEstigma("username", $usuario);
-        page()->addEstigma('back_url', '/nymsa/factura/nuevo');
+        page()->addEstigma('back_url', '/facturacion/factura/nuevo');
         page()->addEstigma("TITULO", 'Resumen');
         template()->addTemplateBit('content', 'facturacion/resumen.html');
         template()->parseOutput();
@@ -76,7 +76,7 @@ class facturaView {
         $this->load_settings();
         page()->setTitle('Creditos fiscales');
         page()->addEstigma("username", $usuario);
-        page()->addEstigma('back_url', '/nymsa/factura/nuevo');
+        page()->addEstigma('back_url', '/facturacion/factura/nuevo');
         page()->addEstigma("TITULO", 'Creditos fiscales');
         template()->addTemplateBit('content', 'facturacion/resumen_credito_fiscal.html');
         template()->parseOutput();
@@ -110,7 +110,7 @@ class facturaView {
 		$this->load_settings();
 		page()->setTitle('Pendientes');
 		page()->addEstigma("username", $usuario);
-		page()->addEstigma('back_url', '/nymsa/factura/nuevo');
+		page()->addEstigma('back_url', '/facturacion/factura/nuevo');
 		page()->addEstigma("TITULO", 'Pendientes');
 		template()->addTemplateBit('content', 'facturacion/pendientes.html');
 		template()->parseOutput();
@@ -123,7 +123,7 @@ class facturaView {
         $this->load_settings();
         page()->setTitle('Salida de mercaderia');
         page()->addEstigma("username", $usuario);
-        page()->addEstigma('back_url', '/nymsa/factura/principal');
+        page()->addEstigma('back_url', '/facturacion/factura/principal');
         page()->addEstigma("TITULO", 'Salida de mercaderia');
         template()->addTemplateBit('content', 'facturacion/salida.html');
         template()->parseOutput();
@@ -136,7 +136,7 @@ class facturaView {
         $this->load_settings();
         page()->setTitle('Reparaciones');
         page()->addEstigma("username", $usuario);
-        page()->addEstigma('back_url', '/nymsa/factura/principal');
+        page()->addEstigma('back_url', '/facturacion/factura/principal');
         page()->addEstigma("TITULO", 'Reparaciones');
         page()->addEstigma("fecha", date("Y-m-d"));
         template()->addTemplateBit('content', 'facturacion/reparaciones.html');
@@ -151,7 +151,7 @@ class facturaView {
         page()->setTitle('Anular facturas');
         page()->addEstigma("username", $usuario);
         page()->addEstigma("time_stamp", date("Y-m-d H:i:s "));
-        page()->addEstigma('back_url', '/nymsa/factura/principal');
+        page()->addEstigma('back_url', '/facturacion/factura/principal');
         page()->addEstigma("TITULO", 'Anular factura');
         template()->addTemplateBit('content', 'facturacion/anular.html');
         template()->parseOutput();
@@ -166,7 +166,7 @@ class facturaView {
         page()->addEstigma("username", $usuario);
         page()->addEstigma("time_stamp", date("Y-m-d H:i:s "));
         page()->addEstigma("fecha", date("Y-m-d"));
-        page()->addEstigma('back_url', '/nymsa/factura/principal');
+        page()->addEstigma('back_url', '/facturacion/factura/principal');
         page()->addEstigma("TITULO", 'Cambios');
         template()->addTemplateBit('content', 'facturacion/cambios.html');
         template()->parseOutput();
@@ -183,7 +183,7 @@ class facturaView {
         page()->addEstigma("paginacion_str", $paginacion_str);
         page()->addEstigma("editable", $editable);
         page()->addEstigma("time_stamp", date("Y-m-d H:i:s "));
-        page()->addEstigma('back_url', '/nymsa/factura/cambios');
+        page()->addEstigma('back_url', '/facturacion/factura/cambios');
         page()->addEstigma("TITULO", 'Cambios');
         page()->addEstigma("cambio", $id_cambio);
         page()->addEstigma("nombre_cliente", $nombre_cliente);
@@ -201,7 +201,7 @@ class facturaView {
         page()->addEstigma("username", $usuario);
         page()->addEstigma("activo", $activo);
         page()->addEstigma("time_stamp", date("Y-m-d H:i:s "));
-        page()->addEstigma('back_url', '/nymsa/factura/reparaciones');
+        page()->addEstigma('back_url', '/facturacion/factura/reparaciones');
         page()->addEstigma("TITULO", 'Reparacion');
         page()->addEstigma("cambio", $id_reparacion);
         page()->addEstigma("lineas", array('SQL', $cache[0]));
@@ -217,7 +217,7 @@ class facturaView {
         $this->load_settings();
         page()->setTitle('Mantenimiento de Series');
         page()->addEstigma("username", $usuario);
-        page()->addEstigma('back_url', '/nymsa/factura/principal');
+        page()->addEstigma('back_url', '/facturacion/factura/principal');
         page()->addEstigma("TITULO", 'Series');
         template()->addTemplateBit('content', 'facturacion/series.html');
         template()->parseOutput();
@@ -238,7 +238,7 @@ class facturaView {
         page()->addEstigma("usuario", array('SQL', $cache[5]));
         page()->addEstigma("s_cf", array('SQL', $cache[6]));
         page()->addEstigma("s_nr", array('SQL', $cache[7]));
-        page()->addEstigma('back_url', '/nymsa/factura/principal');
+        page()->addEstigma('back_url', '/facturacion/factura/principal');
         page()->addEstigma("TITULO", 'Cajas');
         template()->addTemplateBit('content', 'facturacion/cajas.html');
         template()->parseOutput();
@@ -251,7 +251,7 @@ class facturaView {
         $this->load_settings();
         page()->setTitle('Caja');
         $this->load_settings();
-        page()->addEstigma('back_url', '/nymsa/factura/principal');
+        page()->addEstigma('back_url', '/facturacion/factura/principal');
         page()->addEstigma("TITULO", 'Cajero');
         page()->addEstigma("numero_factura", $numero_remision);
         page()->addEstigma('username', Session::singleton()->getUser());
@@ -266,7 +266,7 @@ class facturaView {
         $this->load_settings();
         $campos_str = "";
         page()->setTitle('Caja');
-        page()->addEstigma('back_url', '/nymsa/factura/principal');
+        page()->addEstigma('back_url', '/facturacion/factura/principal');
         page()->addEstigma("TITULO", 'Cajero');
         page()->addEstigma("n_caja", $data['id']);
         page()->addEstigma("t_caja", $data['nombre']);
@@ -302,7 +302,7 @@ class facturaView {
         $this->load_settings();
         $campos_str = "";
         page()->setTitle('Caja');
-        page()->addEstigma('back_url', '/nymsa/factura/notas_remision');
+        page()->addEstigma('back_url', '/facturacion/factura/notas_remision');
         page()->addEstigma("TITULO", 'Cajero');
         page()->addEstigma("n_caja", $data['id']);
         page()->addEstigma("t_caja", $data['nombre']);

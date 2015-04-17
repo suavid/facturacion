@@ -69,7 +69,7 @@ class facturaController extends controller {
     public function detalle_fac(){
 
         $response = array();
-        $dataFac  = $this->model->detalle_fac($_POST['nofac']);
+        $dataFac  = $this->model->detalle_fac($_POST['nofac'], $_POST['cambio']);
         $response['html'] = $this->view->detalle_fac($dataFac);
         echo json_encode($response);
     }
@@ -273,6 +273,17 @@ class facturaController extends controller {
                 }
             } else {
                 if ($_POST['cantidad'] > 0) {
+                    
+                    $linea  = $_POST['linea'];
+                    $estilo = $_POST['estilo'];
+                    $color  = $_POST['color'];
+                    $talla  = $_POST['talla'];
+                    $nofac  = $_POST['factura'];
+                    $dsv_num = $_POST['cambio'];
+                    
+                    $query = "UPDATE facmesd SET dsv_num = $dsv_num WHERE linea=$linea AND cestilo='{$estilo}' AND ccolor = $color AND talla=$talla AND nofac=$nofac";
+                    data_model()->executeQuery($query);
+
                     $mv->get(0);
                     $mv->change_status($_POST);
                     $mv->save();

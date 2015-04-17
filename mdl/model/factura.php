@@ -314,14 +314,14 @@ class facturaModel extends object {
                 $prod->get(array("estilo"=>$estilo, "linea"=>$linea));
                 $prov = $this->get_child('proveedor');
                 $prov->get($prod->proveedor);
-                data_model()->newConnection(HOST, USER, PASSWORD, "db_system");
-                data_model()->setActiveConnection(1);
+                //data_model()->newConnection(HOST, USER, PASSWORD, "db_system");
+                //data_model()->setActiveConnection(1);
 
                 $system = $this->get_child('system');
                 $system->get(1);
 
 				data_model()->newConnection(HOST, USER, PASSWORD, "db_kardex");
-                data_model()->setActiveConnection(2);
+                data_model()->setActiveConnection(1);
 				$kardex   = connectTo("kardex", "mdl.model.kardex", "kardex");
 				$articulo = connectTo("kardex", "objects.articulo", "articulo");
 				//$kardex->generar_salida($item['linea'], $item['estilo'], $item['color'], $item['talla'], $item['cantidad'], "Facturacion de producto al contado");
@@ -588,14 +588,14 @@ class facturaModel extends object {
 		                $prod->get(array("estilo"=>$estilo, "linea"=>$linea));
 		                $prov = $this->get_child('proveedor');
 		                $prov->get($prod->proveedor);
-		                data_model()->newConnection(HOST, USER, PASSWORD, "db_system");
-		                data_model()->setActiveConnection(1);
+		                //data_model()->newConnection(HOST, USER, PASSWORD, "db_system");
+		                //data_model()->setActiveConnection(1);
 
 		                $system = $this->get_child('system');
 		                $system->get(1);
 
 						data_model()->newConnection(HOST, USER, PASSWORD, "db_kardex");
-		                data_model()->setActiveConnection(2);
+		                data_model()->setActiveConnection(1);
 						$kardex   = connectTo("kardex", "mdl.model.kardex", "kardex");
 						$articulo = connectTo("kardex", "objects.articulo", "articulo");
 						//$kardex->generar_salida($item['linea'], $item['estilo'], $item['color'], $item['talla'], $item['cantidad'], "Facturacion de producto al contado");
@@ -896,10 +896,10 @@ class facturaModel extends object {
 		echo json_encode($ret);
     }
 
-    public function detalle_fac($nofac){
+    public function detalle_fac($nofac, $cambio){
     	$query = "SELECT facmesd.linea AS linea, facmesd.cestilo as estilo, facmesd.ccolor as color, facmesd.talla as talla, facmesd.cantidad as cantidad, devueltos, facmesd.id as fid, nofac, facmesd.precio as precio FROM facmesd  LEFT JOIN devolucion ON 
               (facmesd.linea = devolucion.linea AND facmesd.cestilo = devolucion.estilo AND facmesd.ccolor = devolucion.color AND facmesd.talla = devolucion.talla) 
-              WHERE nofac = $nofac";
+              WHERE nofac = $nofac AND (dsv_num = 0 OR dsv_num = $cambio)";
         return data_model()->cacheQuery($query);
     }
 

@@ -444,3 +444,9 @@
 8: Undefined offset: 2 - url: /facturacion/factura/cambios - line: 41 - file: C:\wamp\www\facturacion\core\engine\frontController.php
 8: Undefined offset: 2 - url: /facturacion/error/not_found - line: 41 - file: C:\wamp\www\facturacion\core\engine\frontController.php
 8: Undefined offset: 2 - url: /facturacion/grid_tables/dsvdiah - line: 41 - file: C:\wamp\www\facturacion\core\engine\frontController.php
+8: Undefined offset: 2 - url: /facturacion/login/form - line: 41 - file: C:\wamp\www\facturacion\core\engine\frontController.php
+8: Undefined offset: 2 - url: /facturacion/error/not_found - line: 41 - file: C:\wamp\www\facturacion\core\engine\frontController.php
+8: Undefined offset: 2 - url: /facturacion/login/login - line: 41 - file: C:\wamp\www\facturacion\core\engine\frontController.php
+8: Undefined offset: 2 - url: /facturacion/login/form - line: 41 - file: C:\wamp\www\facturacion\core\engine\frontController.php
+8: Undefined offset: 2 - url: /facturacion/factura/principal - line: 41 - file: C:\wamp\www\facturacion\core\engine\frontController.php
+8: Undefined offset: 2 - url: /facturacion/error/not_found - line: 41 - file: C:\wamp\www\facturacion\core\engine\frontController.php

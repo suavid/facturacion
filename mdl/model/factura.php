@@ -33,6 +33,7 @@ class facturaModel extends object {
         $pedido_r = $data['pedido_r'];
         $caja = $data['caja'];
         $serie = $data['serie'];
+
         $response = array();
         $oCambio = $this->get_child('cambio');
         if ($oCambio->exists($cambio)) {
@@ -55,10 +56,12 @@ class facturaModel extends object {
                         $info['importe'] = $info['cantidad'] * $info['precio'];
                         $info['id_factura'] = $pedido;
                         $info['bodega'] = $item['bodega'];
-                        $info['linea '] = $item['linea'];
-                        $info['estilo '] = $item['estilo'];
-                        $info['color '] = $item['color'];
-                        $info['talla '] = $item['talla'];
+                        $info['costo'] = $item['costo'];
+                        $info['linea'] = $item['linea'];
+                        $info['estilo'] = $item['estilo'];
+                        $info['color'] = $item['color'];
+                        $info['talla'] = $item['talla'];
+                        $info['id_dsvd'] = $cambio;
                         $oDetalle->get(0);
                         $oDetalle->change_status($info);
                         $oDetalle->save();
@@ -299,7 +302,7 @@ class facturaModel extends object {
 			$facmesd->set_attr('id_facd','0');    // al parece no se ocupa
 			$facmesd->set_attr('devolucion','0'); // al parece no se ocupa
 			$facmesd->set_attr('dsv_caja','0');   // al parece no se ocupa
-			$facmesd->set_attr('dsv_num','0');    // al parece no se ocupa
+			$facmesd->set_attr('dsv_num', $item['id_dsvd']);    // al parece no se ocupa
 			$facmesd->set_attr('descuentop','0'); // al parece no se ocupa
 			
 			$facmesd->save();
@@ -343,21 +346,60 @@ class facturaModel extends object {
                     "sal_cantidad"=> $cantidad
                 );
 
+                $dato_entrada = array(
+                    "ent_cantidad"=> $cantidad,
+                    "ent_costo_unitario"=> $item['costo'],
+                    "ent_costo_total"=> $cantidad * $item['costo']
+                );
 
-                $kardex->nueva_salida(
-                    date("Y-m-d"), 
-                    "FACTURA AL CONTADO", 
-                    $dato_articulo, 
-                    0, 
-                    1000, 
-                    0, 
-                    $dato_proveedor,
-                    $system->periodo_actual,
-                    0, 
-                    $dato_salida,
-                    "$Dserie-$Dnofac",
-                    $item['bodega']
-                );    
+
+                if( $item['id_dsvd']>0 ){
+                	
+                	$kardex->nueva_entrada(
+	                    date("Y-m-d"), 
+	                    "ENTRADA POR CAMBIO DE PRODUCTO", 
+	                    $dato_articulo, 
+	                    0, 
+	                    1000, 
+	                    0, 
+	                    $dato_proveedor,
+	                    $system->periodo_actual,
+	                    0, 
+	                    $dato_entrada,
+	                    "$Dserie-$Dnofac",
+	                    $item['bodega']
+	                );
+
+                	list($kcantidad, $kcosto_unitario, $kcosto_total) = $kardex->estado_actual($articulo->no_articulo($linea, $estilo, $color, $talla), $item['bodega']); 
+                	
+                	data_model()->setActiveConnection(0);
+                	
+                	$this->get_child('control_precio')->cambiar_costo($linea, $estilo, $color, $talla, $kcosto_unitario);
+
+                	$oCambio = $this->get_child('cambio');
+                	$oCambio->get($item['id_dsvd']);
+                	$oCambio->factura = $nofac;
+                	$oCambio->activo  = 0;
+                	$oCambio->save();
+
+                }else{
+
+                	/* indica que no es una fila correspondiente a un cambio */
+                	$kardex->nueva_salida(
+	                    date("Y-m-d"), 
+	                    "FACTURA AL CONTADO", 
+	                    $dato_articulo, 
+	                    0, 
+	                    1000, 
+	                    0, 
+	                    $dato_proveedor,
+	                    $system->periodo_actual,
+	                    0, 
+	                    $dato_salida,
+	                    "$Dserie-$Dnofac",
+	                    $item['bodega']
+	                );
+                }    
 				
 				data_model()->setActiveConnection(0);
 			}
@@ -617,22 +659,61 @@ class facturaModel extends object {
 		                    "sal_cantidad"=> $cantidad
 		                );
 
+		                $dato_entrada = array(
+		                    "ent_cantidad"=> $cantidad,
+		                    "ent_costo_unitario"=> $item['costo'],
+		                    "ent_costo_total"=> $cantidad * $item['costo']
+		                );
+
 		                $Dserie = $seriemd->get_attr('serie');
 
-		                $kardex->nueva_salida(
-		                    date("Y-m-d"), 
-		                    "FACTURA AL CREDITO", 
-		                    $dato_articulo, 
-		                    0, 
-		                    1000, 
-		                    0, 
-		                    $dato_proveedor,
-		                    $system->periodo_actual,
-		                    0, 
-		                    $dato_salida,
-		                    "$Dserie-$nofac",
-		                    $item['bodega']
-		                );    
+		                if( $item['id_dsvd']>0 ){
+                	
+		                	$kardex->nueva_entrada(
+			                    date("Y-m-d"), 
+			                    "ENTRADA POR CAMBIO DE PRODUCTO", 
+			                    $dato_articulo, 
+			                    0, 
+			                    1000, 
+			                    0, 
+			                    $dato_proveedor,
+			                    $system->periodo_actual,
+			                    0, 
+			                    $dato_entrada,
+			                    "$Dserie-$nofac",
+			                    $item['bodega']
+			                );
+
+		                	list($kcantidad, $kcosto_unitario, $kcosto_total) = $kardex->estado_actual($articulo->no_articulo($linea, $estilo, $color, $talla), $item['bodega']); 
+		                	
+		                	data_model()->setActiveConnection(0);
+		                	
+		                	$this->get_child('control_precio')->cambiar_costo($linea, $estilo, $color, $talla, $kcosto_unitario);
+
+		                	$oCambio = $this->get_child('cambio');
+		                	$oCambio->get($item['id_dsvd']);
+		                	$oCambio->factura = $nofac;
+		                	$oCambio->activo  = 0;
+		                	$oCambio->save();
+
+		                }else{
+
+			                $kardex->nueva_salida(
+			                    date("Y-m-d"), 
+			                    "FACTURA AL CREDITO", 
+			                    $dato_articulo, 
+			                    0, 
+			                    1000, 
+			                    0, 
+			                    $dato_proveedor,
+			                    $system->periodo_actual,
+			                    0, 
+			                    $dato_salida,
+			                    "$Dserie-$nofac",
+			                    $item['bodega']
+			                );    
+
+		            	}
 						
 						data_model()->setActiveConnection(0);
 					}
@@ -897,7 +978,7 @@ class facturaModel extends object {
     }
 
     public function detalle_fac($nofac, $cambio){
-    	$query = "SELECT facmesd.linea AS linea, facmesd.cestilo as estilo, facmesd.ccolor as color, facmesd.talla as talla, facmesd.cantidad as cantidad, devueltos, facmesd.id as fid, nofac, facmesd.precio as precio FROM facmesd  LEFT JOIN devolucion ON 
+    	$query = "SELECT facmesd.linea AS linea, facmesd.cestilo as estilo, facmesd.ccolor as color, facmesd.talla as talla, facmesd.cantidad as cantidad, devueltos, facmesd.id as fid, nofac, facmesd.precio as precio, facmesd.costo as costo FROM facmesd  LEFT JOIN devolucion ON 
               (facmesd.linea = devolucion.linea AND facmesd.cestilo = devolucion.estilo AND facmesd.ccolor = devolucion.color AND facmesd.talla = devolucion.talla) 
               WHERE nofac = $nofac AND (dsv_num = 0 OR dsv_num = $cambio)";
         return data_model()->cacheQuery($query);
@@ -1037,7 +1118,7 @@ class facturaModel extends object {
     }
 
     public function existe($linea, $estilo, $color, $talla, $id_factura) {
-        $query = "SELECT * FROM detalle_factura WHERE linea=$linea AND estilo='{$estilo}' AND color=$color AND talla=$talla AND id_factura=$id_factura";
+        $query = "SELECT * FROM detalle_factura WHERE linea=$linea AND estilo='{$estilo}' AND color=$color AND talla=$talla AND id_factura=$id_factura AND id_dsvd < 1";
         data_model()->executeQuery($query);
         if (data_model()->getNumRows() > 0)
             return true;

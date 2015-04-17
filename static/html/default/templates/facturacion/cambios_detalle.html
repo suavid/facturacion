@@ -144,7 +144,7 @@
         }
     }
 
-    function devolver(event, linea, estilo, color, talla, nofac, cantidad, precio, id){
+    function devolver(event, linea, estilo, color, talla, nofac, cantidad, precio, costo, id){
     //alert(talla);
         devueltos = $(id).val();
         if (!isNaN(cantidad))
@@ -159,6 +159,7 @@
                 "talla"   :talla,
                 "cantidad":devueltos,
                 "precio"  :precio,
+                "costo"  :costo,
                 "factura" :nofac,
                 "cambio"  :{cambio}
             };

@@ -409,6 +409,217 @@ class facturaModel extends object {
 		data_model()->executeQuery($query);
     }
 
+    public function consignar($id_factura, $serie) {
+		$query = "START TRANSACTION";
+		data_model()->executeQuery($query);
+		$query = "UPDATE factura SET  facturado = 1, formapago = 3 WHERE id_factura = $id_factura";
+		data_model()->executeQuery($query);
+		$query = "UPDATE serie SET ultimo_utilizado = (ultimo_utilizado + 1) WHERE id = $serie";
+		data_model()->executeQuery($query);
+		$query = "SELECT ultimo_utilizado FROM serie WHERE id = $serie";
+		data_model()->executeQuery($query);
+		$ret   = data_model()->getResult()->fetch_assoc();
+			
+		$nodoc = $ret['ultimo_utilizado'];  // numero de nota de remision que corresponde
+		
+		/* creacion de modelos e inicializacion de los mismos */
+		$this->get($id_factura); 					// inicializacion de pedidos
+		$remisionH = $this->get_child('nota_remision');		// creacion de modelo para cabecera de facturas
+		$remisionH->get(0);							// inicializacion de modelo para cabecera de facturas
+		$remisionD = $this->get_child('detalle_nota_remision');		// creacion de modelo para detalle de facturas
+		$remisionD->get(0);							// inicializacion de modelo para detalle de facturas
+		$seriemd   = $this->get_child('serie');		// creacion de modelo para serie de documentos 
+		$seriemd->get($serie);							// se inicializa para la serie actual de factura
+		$cpr	 = $this->get_child('caja_pedido_referencia'); // creacion de modelo para caja_pedido_referencia	
+		$cliente = $this->get_sibling('cliente');   // creacion de modelo para cliente
+		$cliente->get($this->get_attr('id_cliente'));
+		$producto = $this->get_child('producto');
+		
+		/* proceso de creacion de la cabecera de la nota de remision */
+		$remisionH->set_attr('caja', $this->get_attr('caja'));
+		$remisionH->set_attr('codtra', '2A');
+		$remisionH->set_attr('serie', $seriemd->get_attr('serie'));
+		$remisionH->set_attr('nodoc', $nodoc);
+		$remisionH->set_attr('fedoc', date('Y-m-d'));
+		$remisionH->set_attr('noped', $cpr->obtener_pedido($this->get_attr('caja'), $id_factura));
+		$remisionH->set_attr('rd_cod', $this->get_attr('id_cliente'));
+		
+		$remisionH->set_attr('codven', '0');  // por el momento ya que aun no se migran empleados
+		
+		$remisionH->set_attr('venta_b', $this->get_attr('subtotal'));
+		$remisionH->set_attr('descuento', $this->get_attr('descuento'));
+		$remisionH->set_attr('venta_n', $this->get_attr('total'));
+		$remisionH->set_attr('formapago', $this->get_attr('formapago'));
+		$remisionH->set_attr('efectivo', $this->get_attr('efectivo'));
+		$remisionH->set_attr('cheque', $this->get_attr('cheque'));
+		$remisionH->set_attr('tarjeta', $this->get_attr('tarjeta'));
+		$remisionH->set_attr('ta_numero', $this->get_attr('ta_numero'));
+		$remisionH->set_attr('ta_casa', $this->get_attr('ta_casa'));
+		$remisionH->set_attr('deposito', $this->get_attr('deposito'));
+		
+		// esta siendo facturado al contado
+		$credito = '0';
+		
+		$remisionH->set_attr('credito', $credito); // si formapago == 2 poner credito a 1, caso contrario a cero
+		$remisionH->set_attr('financiado', $this->get_attr('financiado'));
+		$remisionH->set_attr('financiera', $this->get_attr('financiera'));
+		$remisionH->set_attr('facturado', '0'); // deberia ser 1 pero todas estan en cero
+		$remisionH->set_attr('anulado', '0');   // se acaba de crear, no puede estar anulada
+		$remisionH->set_attr('despacho', '0');  // no se ocupa al parecer
+		$remisionH->set_attr('prepedido', '0'); // no se ocupa al parecer
+		$remisionH->set_attr('usuario', '0');   // no se ocupa al parecer
+		
+		$nomcli = '';
+		$nomcli .= $cliente->get_attr('primer_nombre').' ';
+		$nomcli .= $cliente->get_attr('segundo_nombre').' ';
+		$nomcli .= $cliente->get_attr('primer_apellido').' ';
+		$nomcli .= $cliente->get_attr('segundo_apellido');
+		
+		$remisionH->set_attr('nomcli', $nomcli);
+		$remisionH->set_attr('dircli', $cliente->get_attr('direccion'));
+		$remisionH->set_attr('nitcli', $cliente->get_attr('nit'));
+		$remisionH->set_attr('venta', $this->get_attr('venta'));
+		$remisionH->set_attr('servicio', $this->get_attr('servicio'));
+		$remisionH->set_attr('monto', $this->get_attr('monto'));
+		$remisionH->set_attr('iva', $this->get_attr('iva'));
+		$remisionH->set_attr('total', $this->get_attr('total'));
+		$remisionH->set_attr('facturadop', '0');
+		$remisionH->set_attr('fefacturad', '');
+		$remisionH->set_attr('descuentop', '0');
+		$Dserie = "";
+		$Dnofac = "";
+		$remisionH->save();
+		//$kardex = $this->get_child('kardex');
+
+		// obtencion de los detalles de las facturas
+		$query = "SELECT * FROM detalle_factura WHERE id_factura=$id_factura";
+		data_model()->executeQuery($query);
+		$buffer_detail = array();
+		while($result = data_model()->getResult()->fetch_assoc()){
+			
+			$buffer_detail[] = $result;
+		}
+		
+		// proceso del detalle de la factura
+		foreach($buffer_detail as $item){
+			
+			$info = array();
+			$info['linea']  = $item['linea'];
+			$info['estilo'] = $item['estilo'];
+			$producto->get($info); 
+			
+			$remisionD->get(0);
+			
+			$Dserie = $seriemd->get_attr('serie');
+			$Dnodoc = $nodoc;
+			$remisionD->set_attr('cordia','0');  // por el momento parece que no se usa
+			$remisionD->set_attr('caja',$this->get_attr('caja'));
+			$remisionD->set_attr('codtra','2A');
+			$remisionD->set_attr('serie',$seriemd->get_attr('serie'));
+			$remisionD->set_attr('nodoc',$nodoc);
+			$remisionD->set_attr('fedoc',date('Y-m-d'));
+			$remisionD->set_attr('hora',date('H:m:s'));
+			$remisionD->set_attr('bodega', $item['bodega']);
+			$remisionD->set_attr('linea', $item['linea']); 
+			$remisionD->set_attr('cestilo', $item['estilo']);
+			$remisionD->set_attr('estilo','0'); 
+			$remisionD->set_attr('ccolor', $item['color']);
+			$remisionD->set_attr('talla', $item['talla']);
+			$remisionD->set_attr('precio', $item['precio']);
+			$remisionD->set_attr('costo',$item['costo']);      // por el momento no se toma en cuenta, consultar si es necesario
+			$remisionD->set_attr('cantidad', $item['cantidad']);
+			$remisionD->set_attr('pordes', $item['pordes']);
+			$remisionD->set_attr('valdes','0');     // no se han implementado vales de descuento
+			$remisionD->set_attr('importe', $item['importe']); 
+			$remisionD->set_attr('propiedad', $item['propiedad']);
+			$remisionD->set_attr('factura','0');    // al parece no se ocupa
+			$remisionD->set_attr('caja_a','0');     // al parece no se ocupa
+			$remisionD->set_attr('catalogo', $producto->get_attr('catalogo'));
+			$remisionD->set_attr('entregado','0');  // al parece no se ocupa
+			$remisionD->set_attr('item_inc','0');   // al parece no se ocupa
+			$remisionD->set_attr('id_factura','0'); // al parece no se ocupa
+			$remisionD->set_attr('id_prod','0');    // al parece no se ocupa
+			$remisionD->set_attr('rd_cod','0');     // al parece no se ocupa
+			$remisionD->set_attr('codpro','0');     // al parece no se ocupa  
+			$remisionD->set_attr('pagina', $producto->get_attr('n_pagina'));
+			$remisionD->set_attr('id_facd','0');    // al parece no se ocupa
+			$remisionD->set_attr('devolucion','0'); // al parece no se ocupa
+			$remisionD->set_attr('dsv_caja','0');   // al parece no se ocupa
+			$remisionD->set_attr('dsv_num', $item['id_dsvd']);    // al parece no se ocupa
+			$remisionD->set_attr('descuentop','0'); // al parece no se ocupa
+			
+			$remisionD->save();
+			
+			if(isInstalled("kardex")){
+				$linea = $item['linea'];
+				$estilo = $item['estilo'];
+				$color = $item['color'];
+				$talla = $item['talla'];
+				$cantidad = $item['cantidad'];
+				$prod = $this->get_child('producto');
+                $prod->get(array("estilo"=>$estilo, "linea"=>$linea));
+                $prov = $this->get_child('proveedor');
+                $prov->get($prod->proveedor);
+                //data_model()->newConnection(HOST, USER, PASSWORD, "db_system");
+                //data_model()->setActiveConnection(1);
+
+                $system = $this->get_child('system');
+                $system->get(1);
+
+				data_model()->newConnection(HOST, USER, PASSWORD, "db_kardex");
+                data_model()->setActiveConnection(1);
+				$kardex   = connectTo("kardex", "mdl.model.kardex", "kardex");
+				$articulo = connectTo("kardex", "objects.articulo", "articulo");
+				//$kardex->generar_salida($item['linea'], $item['estilo'], $item['color'], $item['talla'], $item['cantidad'], "Facturacion de producto al contado");
+
+				$articulo->nuevo_articulo($linea, $estilo, $color, $talla);
+                        
+                $dato_articulo = array(
+                    'codigo'=>$articulo->no_articulo($linea, $estilo, $color, $talla),
+                    'articulo'=>"$linea-$estilo-$color-$talla",
+                    'descripcion'=> $prod->descripcion
+                );
+
+                $dato_proveedor = array(
+                    'nombre_proveedor'=> $prov->nombre,
+                    'nacionalidad_proveedor'=> $prov->nacionalidad
+                );
+
+                $dato_salida = array(
+                    "sal_cantidad"=> $cantidad
+                );
+
+                $dato_entrada = array(
+                    "ent_cantidad"=> $cantidad,
+                    "ent_costo_unitario"=> $item['costo'],
+                    "ent_costo_total"=> $cantidad * $item['costo']
+                );
+
+
+   
+                $kardex->nueva_salida(
+	                date("Y-m-d"), 
+	                "SALIDA DE INVENTARIO POR CONSIGNACION", 
+	                $dato_articulo, 
+	                0, 
+	                1000, 
+	                0, 
+	                $dato_proveedor,
+	                $system->periodo_actual,
+	                0, 
+	                $dato_salida,
+	                "$Dserie-$Dnodoc",
+	                $item['bodega']
+	            ); 
+				
+				data_model()->setActiveConnection(0);
+			}
+		}
+		
+		$query = "COMMIT";
+		data_model()->executeQuery($query);
+    }
+
     public function cf_contado($id_factura, $serie) {
         $query = "START TRANSACTION";
         data_model()->executeQuery($query);
@@ -1103,6 +1314,11 @@ class facturaModel extends object {
         $query = "SELECT pordes as porcentaje, valdes as descuento, importe, cantidad, descripcion, precio FROM facmesd as f JOIN producto as p ON (f.linea = p.linea AND f.cestilo = p.estilo  ) WHERE nofac=$NoFactura AND serie='$serie'";
         return data_model()->cacheQuery($query);
     }
+
+    public function DetalleRemision($NoFactura, $serie) {
+        $query = "SELECT pordes as porcentaje, valdes as descuento, importe, cantidad, descripcion, precio FROM detalle_nota_remision as f JOIN producto as p ON (f.linea = p.linea AND f.cestilo = p.estilo  ) WHERE nodoc=$NoFactura AND serie='$serie'";
+        return data_model()->cacheQuery($query);
+    }
 	
 	public function datos_facturacion($noped, $caja){
 		$query = "SELECT monto, iva, venta_b, descuento, total, nofac, serie FROM facmesh WHERE noped=$noped AND caja=$caja";
@@ -1110,6 +1326,14 @@ class facturaModel extends object {
 		$result = data_model()->getResult()->fetch_assoc();
 		
 		return array($result['monto'], $result['iva'], $result['venta_b'], $result['descuento'], $result['total'], $result['nofac'], $result['serie']);
+	}
+
+	public function datos_remision($noped, $caja){
+		$query = "SELECT monto, iva, venta_b, descuento, total, nodoc, serie FROM nota_remision WHERE noped=$noped AND caja=$caja";
+		data_model()->executeQuery($query);
+		$result = data_model()->getResult()->fetch_assoc();
+		
+		return array($result['monto'], $result['iva'], $result['venta_b'], $result['descuento'], $result['total'], $result['nodoc'], $result['serie']);
 	}
 
     public function cerrarFactura($NoFactura) {

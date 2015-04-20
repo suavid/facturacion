@@ -114,11 +114,16 @@
 
     var dsOption = {
         fields: [
-            {name: 'numero'},
+            {name: 'id'},
             {name: 'cliente'},
             {name: 'fecha'},
+            {name: 'editable'},
             {name: 'en_factura'},
-            {name: 'editable'}
+            {name: 'activo'},
+            {name: 'caja'},
+            {name: 'serie'},
+            {name: 'pedido'},
+            {name: 'factura'}
         ],
         recordType: 'object'
     }
@@ -151,6 +156,8 @@
         clickStartEdit: true,
         defaultRecord: {'id': "00", 'nombre': ""},
         pageSize: 10,
+        remotePaging: true,
+        autoLoad: true,
         allowCustomSkin: true,
         skin: 'mac',
         toolbarContent: 'reload | filter | nav state'

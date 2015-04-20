@@ -287,7 +287,7 @@
 				$('#festado option').remove();
 				
                 if(d.estado==1){
-					$('#festado').append("<option>FACTURADO</option>");
+					$('#festado').append("<option>PROCESADO</option>");
 				}else{
 					$('#festado').append("<option>PENDIENTE</option>");
 				}
@@ -299,7 +299,9 @@
 				if(d.tipo == 2)
 					$('#ftipo').append("<option>CREDITO</option>");
 				if(d.tipo == 0)
-					$('#ftipo').append("<option>PEDIDO</option>");		
+					$('#ftipo').append("<option>PEDIDO</option>");
+                if(d.tipo == 3)
+                    $('#ftipo').append("<option>CONSIGNACION</option>");    		
 				
                 $('#codigo_cliente').attr("disable", "disabled");
 				$('#fecha').attr("disable", "disabled");
@@ -869,16 +871,15 @@
                     </li>
 					
                     <li style="float:left;width:140px;">
-                        Tipo
-                        <br/>
-                        <select value="" id="ftipo" style="width:130px;" disabled="disabled">
-                        </select>
-                    </li>
-
-                    <li style="float:left;width:140px;">
                         Estado
                         <br/>
                         <select value="" id="festado" style="width:130px;" disabled="disabled">
+                        </select>
+                    </li>
+                    <li style="float:left;width:140px;">
+                        Forma pago
+                        <br/>
+                        <select value="" id="ftipo" style="width:130px;" disabled="disabled">
                         </select>
                     </li>
                 </ul>
@@ -1059,12 +1060,12 @@
 
         </div>
     </div>
-    <div style="width:250px;float:left;text-align:right;background:#F3F3F3;padding-right:30px;margin-top:10px;margin-bottom: 30px;">
+    <div style="width:300px;float:left;text-align:right;background:#F3F3F3;padding-right:30px;margin-top:10px;margin-bottom: 30px;">
         <form>
             <div>
                 <h6>[Caja No. {n_caja} / {t_caja}]</h6>
                 <h6>Siguiente Pedido: <span id="NoFactura">{numero_factura}</span> </h6>
-				<h6>Factura con serie: {codigo_serie_factura}</h6>
+				<h6>Serie factura: {codigo_serie_factura} / Serie remisión: {codigo_serie_remision}</h6>
                 <div style="padding:0px;">
                     (+) Flete <input type="checkbox" id="FLETE" disabled="disabled" />
                 </div>
@@ -1176,7 +1177,7 @@
                                         '<br/><br/><div style="text-align:center;">',
                                         '<button class="shortcut" id="fcredito" onclick="facturar_credito();"><i class="icon-credit-card"></i>Crédito</button>',
                                         '<button class="shortcut" id="fcontado" onclick="facturar_contado();"><i class="icon-dollar"></i>Contado</button>',
-                                        '<button class="shortcut" id="ffiscal" onclick="credito_fiscal();"><i class="icon-briefcase"></i>Crédito fiscal</button>'
+                                        '<button class="shortcut" id="ffiscal" onclick="consignar();"><i class="icon-briefcase"></i>Consignar mercadería</button>'
                                     ];
                                     if (window.nt) htmls.pop();
                                         html = htmls.join("");
@@ -1189,6 +1190,42 @@
                 } else{
                     alert("No se puede procesar un saldo menor o igual a cero");
                 }
+            }
+
+            function consignar(){
+                /* proceso de consignacion */
+
+                factura = window.codPedido; // numero de pedido
+
+                uri = "/facturacion/factura/consignar"; // url de proceso de facturacion contado
+
+                resource = [ uri, factura ].join("/");
+                request = $.post(resource, { "serie": {serie_remision} }, function(data){
+
+                      // punto de respuesta de la peticion
+                    window.editable = false;
+                    imp();
+                    window.codPedido = 0;
+                    obtenerDatosCliente(0);
+                      
+                    var grid = Sigma.$grid("factura_grid");
+                    grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
+                    grid.reload();
+                    $('#n_pedido').val("0");
+                    $('#codigo_cliente').val("0");
+                    $('#codigo_cliente').removeAttr("disabled");
+                    $('#fecha').removeAttr("disabled");
+                    $('#n_pedido').focus();
+                    desHabilitar();
+                    
+                    if (window.cerrar)
+                        window.close();
+                    
+                    $.Dialog.close();
+                    $('#DESCUENTO').val("");
+                    $('#TOTAL').val("");
+                    $('#SUBTOTAL').val("");
+                   }, "json");   
             }
 
             function credito_fiscal(){

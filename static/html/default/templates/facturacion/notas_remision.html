@@ -55,17 +55,21 @@
 </div>
 <section style="display:table;">
     <div class="toolbar transparent">
-        <button onclick="nueva_nota();"><i class="icon-new on-left"></i>Nuevo</button>
         <button onclick="notas_anuladas();"><i class="icon-search on-left"></i>Notas anuladas</button>
         <button onclick="notas_procesadas();"><i class="icon-search on-left"></i>Notas procesadas</button>
     </div>
-    <h3>Pendientes de procesar</h3>
+    <br/><br/>
+    <h2>Pendientes de procesar</h2>
     <div id="bigbox" style="margin:15px;display:!none;float:left;">
         <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
 
         </div>
     </div>
     <div style="width:400px;text-align:right;background:#F3F3F3;padding:15px;float:left;margin-top:15px;">
+        <input type="text" id="codigo_cliente" placeholder="Código del cliente"/> <button onclick="cargar_cliente();
+                filtrar_notas();"><i class="icon-search"></i></button>
+        <input type="text" id="nombre" disabled="disabled" />
+        <br/><br/>
         Limite de credito
         <input type="text" id="credito" readonly="readonly" />
         <br/>
@@ -108,10 +112,6 @@
         </table>
     </div>
 </section>
-<h4>Filtar notas por </h4>
-Cliente: <input type="text" id="codigo_cliente" placeholder="codigo del cliente"/> <button onclick="cargar_cliente();
-        filtrar_notas();"><i class="icon-search"></i></button>
-<input type="text" id="nombre" style="width:400px;" disabled="disabled" />
 
 <script type="text/javascript" >
 
@@ -292,7 +292,7 @@ Cliente: <input type="text" id="codigo_cliente" placeholder="codigo del cliente"
         loadURL: '/facturacion/factura/cargarRemisionPendiente',
         saveURL: '',
         width: "750", //"100%", // 700,
-        height: "260", //"100%", // 330,
+        height: "320", //"100%", // 330,
         container: 'gridbox',
         replaceContainer: true,
         encoding: 'UTF-8', // Sigma.$encoding(), 
@@ -300,7 +300,11 @@ Cliente: <input type="text" id="codigo_cliente" placeholder="codigo del cliente"
         columns: colsOption,
         clickStartEdit: true,
         defaultRecord: {'id': "00", 'nombre': ""},
-        pageSize: 30,
+        pageSize: 10,
+        remotePaging: true,
+        autoLoad: true,
+        allowCustomSkin: true,
+        skin: 'mac',
         toolbarContent: 'reload | filter | nav state'
     };
 
@@ -347,7 +351,7 @@ Cliente: <input type="text" id="codigo_cliente" placeholder="codigo del cliente"
         loadURL: '/facturacion/factura/cargarRemisionAnulada',
         saveURL: '',
         width: "760", //"100%", // 700,
-        height: "260", //"100%", // 330,
+        height: "360", //"100%", // 330,
         container: 'gridbox4',
         replaceContainer: true,
         encoding: 'UTF-8', // Sigma.$encoding(), 
@@ -355,7 +359,11 @@ Cliente: <input type="text" id="codigo_cliente" placeholder="codigo del cliente"
         columns: colsOption4,
         clickStartEdit: true,
         defaultRecord: {'id': "00", 'nombre': ""},
-        pageSize: 30,
+        pageSize: 10,
+        remotePaging: true,
+        autoLoad: true,
+        allowCustomSkin: true,
+        skin: 'mac',
         toolbarContent: 'reload | filter | nav state'
     };
 
@@ -402,7 +410,7 @@ Cliente: <input type="text" id="codigo_cliente" placeholder="codigo del cliente"
         loadURL: '/facturacion/factura/cargarRemisionProcesada',
         saveURL: '',
         width: "760", //"100%", // 700,
-        height: "260", //"100%", // 330,
+        height: "360", //"100%", // 330,
         container: 'gridbox5',
         replaceContainer: true,
         encoding: 'UTF-8', // Sigma.$encoding(), 
@@ -410,7 +418,11 @@ Cliente: <input type="text" id="codigo_cliente" placeholder="codigo del cliente"
         columns: colsOption5,
         clickStartEdit: true,
         defaultRecord: {'id': "00", 'nombre': ""},
-        pageSize: 30,
+        pageSize: 10,
+        allowCustomSkin: true,
+        skin: 'mac',
+        remotePaging: true,
+        autoLoad: true,
         toolbarContent: 'reload | filter | nav state'
     };
 
@@ -460,6 +472,10 @@ Cliente: <input type="text" id="codigo_cliente" placeholder="codigo del cliente"
         clickStartEdit: true,
         defaultRecord: {'id': "00", 'nombre': ""},
         pageSize: 10,
+        remotePaging: true,
+        autoLoad: true,
+        allowCustomSkin: true,
+        skin: 'mac',
         toolbarContent: 'nav state'
     };
 
@@ -485,7 +501,7 @@ Cliente: <input type="text" id="codigo_cliente" placeholder="codigo del cliente"
     }
 
     function entran_render(value, record, columnObj, grid, colNo, rowNo) {
-        return '<input type="text" onkeyup="validar_entrada(event,' + record['cantidad'] + ',' + record['id'] + ')"/>';
+        return '<input type="text" value="0" onkeyup="validar_entrada(event,' + record['cantidad'] + ',' + record['id'] + ')"/>';
     }
 
     function validar_entrada(event, cantidad, id) {
@@ -531,6 +547,10 @@ Cliente: <input type="text" id="codigo_cliente" placeholder="codigo del cliente"
         clickStartEdit: true,
         defaultRecord: {'id': "00", 'nombre': ""},
         pageSize: 10,
+        remotePaging: true,
+        autoLoad: true,
+        allowCustomSkin: true,
+        skin: 'mac',
         toolbarContent: 'nav state'
     };
 
@@ -589,6 +609,7 @@ Cliente: <input type="text" id="codigo_cliente" placeholder="codigo del cliente"
     function cerrar_proceso() {
         uri = '/facturacion/factura/reset_proceso';
         data = {
+
             "id": window.referencia_nota
         };
         rq = $.post(uri, data, function(d) {

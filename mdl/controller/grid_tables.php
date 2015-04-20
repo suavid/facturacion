@@ -674,7 +674,7 @@ class grid_tablesController extends controller {
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
         $pageSize = 10; //10 rows per page
         //to get how many records totally.
-        $sql = "select count(*) as cnt from cambio ";
+        $sql = "select count(*) as cnt from cambio WHERE activo = 1";
         $handle = mysqli_query(conManager::getConnection(), $sql);
         $row = mysqli_fetch_object($handle);
         $totalRec = $row->cnt;
@@ -683,7 +683,7 @@ class grid_tablesController extends controller {
         $pageNo = 1;
         endif;
         if ($json->{'action'} == 'load'):
-        $sql = "select * from cambio ORDER BY id DESC limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize . ";";
+        $sql = "select * from cambio WHERE activo = 1 ORDER BY id DESC limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize . ";";
         $handle = mysqli_query(conManager::getConnection(), $sql);
         $retArray = array();
         while ($row = mysqli_fetch_object($handle)):

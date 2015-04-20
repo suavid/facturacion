@@ -89,6 +89,8 @@ class facturaController extends controller {
             $query = "UPDATE detalle_factura SET entran = 0 WHERE id_factura=$id";
             data_model()->executeQuery($query);
         }
+
+        echo json_encode(array("msg"=>""));
     }
 
     public function anular_nota_remision() {
@@ -716,10 +718,18 @@ class facturaController extends controller {
 		
 		$no_pedido = $cpref->obtener_pedido($caja, $id_factura); 
 		
-		list( $monto, $iva, $subtotal, $descuento, $total, $no_factura, $serie ) = $this->model->datos_facturacion($no_pedido, $caja);
+        if($this->model->formapago==1 || $this->model->formapago==2){
+
+            list( $monto, $iva, $subtotal, $descuento, $total, $no_factura, $serie ) = $this->model->datos_facturacion($no_pedido, $caja);
+            $cache     = array();
+            $cache[0]  = $this->model->DetalleFactura($no_factura, $serie);
+
+        }else if($this->model->formapago==3){
+            list( $monto, $iva, $subtotal, $descuento, $total, $no_factura, $serie ) = $this->model->datos_remision($no_pedido, $caja);
+            $cache     = array();
+            $cache[0]  = $this->model->DetalleRemision($no_factura, $serie);
+        }
 		
-		$cache     = array();
-        $cache[0]  = $this->model->DetalleFactura($no_factura, $serie);
 		
         $flete_c   = 0.0;
         $total = $total + 0.0;
@@ -895,6 +905,12 @@ class facturaController extends controller {
      public function contado($id_factura) {
         $serie = $_POST['serie'];
         $this->model->contado($id_factura, $serie);
+        echo json_encode(array("msg"=>""));
+     }
+
+     public function consignar($id_factura) {
+        $serie = $_POST['serie'];
+        $this->model->consignar($id_factura, $serie);
         echo json_encode(array("msg"=>""));
      }
 
@@ -1240,7 +1256,7 @@ class facturaController extends controller {
         $cliente = (isset($_POST['cliente'])) ? " AND id_cliente=" . $_POST['cliente'] : "";
 
         //to get how many records totally.
-        $sql = "select count(*) as cnt from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE tipo='REMISION' AND estado='PENDIENTE'" . $cliente;
+        $sql = "select count(*) as cnt from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE formapago=3 AND estado='PENDIENTE'" . $cliente;
         $handle = mysqli_query(conManager::getConnection(), $sql);
         $row = mysqli_fetch_object($handle);
         $totalRec = $row->cnt;
@@ -1251,7 +1267,7 @@ class facturaController extends controller {
         endif;
 
         if ($json->{'action'} == 'load'):
-            $sql = "select * from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE tipo='REMISION' AND estado='PENDIENTE'" . $cliente . " limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
+            $sql = "select * from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE formapago=3 AND estado='PENDIENTE' " . $cliente . " limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
             $handle = mysqli_query(conManager::getConnection(), $sql);
             $retArray = array();
             while ($row = mysqli_fetch_object($handle)):

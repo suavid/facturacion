@@ -202,21 +202,22 @@
     var dsOption = {
         fields: [
             {name: 'serie'},
-            {name: 'pedido'},
-            {name: 'caja'},
-            {name: 'pedido'},
-            {name: 'fecha'},
-            {name: 'estado'},
-            {name: 'subtotal'},
-            {name: 'descuento'},
-            {name: 'total'}
+			{name: 'nodoc'},
+			{name: 'caja'},
+			{name: 'rd_cod'},
+			{name: 'fedoc'},
+			{name: 'facturado'},
+			{name: 'venta_b'},
+			{name: 'descuento'},
+			{name: 'venta_n'},
+			{name: 'noped'}
         ],
         recordType: 'object'
     }
 
     function acciones_render(value, record, columnObj, grid, colNo, rowNo) {
-        var detalle = '<a href="javascript:void(0);" onclick="ver_detalle(' + record['pedido'] + ',' + record['caja'] + ');"> ver detalle </a>';
-        var procesar = '<a href="javascript:void(0);" onclick="procesar(' + record['pedido'] + ',' + record['caja'] + ');"> procesar </a>';
+        var detalle  = '<a href="javascript:void(0);" onclick="ver_detalle(' + record['noped'] + ',' + record['caja'] + ');"> ver detalle </a>';
+        var procesar = '<a href="javascript:void(0);" onclick="procesar(' + record['noped'] + ',' + record['caja'] + ');"> procesar </a>';
 
         return detalle + '|' + procesar;
     }
@@ -273,16 +274,16 @@
     }
 
     var colsOption = [
-        {id: 'codigo_factura', header: "Serie ", width: 50},
-        {id: 'pedido', header: "No. Pedido", width: 72},
+        {id: 'serie', header: "Serie ", width: 50},
+        {id: 'nodoc', header: "No. Doc", width: 72},
         {id: 'caja', header: "Caja", width: 50},
-        {id: 'id_cliente', header: "Cliente", width: 50},
-        {id: 'fecha', header: "Fecha", width: 80},
-        {id: 'estado', header: "Estado", width: 80},
-        {id: 'subtotal', header: "Subtotal", width: 80},
+        {id: 'rd_cod', header: "Cliente", width: 50},
+        {id: 'fedoc', header: "Fecha", width: 80},
+        {id: 'facturado', header: "Estado", width: 80, renderer: estado_render},
+        {id: 'venta_b', header: "Subtotal", width: 80},
         {id: 'descuento', header: "Descuento", width: 70},
-        {id: 'total', header: "Total", width: 70},
-        {id: 'acciones', header: "Acciones [click]", width: 140, renderer: acciones_render}
+        {id: 'venta_n', header: "Total", width: 70},
+        {id: 'acciones', header: "Acciones [click]", width: 145, renderer: acciones_render}
 
     ];
 
@@ -462,8 +463,8 @@
         id: grid_demo2_id,
         loadURL: '',
         saveURL: '',
-        width: "650", //"100%", // 700,
-        height: "260", //"100%", // 330,
+        width: "653", //"100%", // 700,
+        height: "360", //"100%", // 330,
         container: 'gridbox2',
         replaceContainer: true,
         encoding: 'UTF-8', // Sigma.$encoding(), 
@@ -503,6 +504,11 @@
     function entran_render(value, record, columnObj, grid, colNo, rowNo) {
         return '<input type="text" value="0" onkeyup="validar_entrada(event,' + record['cantidad'] + ',' + record['id'] + ')"/>';
     }
+	
+	function estado_render(value, record, columnObj, grid, colNo, rowNo) {
+        if(record['facturado']=='0') return 'PENDIENTE';
+		else return 'PROCESADO';
+    }
 
     function validar_entrada(event, cantidad, id) {
         var elem = event.target;
@@ -537,8 +543,8 @@
         id: grid_demo3_id,
         loadURL: '',
         saveURL: '',
-        width: "700", //"100%", // 700,
-        height: "260", //"100%", // 330,
+        width: "703", //"100%", // 700,
+        height: "360", //"100%", // 330,
         container: 'gridbox3',
         replaceContainer: true,
         encoding: 'UTF-8', // Sigma.$encoding(), 

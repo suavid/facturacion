@@ -77,8 +77,7 @@ function error_handler($errno, $errstr, $errfile, $errline) {
     //$fp = fopen(APP_PATH."error.log", "a");
     //fputs($fp, $errno.": ".$errstr." - url: ".$_SERVER['REQUEST_URI']." - line: ".$errline." - file: ".$errfile.PHP_EOL);
     //fclose($fp);
-
-    if (4096 == $errno){
+    if (4096 == $errno || 256 == $errno){
         throw new Exception($errstr);
     }
     

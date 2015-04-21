@@ -177,86 +177,89 @@ class facturaController extends controller {
         $res['message'] = "";               // mensaje de la operacion (puede ser mensaje de error u otro)
         $res['success'] = false;            // estado de la operacion (true si tuvo exito o false si ocurre algun error)
         $res['data'] = array();                 // se agrega esta variable solo si se quiere retornar informacion
+		
+		try{
+			$id = $_POST['id'];       # id de referencia al pedido
 
-        $id = $_POST['id'];       # id de referencia al pedido
+			$this->model->get($id);   # cargar datos del pedido
 
-        $this->model->get($id);   # cargar datos del pedido
+			$cliente = $this->model->get_attr('id_cliente');   # cliente que ha realizado el pedido
+			$estado = $this->model->get_attr('estado');       # estado de la nota de remision
 
-        $cliente = $this->model->get_attr('id_cliente');   # cliente que ha realizado el pedido
-        $estado = $this->model->get_attr('estado');       # estado de la nota de remision
+			/* informacion asociada al registro de la operacion */
+			$registro = array();
+			$registro['tipo'] = "PROCESAR";                         # tipo de la operacion
+			$registro['fecha'] = date("Y-m-d");                      # fecha de la operacion
+			$registro['usuario'] = Session::singleton()->getUser();  # usuario que lleva a cabo la operacion
+			$registro['n_pedido'] = $_POST['pedido'];                   # referencia a pedido
 
-        /* informacion asociada al registro de la operacion */
-        $registro = array();
-        $registro['tipo'] = "PROCESAR";                         # tipo de la operacion
-        $registro['fecha'] = date("Y-m-d");                      # fecha de la operacion
-        $registro['usuario'] = Session::singleton()->getUser();  # usuario que lleva a cabo la operacion
-        $registro['n_pedido'] = $_POST['pedido'];                   # referencia a pedido
+			import('scripts.periodos');
+			list(, $pactual) = cargar_periodos();                         # se carga el perido actual
 
-        import('scripts.periodos');
-        list(, $pactual) = cargar_periodos();                         # se carga el perido actual
+			/* la nota solo se procesa en caso que este pendiente */
+			if ($estado == "PENDIENTE") {
+				$this->model->set_attr('estado', 'PROCESADO');
+				$this->model->save();   # automaticamente su estado cambia a procesado para bloquear la nota
+				// cargamos los datos de caja del usuario
+				// un usuario sin caja no puede procesar notas de remision
+				list($tieneCaja, $data) = $this->model->tieneCaja(Session::singleton()->getUser());
 
-        /* la nota solo se procesa en caso que este pendiente */
-        if ($estado == "PENDIENTE") {
-            $this->model->set_attr('estado', 'PROCESADO');
-            $this->model->save();   # automaticamente su estado cambia a procesado para bloquear la nota
-            // cargamos los datos de caja del usuario
-            // un usuario sin caja no puede procesar notas de remision
-            list($tieneCaja, $data) = $this->model->tieneCaja(Session::singleton()->getUser());
+				// si no tiene caja se advierte de la falta de permisos para facturar
+				if (!$tieneCaja) {
+					$ret['message'] = "Lo sentimos, no posee permiso de facturacion";
+					$res['success'] = false;
+				} else {
 
-            // si no tiene caja se advierte de la falta de permisos para facturar
-            if (!$tieneCaja) {
-                $ret['message'] = "Lo sentimos, no posee permiso de facturacion";
-                $res['success'] = false;
-            } else {
+					// se terminan de almacenar los datos asociados al registro
+					$registro['caja'] = $this->model->get_attr('caja');
+					$cj = $this->model->get_child('caja');
+					$cj->get($this->model->get_attr('caja'));
+					$registro['serie'] = $cj->get_attr('codigo_factura');
+					// se ha registrado ademas del pedido la caja de facturacion y la serie que estaba activa
 
-                // se terminan de almacenar los datos asociados al registro
-                $registro['caja'] = $this->model->get_attr('caja');
-                $cj = $this->model->get_child('caja');
-                $cj->get($this->model->get_attr('caja'));
-                $registro['serie'] = $cj->get_attr('codigo_factura');
-                // se ha registrado ademas del pedido la caja de facturacion y la serie que estaba activa
+					$nt = $this->model->get_child('detalle_factura');   # carga de objeto para proceso de rollback
+					// anulacion parcial del pedido, todos aquellos productos marcados como 'entran' son
+					// regresados al inventario y descontados de la cuenta del usuario (se abona), con el fin
+					// de reducir la carga al credito que habia provocado la adquisicion del producto
+					$nt->anular_pedido_parcial($id);
 
-                $nt = $this->model->get_child('detalle_factura');   # carga de objeto para proceso de rollback
-                // anulacion parcial del pedido, todos aquellos productos marcados como 'entran' son
-                // regresados al inventario y descontados de la cuenta del usuario (se abona), con el fin
-                // de reducir la carga al credito que habia provocado la adquisicion del producto
-                $nt->anular_pedido_parcial($id);
+					// se calculan los productos faltantes, es decir aquellos productos que salieron y no regresaron
+					// a nivel de registro se manejan como cantidad_que_salio - productos_que_entran = productos faltantes
+					$pendiente = $nt->total_facturable($id);
 
-                // se calculan los productos faltantes, es decir aquellos productos que salieron y no regresaron
-                // a nivel de registro se manejan como cantidad_que_salio - productos_que_entran = productos faltantes
-                $pendiente = $nt->total_facturable($id);
+					// si faltan productos, es decir que hay producto que no
+					// ha regresado, se factura toda esta diferencia porque el cliente debe pagarla 
 
-                // si faltan productos, es decir que hay producto que no
-                // ha regresado, se factura toda esta diferencia porque el cliente debe pagarla 
-
-                if ($pendiente > 0) {
-                    $pedido = $nt->facturar_diferencia($id, $cliente, $data['id'], $pactual);
-                    $res['success'] = true;
-                    // retorna el numero de pedido que se ha creado
-                    // el numero de pedido retornado no es la referencia a la base de datos, sino la 
-                    // referencia de pedido por caja, para que la informacion de facturacion
-                    // pueda cargarse de forma automatica desde la caja para generar la factura
-                    // (este proceso debe ser automatico porque una nota de remision procesada no se puede
-                    // manipular en caja)
-                    $res['data']['pedido'] = $pedido;
-                } else {
-                    // si no hay pendientes retorna -1 como numero de pedido en aviso de el estado del proceso
-                    // (ya que no existen pedidos negativos es una buena manera de notificar la accion)
-                    $res['data']['pedido'] = -1;
-                    $res['success'] = true;
-                }
-                $op = $this->model->get_child('pnota_remision');
-                $op->get(0);
-                $op->change_status($registro);
-                $op->save();  // simplemente guarda el registro del suceso
-            }
-        } else {
-            /* si la nota ya estaba en proceso se le comunica al respecto al usuario */
-            $res['success'] = false;
-            $res['message'] = "Error!, El pedido ya habia sido procesado";
-            $res['data']['pedido'] = -1;
-        }
-
+					if ($pendiente > 0) {
+						$pedido = $nt->facturar_diferencia($id, $cliente, $data['id'], $pactual);
+						$res['success'] = true;
+						// retorna el numero de pedido que se ha creado
+						// el numero de pedido retornado no es la referencia a la base de datos, sino la 
+						// referencia de pedido por caja, para que la informacion de facturacion
+						// pueda cargarse de forma automatica desde la caja para generar la factura
+						// (este proceso debe ser automatico porque una nota de remision procesada no se puede
+						// manipular en caja)
+						$res['data']['pedido'] = $pedido;
+					} else {
+						// si no hay pendientes retorna -1 como numero de pedido en aviso de el estado del proceso
+						// (ya que no existen pedidos negativos es una buena manera de notificar la accion)
+						$res['data']['pedido'] = -1;
+						$res['success'] = true;
+					}
+					$op = $this->model->get_child('pnota_remision');
+					$op->get(0);
+					$op->change_status($registro);
+					$op->save();  // simplemente guarda el registro del suceso
+				}
+			} else {
+				/* si la nota ya estaba en proceso se le comunica al respecto al usuario */
+				$res['success'] = false;
+				$res['message'] = "Error!, El pedido ya habia sido procesado";
+				$res['data']['pedido'] = -1;
+			}
+		}catch(Exception $e){
+			$res['message'] = $e->getMessage();
+		}
         echo json_encode($res);
     }
 
@@ -1253,10 +1256,10 @@ class facturaController extends controller {
         $json = json_decode(stripslashes($_POST["_gt_json"]));
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
         $pageSize = 10; //10 rows per page
-        $cliente = (isset($_POST['cliente'])) ? " AND id_cliente=" . $_POST['cliente'] : "";
+        $cliente = (isset($_POST['cliente'])) ? " AND rd_cod=" . $_POST['cliente'] : "";
 
         //to get how many records totally.
-        $sql = "select count(*) as cnt from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE formapago=3 AND estado='PENDIENTE'" . $cliente;
+        $sql = "select count(*) as cnt from nota_remision WHERE facturado = 0 " . $cliente;
         $handle = mysqli_query(conManager::getConnection(), $sql);
         $row = mysqli_fetch_object($handle);
         $totalRec = $row->cnt;
@@ -1267,7 +1270,7 @@ class facturaController extends controller {
         endif;
 
         if ($json->{'action'} == 'load'):
-            $sql = "select * from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE formapago=3 AND estado='PENDIENTE' " . $cliente . " limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
+            $sql = "select * from nota_remision WHERE facturado = 0 " . $cliente . " limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
             $handle = mysqli_query(conManager::getConnection(), $sql);
             $retArray = array();
             while ($row = mysqli_fetch_object($handle)):

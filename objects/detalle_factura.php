@@ -44,13 +44,14 @@ class detalle_facturaModel extends object {
 
     public function anular_pedido_parcial($id) {
         /* consulta para obtener la cantidad de producto entrante */
-        $query = "SELECT entran,bodega,linea,estilo,color,talla,importe,descuento,precio,cantidad FROM detalle_factura WHERE id_factura=$id";
+        $query = "SELECT entran,bodega,linea,estilo,color,talla,costo FROM detalle_factura WHERE id_factura=$id";
         data_model()->executeQuery($query);
         $buffer_mem = array();
 
         // almacenar el producto entrante en un array
         while ($temp = data_model()->getResult()->fetch_assoc()) {
-            $buffer_mem[] = $temp;
+            
+			$buffer_mem[] = $temp;
         }
 
         // obtener el cliente de la factura
@@ -64,23 +65,73 @@ class detalle_facturaModel extends object {
 
         // por cada elemento almacenado en el array (memoria temporal)
         foreach ($buffer_mem as $item) {
-            $linea = $item['linea'];
-            $estilo = $item['estilo'];
-            $color = $item['color'];
-            $talla = $item['talla'];
-            $bodega = $item['bodega'];
+            $linea    = $item['linea'];
+            $estilo   = $item['estilo'];
+            $color    = $item['color'];
+            $talla    = $item['talla'];
+            $bodega   = $item['bodega'];
             $cantidad = $item['entran'];
-
-            $abono = $item['precio'] * $cantidad;
-            $descuento = ($item['descuento'] / $item['cantidad']) * $cantidad;
-
-            // abonamos el total que le fue cargado en la cuenta al usuario
-            $cliente->abonar($abono + $descuento);
-            $cliente->save();
+			$costo 	  = $item['costo'];
 
             // aumentamos el stock del producto respectivo
             $inv = $this->get_child('bodega');
             $inv->aumentar_stock($linea, $estilo, $color, $talla, $bodega, $cantidad);
+			
+			if(isInstalled("kardex")){
+                    
+                $prod = $this->get_child('producto');
+                $prod->get(array("estilo"=>$estilo, "linea"=>$linea));
+                $prov = $this->get_child('proveedor');
+                $prov->get($prod->proveedor);
+
+                $system = $this->get_child('system');
+                $system->get(1);
+
+                data_model()->newConnection(HOST, USER, PASSWORD, "db_kardex");
+                data_model()->setActiveConnection(1);
+                $kardex   = connectTo("kardex", "mdl.model.kardex", "kardex");
+                $articulo = connectTo("kardex", "objects.articulo", "articulo");
+                $articulo->nuevo_articulo($linea, $estilo, $color, $talla);
+                    
+                $dato_articulo = array(
+                    'codigo'=>$articulo->no_articulo($linea, $estilo, $color, $talla),
+                    'articulo'=>"$linea-$estilo-$color-$talla",
+                    'descripcion'=> $prod->descripcion
+                );
+
+                $dato_proveedor = array(
+                    'nombre_proveedor'=> $prov->nombre,
+                    'nacionalidad_proveedor'=> $prov->nacionalidad
+                );
+
+                $dato_entrada = array(
+                    "ent_cantidad"=> $cantidad,
+                    "ent_costo_unitario"=> $costo,
+                    "ent_costo_total"=> $cantidad * $costo
+                );
+
+
+                $kardex->nueva_entrada(
+                    date("Y-m-d"), 
+                    "NOTA DE REMISION PROCESADA", 
+                    $dato_articulo, 
+                    0, 
+                    1000, 
+                    0, 
+                    $dato_proveedor,
+                    $system->periodo_actual,
+                    0, 
+                    $dato_entrada,
+                    "",
+                    $bodega
+                );        
+
+                list($kcantidad, $kcosto_unitario, $kcosto_total) = $kardex->estado_actual($articulo->no_articulo($linea, $estilo, $color, $talla), $bodega_destino); 
+
+                data_model()->setActiveConnection(0);
+
+                $this->get_child('control_precio')->cambiar_costo($linea, $estilo, $color, $talla, $kcosto_unitario);
+            }
         }
     }
 

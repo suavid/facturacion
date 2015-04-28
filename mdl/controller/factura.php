@@ -172,11 +172,11 @@ class facturaController extends controller {
     public function procesar_nota_remision() {
         // estandar para toda comunicacion asincrona dentro el sistema
         // cada transaccion debe poseer al menos los siguientes elementos
-        $res = array();
+        $res                = array();
         $res['transaction'] = "procesar nota de remision"; // operacion que se esta realizando
-        $res['message'] = "";               // mensaje de la operacion (puede ser mensaje de error u otro)
-        $res['success'] = false;            // estado de la operacion (true si tuvo exito o false si ocurre algun error)
-        $res['data'] = array();                 // se agrega esta variable solo si se quiere retornar informacion
+        $res['message']     = "";               // mensaje de la operacion (puede ser mensaje de error u otro)
+        $res['success']     = false;            // estado de la operacion (true si tuvo exito o false si ocurre algun error)
+        $res['data']        = array();                 // se agrega esta variable solo si se quiere retornar informacion
 		
 		try{
 			$id = $_POST['id'];       # id de referencia al pedido
@@ -187,10 +187,10 @@ class facturaController extends controller {
 			$estado = $this->model->get_attr('estado');       # estado de la nota de remision
 
 			/* informacion asociada al registro de la operacion */
-			$registro = array();
-			$registro['tipo'] = "PROCESAR";                         # tipo de la operacion
-			$registro['fecha'] = date("Y-m-d");                      # fecha de la operacion
-			$registro['usuario'] = Session::singleton()->getUser();  # usuario que lleva a cabo la operacion
+			$registro             = array();
+			$registro['tipo']     = "PROCESAR";                         # tipo de la operacion
+			$registro['fecha']    = date("Y-m-d");                      # fecha de la operacion
+			$registro['usuario']  = Session::singleton()->getUser();  # usuario que lleva a cabo la operacion
 			$registro['n_pedido'] = $_POST['pedido'];                   # referencia a pedido
 
 			import('scripts.periodos');
@@ -211,10 +211,12 @@ class facturaController extends controller {
 				} else {
 
 					// se terminan de almacenar los datos asociados al registro
-					$registro['caja'] = $this->model->get_attr('caja');
-					$cj = $this->model->get_child('caja');
-					$cj->get($this->model->get_attr('caja'));
+					$registro['caja']  = $this->model->get_attr('caja');
+					$cj                = $this->model->get_child('caja');
 					$registro['serie'] = $cj->get_attr('codigo_factura');
+					
+					$cj->get($this->model->get_attr('caja'));
+					
 					// se ha registrado ademas del pedido la caja de facturacion y la serie que estaba activa
 
 					$nt = $this->model->get_child('detalle_factura');   # carga de objeto para proceso de rollback

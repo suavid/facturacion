@@ -25,7 +25,7 @@ class LoginController extends controller {
             BM::singleton()->getObject('db')->newConnection(HOST, USER, PASSWORD, DATABASE);
             $usuario = BM::singleton()->getObject('db')->sanitizeData($_POST['usuario']);
             $clave = cifrar_RIJNDAEL_256($_POST['clave']);
-            $query = "SELECT * FROM empleado WHERE usuario='{$usuario}' AND clave='{$clave}';";
+            $query = "SELECT * FROM empleado WHERE usuario='{$usuario}' AND clave='{$clave}' AND modulo='facturacion';";
             BM::singleton()->getObject('db')->executeQuery($query);
             if (BM::singleton()->getObject('db')->getNumRows() > 0) {
                 $level = 1;

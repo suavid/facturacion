@@ -1,68 +1,90 @@
 <h3>Anulación de facturas</h3>
+<p class="text-muted">
+    Anule cualquier factura ingresando los datos del documento en el formulario indicado
+</p>
 <hr/>
 <span id="msg" style="position:fixed;"></span>
-<div style="display:table;">
-    <div style="float:left;width:300px;text-align:right;">
-        <div class="input-control text">
-            <input type="text" id="numero_caja" placeholder="Número de caja"/>
-        </div>
-        <br/>
-        <div class="input-control text">
-            <input type="text" id="serie_factura" placeholder="Serie de documento"/>
-        </div>
-        <br/>
-        <div class="input-control text">
-            <input type="text" id="numero_factura" onblur="cargar_datos();" placeholder="Número de factura"/>
-        </div>
-        <br/>
-        <div class="input-control text">
-            <input type="text" id="fecha_emision" placeholder="Fecha de emisión" readonly="readonly" />
-        </div>
-        <input type="hidden" id="referencia" />
-        <br/>
+<div class="panel span12">
+    <div class="panel-header">
+        <i class="icon-database"></i> 
+        Datos de la factura
     </div>
-
-    <div style="margin-left:40px;float:left;width:400px;text-align:right;">
-        <div class="input-control text">
-            <input type="text" id="nombre_cliente" placeholder="A nombre del cliente" style="width:100%;" readonly="readonly"/>
-        </div>
-        <div style="display:table;width:100%;">
-            <div style="float:left;width:40%;margin-right: 20px;margin-left: 60px;">
+    <div class="panel-content">
+        <div style="display:table;">
+            <div style="float:left;width:300px;text-align:right;">
                 <div class="input-control text">
-                    <input type="text" id="monto_factura" placeholder="Por un monto de" readonly="readonly" />
-                </div>
-                <br/>
-                Anulado por
-                <div class="input-control text">
-                    <input type="text" value="{username}" disabled="disabled" id="usuario_activo" />
+                    <input type="text" id="numero_caja" placeholder="Número de caja"/>
                 </div>
                 <br/>
                 <div class="input-control text">
-                    <input type="text" value="{time_stamp}" id="fecha_anulacion" />
+                    <input type="text" id="serie_factura" placeholder="Serie de documento"/>
                 </div>
+                <br/>
+                <div class="input-control text">
+                    <input type="text" id="numero_factura" onblur="cargar_datos();" placeholder="Número de factura"/>
+                </div>
+                <br/>
+                <div class="input-control text">
+                    <input type="text" id="fecha_emision" placeholder="Fecha de emisión" readonly="readonly" />
+                </div>
+                <input type="hidden" id="referencia" />
                 <br/>
             </div>
-            <div style="float:left;width:40%;">
+        
+            <div style="margin-left:40px;float:left;width:400px;text-align:right;">
                 <div class="input-control text">
-                    <input type="text" id="id_pedido" placeholder="Pedido No." readonly="readonly" />
+                    <input type="text" id="nombre_cliente" placeholder="A nombre del cliente" style="width:100%;" readonly="readonly"/>
                 </div>
-                <br/>
-                Anulado
-                <input type="checkbox" id="bAnulado" disabled="disabled" />
-                Crédito
-                <input type="checkbox" id="bCredito" disabled="disabled" />
+                <div style="display:table;width:100%;">
+                    <div style="float:left;width:40%;margin-right: 20px;margin-left: 60px;">
+                        <div class="input-control text">
+                            <input type="text" id="monto_factura" placeholder="Por un monto de" readonly="readonly" />
+                        </div>
+                        <br/>
+                        Anulado por
+                        <div class="input-control text">
+                            <input type="text" value="{username}" disabled="disabled" id="usuario_activo" />
+                        </div>
+                        <br/>
+                        <div class="input-control text">
+                            <input type="text" value="{time_stamp}" id="fecha_anulacion" />
+                        </div>
+                        <br/>
+                    </div>
+                    <div style="float:left;width:40%;">
+                        <div class="input-control text">
+                            <input type="text" id="id_pedido" placeholder="Pedido No." readonly="readonly" />
+                        </div>
+                        <br/>
+                        Anulado
+                        <input type="checkbox" id="bAnulado" disabled="disabled" />
+                        Crédito
+                        <input type="checkbox" id="bCredito" disabled="disabled" />
+                        <br/><br/><br/>
+                        <button class="large primary" id="btnAnular" style="float:left;" disabled="disabled" onclick="anular();"><i class="icon-cancel"></i> Anular </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
-
-<div id="bigbox" style="float:left;margin:15px;display:!none;width:700px;">
-    <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
-
+<div style="clear:both;"></div>
+<br/>
+<div class="panel span12">
+    <div class="panel-header">
+        <i class="icon-list"></i> 
+        Detalle de factura
+    </div>
+    <div class="panel-content">
+        <div id="bigbox" style="float:left;margin:15px;display:!none;width:700px;">
+            <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+        
+            </div>
+        </div>
+        <div style="clear:both;"></div>
     </div>
 </div>
 
-<button class="large success" id="btnAnular" style="float:left;" disabled="disabled" onclick="anular();"><i class="icon-cancel"></i> Anular </button>
 
 <script type="text/javascript">
 

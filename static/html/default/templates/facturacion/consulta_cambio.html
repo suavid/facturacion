@@ -1,0 +1,183 @@
+<h3>Consula rápida de cambios</h3>
+<p class="text-muted">
+	Proporcione el código de un cliente para ver los cambios pendientes
+</p>
+<hr/>
+<label>Código de afiliado</label>
+<div class="input-control text span3">
+	<input type="text" onchange="cargarCambios(event);"/>
+</div>
+<div class="panel">
+	<div class="panel-header">
+		<i class="icon-clock"></i>
+		Cambios pendientes
+	</div>
+	<div class="panel-content">
+		<div id="bigbox" style="margin:15px;display:!none;">
+			<div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+	        
+			</div>
+		</div>
+	</div>
+</div>
+<br/>
+<br/>
+<div class="panel">
+	<div class="panel-header">
+		<i class="icon-list"></i> 
+		Detalle del cambio
+	</div>
+	<div class="panel-content">
+		<div id="bigbox2" style="margin:15px;display:!none;">
+			<div id="gridbox2" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+	        
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+    function cargarCambios(event){
+        var codigo = $(event.target).val();
+        var url = '/facturacion/grid_tables/dsvdiah?cliente='+codigo;
+        var grid = Sigma.$grid("cambio_grid");
+    	grid.loadURL = url;
+    	grid.reload();
+    }
+    
+    function cargarDetalle(idCambio){
+        var url = '/facturacion/inventario/cargar_cfd?tblname=devolucion&field=cambio&value='+idCambio;
+        var grid = Sigma.$grid("detalle_grid");
+    	grid.loadURL = url;
+    	grid.reload();
+    }
+
+	 function en_factura_render(value, record, columnObj, grid, colNo, rowNo) {
+        if (record['en_factura'] == 0)
+            return 'NO';
+        else
+            return 'SI';
+    }
+
+    function editable_render(value, record, columnObj, grid, colNo, rowNo) {
+        if (record['editable'] == 0)
+            return 'SI';
+        else
+            return 'NO';
+    }
+
+    function facturado_render(value, record, columnObj, grid, colNo, rowNo) {
+        if (record['activo'] == 0)
+            return 'SI';
+        else
+            return 'NO';
+    }
+    
+    function ver_detalle(value, record, columnObj, grid, colNo, rowNo) {
+        return '<a href="javascript: void(0);" onclick="cargarDetalle('+record['id']+')" >ver detalle</a>';
+    }
+    
+    var grid_demo_id = "cambio_grid";
+    
+    var dsOption = {
+        fields: [
+            {name: 'id'},
+            {name: 'cliente'},
+            {name: 'fecha'},
+            {name: 'editable'},
+            {name: 'en_factura'},
+            {name: 'activo'},
+            {name: 'caja'},
+            {name: 'serie'},
+            {name: 'pedido'},
+            {name: 'factura'}
+        ],
+        recordType: 'object'
+    }
+
+    var colsOption = [
+        {id: 'id', header: "# Cambio", width: 100},
+        {id: 'fecha', header: "Fecha", width: 100},
+        {id: 'editable', header: "Aplicado?", width: 100, renderer: editable_render},
+        {id: 'en_factura', header: "En pedido?", width: 100, renderer: en_factura_render},
+        {id: 'activo', header: "Facturado?", width: 100, renderer: facturado_render},
+        {id: 'caja', header: "Caja", width: 100},
+        {id: 'serie', header: "Serie", width: 100},
+        {id: 'pedido', header: "# Pedido", width: 100},
+        {id: 'factura', header: "Factura que aplica", width: 100},
+        {id: 'accion', header: "Acciones", width: 100, renderer: ver_detalle}
+    ];
+
+
+    var gridOption = {
+        id: grid_demo_id,
+        loadURL: '',
+        saveURL: '',
+        width: "1005", //"100%", // 700,
+        height: "280", //"100%", // 330,
+        container: 'gridbox',
+        replaceContainer: true,
+        encoding: 'UTF-8', // Sigma.$encoding(), 
+        dataset: dsOption,
+        columns: colsOption,
+        clickStartEdit: true,
+        defaultRecord: {'id': "00", 'nombre': ""},
+        pageSize: 10,
+        remotePaging: true,
+        autoLoad: true,
+        allowCustomSkin: true,
+        skin: 'mac',
+        toolbarContent: 'reload | filter | nav state'
+    };
+
+
+    var mygrid = new Sigma.Grid(gridOption);
+    Sigma.Util.onLoad(function() {
+        mygrid.render();
+    });
+    
+    var grid_detalle_id = "detalle_grid";
+    
+    var dsOption2 = {
+        fields :[
+            {name : 'id'  },
+            {name : 'nombre'  },
+            {name : 'encargado'  },
+            {name : 'descripcion'  }
+        ],
+        recordType : 'object'
+    }
+
+    var colsOption2 = [
+        {id: 'bodega', header: "Bodega", width :100 },
+        {id: 'linea', header: "Linea", width :100 },
+        {id: 'estilo', header: "Estilo", width :100 },
+        {id: 'color', header: "Color", width :100 },
+        {id: 'talla', header: "Talla", width :100 },
+        {id: 'factura', header: "# Factura", width :100 },
+        {id: 'cantidad', header: "Devuelve", width :100 }
+    ];
+           
+    var gridOption2 = {
+        id : grid_detalle_id,
+        loadURL : '',
+        saveURL : '',
+        width: "705", //"100%", // 700,
+        height: "280", //"100%", // 330,
+        container : 'gridbox2',
+        replaceContainer : true,
+        encoding : 'UTF-8', // Sigma.$encoding(), 
+        dataset : dsOption2,
+        columns : colsOption2,
+        clickStartEdit : true,
+        defaultRecord : {'id':"00", 'nombre':""},
+        pageSize:10,
+        allowCustomSkin: true,
+        skin: 'mac',
+        toolbarContent : 'reload | filter | nav state'
+    };
+            
+    var mygrid2 = new Sigma.Grid(gridOption2);
+    Sigma.Util.onLoad(function(){
+        mygrid2.render();
+    });
+</script>

@@ -1,37 +1,57 @@
 <h3>Cambio de producto</h3>
-<div style="display:table;">
-    <div style="width:300px;text-align:right;float:left;">
-        # (Nuevo = 0) 
-        <div class="input-control text">
-            <input type="text" style="text-align:center" id="id_cambio" value="0" onchange="cargar_cambio();" /><br/><br/>
-        </div>
-        Cliente
-        <div class="input-control text"> 
-            <input type="text" id="codigo_cliente" style="text-align:center" onchange="obtenerDatos();" /><br/><br/>
-        </div>
-        Fecha 
-        <div class="input-control text">
-            <input type="text" id="fecha" style="text-align:center" value="{fecha}"/>
-        </div>
-        <button onclick="crear();" class="primary">Crear / Abrir cambio</button>
+<p class="text-muted">
+    Preparación de cambios de productos para el cliente
+</p>
+<hr/>
+<div class="panel span12">
+    <div class="panel-header">
+       <i class="icon-pencil"></i> Crear o editar un cambio
     </div>
-    <div style="width:400px;text-align:right;float:left;padding-left:10px;">
-        Cliente
-        <div class="input-control text"> 
-            <input type="text" id="nombre_cliente" style="width:70%;" readonly="readonly" />
+    <div class="panel-content">
+        <br/>
+        <div style="display:table;">
+            <div style="width:300px;text-align:right;float:left;">
+                # (Nuevo = 0) 
+                <div class="input-control text">
+                    <input type="text" style="text-align:center" id="id_cambio" value="0" onchange="cargar_cambio();" /><br/><br/>
+                </div>
+                Cliente
+                <div class="input-control text"> 
+                    <input type="text" id="codigo_cliente" style="text-align:center" onchange="obtenerDatos();" /><br/><br/>
+                </div>
+                Fecha 
+                <div class="input-control text">
+                    <input type="text" id="fecha" style="text-align:center" value="{fecha}"/>
+                </div>
+                <button onclick="crear();" class="primary">Crear / Abrir cambio</button>
+            </div>
+            <div style="width:400px;text-align:right;float:left;padding-left:10px;">
+                Nombre del cliente
+                <div class="input-control text"> 
+                    <input type="text" id="nombre_cliente" style="width:70%;" readonly="readonly" />
+                </div>
+                <br/>
+            </div>
         </div>
         <br/>
     </div>
 </div>
 <br/>
 <br/>
-<h3>Cambios pendientes</h3>
-<hr/>
-<div id="bigbox" style="margin:15px;display:!none;">
-    <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
-
+<div class="panel">
+    <div class="panel-header">
+        <i class="icon-list"></i> 
+        Cambios pendientes
+    </div>
+    <div class="panel-content">
+        <div id="bigbox" style="margin:15px;display:!none;">
+            <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+        
+            </div>
+        </div>
     </div>
 </div>
+<br/><br/>
 <script>
 
     $(document).ready(function() {

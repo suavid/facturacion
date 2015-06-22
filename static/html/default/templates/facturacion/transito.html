@@ -1,0 +1,90 @@
+<h3>Producto en tránsito</h3>
+<p class="text-muted">
+	Consulta de producto próximo a entrar a inventario 
+</p>
+<hr/>
+<div class="panel">
+    <div class="panel-header">
+        <i class="icon-clock"></i> Se espera recibir
+    </div>
+    <div class="panel-content">
+        <div class="input-control text span4">
+            <input type="text" onkeyup="filtrarResultados(event);" placeholder="Consulte un estilo"/>
+        </div>
+        <br/>
+        <div id="bigbox" style="margin:0px;display:!none;">
+        	<div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+                        
+        	</div>
+        </div> 
+    </div>
+</div>
+<script style="text/javascript">
+	 var grid_demo_id = "producto_grid";
+    
+    var dsOption = {
+        fields :[
+            {name : 'estilo'},
+            {name : 'linea'}, 
+            {name : 'codigo_origen'},
+            {name : 'descripcion'},
+            {name : 'proveedor'},
+            {name : 'catalogo'},
+            {name : 'n_pagina'},
+            {name : 'genero'},
+            {name : 'marca'},
+            {name : 'propiedad'},
+            {name : 'fecha_ingreso'},
+            {name : 'nota'}
+        ],
+        uniqueField: 1,
+        recordType : 'object'
+    }
+
+    var colsOption = [
+        {id: 'linea', header: "Linea", width  :150},
+        {id: 'estilo', header: "Estilo", width :109},
+        {id: 'color', header: "Color", width :110},
+        {id: 'talla', header: "Talla", width :100},
+        {id: 'cantidad', header: "Cantidad", width :70},
+        {id: 'id_orden', header: "# orden", width :70},
+        {id: 'fecha_espera', header: "Ingresa el", width :150}
+    ];
+    
+    var gridOption = {
+        id : grid_demo_id,
+        loadURL : '/compras/grid_tables/cargarProductoEnTransito',
+        saveURL : '',
+        width: "762", //"100%", // 700,
+        height: "380", //"100%", // 330,
+        container : 'gridbox',
+        replaceContainer : true,
+        encoding : 'UTF-8', // Sigma.$encoding(), 
+        dataset : dsOption,
+        columns : colsOption,
+        showGridMenu : false,
+        allowHide : true,
+        allowGroup  : true,
+        clickStartEdit : false,
+        pageSize:15,
+        remotePaging: true,
+        remoteSort: true,
+        autoLoad: true,
+        allowCustomSkin: true,
+        skin: 'mac',
+        toolbarContent : 'filter | nav state'
+    };
+            
+    var mygrid = new Sigma.Grid( gridOption );
+    
+    Sigma.Util.onLoad(function(){
+        mygrid.render()
+    });
+    
+    function filtrarResultados(e){
+        var term = $(e.target).val();
+        var grid = Sigma.$grid("producto_grid");
+        grid.loadURL = '/compras/grid_tables/cargarProductoEnTransito?estilo='+term;
+    	grid.reload();
+    }
+</script>

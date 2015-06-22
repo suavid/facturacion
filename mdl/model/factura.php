@@ -322,9 +322,7 @@ class facturaModel extends object {
 
                 $system = $this->get_child('system');
                 $system->get(1);
-
-				data_model()->newConnection(HOST, USER, PASSWORD, "db_kardex");
-                data_model()->setActiveConnection(1);
+				
 				$kardex   = connectTo("kardex", "mdl.model.kardex", "kardex");
 				$articulo = connectTo("kardex", "objects.articulo", "articulo");
 				//$kardex->generar_salida($item['linea'], $item['estilo'], $item['color'], $item['talla'], $item['cantidad'], "Facturacion de producto al contado");
@@ -372,8 +370,6 @@ class facturaModel extends object {
 
                 	list($kcantidad, $kcosto_unitario, $kcosto_total) = $kardex->estado_actual($articulo->no_articulo($linea, $estilo, $color, $talla), $item['bodega']); 
                 	
-                	data_model()->setActiveConnection(0);
-                	
                 	$this->get_child('control_precio')->cambiar_costo($linea, $estilo, $color, $talla, $kcosto_unitario);
 
                 	$oCambio = $this->get_child('cambio');
@@ -401,7 +397,7 @@ class facturaModel extends object {
 	                );
                 }    
 				
-				data_model()->setActiveConnection(0);
+			
 			}
 		}
 		
@@ -566,8 +562,7 @@ class facturaModel extends object {
                 $system = $this->get_child('system');
                 $system->get(1);
 
-				data_model()->newConnection(HOST, USER, PASSWORD, "db_kardex");
-                data_model()->setActiveConnection(1);
+				
 				$kardex   = connectTo("kardex", "mdl.model.kardex", "kardex");
 				$articulo = connectTo("kardex", "objects.articulo", "articulo");
 				//$kardex->generar_salida($item['linea'], $item['estilo'], $item['color'], $item['talla'], $item['cantidad'], "Facturacion de producto al contado");
@@ -612,7 +607,7 @@ class facturaModel extends object {
 	                $item['bodega']
 	            ); 
 				
-				data_model()->setActiveConnection(0);
+			
 			}
 		}
 		
@@ -847,8 +842,7 @@ class facturaModel extends object {
 		                $system = $this->get_child('system');
 		                $system->get(1);
 
-						data_model()->newConnection(HOST, USER, PASSWORD, "db_kardex");
-		                data_model()->setActiveConnection(1);
+						
 						$kardex   = connectTo("kardex", "mdl.model.kardex", "kardex");
 						$articulo = connectTo("kardex", "objects.articulo", "articulo");
 						//$kardex->generar_salida($item['linea'], $item['estilo'], $item['color'], $item['talla'], $item['cantidad'], "Facturacion de producto al contado");
@@ -897,7 +891,7 @@ class facturaModel extends object {
 
 		                	list($kcantidad, $kcosto_unitario, $kcosto_total) = $kardex->estado_actual($articulo->no_articulo($linea, $estilo, $color, $talla), $item['bodega']); 
 		                	
-		                	data_model()->setActiveConnection(0);
+		                
 		                	
 		                	$this->get_child('control_precio')->cambiar_costo($linea, $estilo, $color, $talla, $kcosto_unitario);
 
@@ -926,7 +920,7 @@ class facturaModel extends object {
 
 		            	}
 						
-						data_model()->setActiveConnection(0);
+					
 					}
 				}
 				
@@ -1109,14 +1103,12 @@ class facturaModel extends object {
 	                $prov = $this->get_child('proveedor');
 	                $prov->get($prod->proveedor);
 
-	                data_model()->newConnection(HOST, USER, PASSWORD, "db_system");
-	                data_model()->setActiveConnection(1);
+	             
 
 	                $system = $this->get_child('system');
 	                $system->get(1);
 
-	                data_model()->newConnection(HOST, USER, PASSWORD, "db_kardex");
-	                data_model()->setActiveConnection(2);
+	             
 	                $kardex   = connectTo("kardex", "mdl.model.kardex", "kardex");
 	                $articulo = connectTo("kardex", "objects.articulo", "articulo");
 	                $articulo->nuevo_articulo($linea, $estilo, $color, $talla);
@@ -1156,7 +1148,7 @@ class facturaModel extends object {
 
 	                list($kcantidad, $kcosto_unitario, $kcosto_total) = $kardex->estado_actual($articulo->no_articulo($linea, $estilo, $color, $talla), $bodega); 
 
-	                data_model()->setActiveConnection(0);
+	             
 
 	                $this->get_child('control_precio')->cambiar_costo($linea, $estilo, $color, $talla, $kcosto_unitario);
 	            }

@@ -514,7 +514,7 @@ class facturaController extends controller {
         $cache[2] = $this->model->get_child('serie')->get_by_type('RC');
         $cache[3] = $this->model->get_child('serie')->get_by_type('TI');
         $cache[4] = $this->model->get_child('bodega')->get_list('','', array('nombre'));
-        $cache[5] = $this->model->get_child('empleado')->get_list();
+        $cache[5] = $this->model->get_child('empleado')->filter('modulo','facturacion');
         $cache[6] = $this->model->get_child('serie')->get_by_type('CF');
         $cache[7] = $this->model->get_child('serie')->get_by_type('NR');
         $this->view->cajas($usuario, $cache);
@@ -522,6 +522,19 @@ class facturaController extends controller {
 
     public function traer_cambio() {
         $this->model->traer_cambio($_POST);
+    }
+
+    public function productoEntrante(){
+        if(isInstalled("compras")){
+            $this->view->productoEntrante();
+        }else{
+            HttpHandler::redirect('/inventario/error/e403');
+        }
+    }
+    
+    public function consultaCambio(){
+        
+        $this->view->consultaCambio();
     }
 
     public function series() {

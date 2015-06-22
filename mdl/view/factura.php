@@ -24,6 +24,29 @@ class facturaView {
         template()->parseExtras();
         print page()->getContent();
     }
+    
+    public function productoEntrante(){
+        template()->buildFromTemplates('template_nofixed.html');
+        page()->setTitle('Producto en tránsito');
+        page()->addEstigma("username", Session::singleton()->getUser());
+        page()->addEstigma("back_url", '/'.MODULE.'/factura/principal');
+        page()->addEstigma("TITULO", 'Producto en tránsito');
+        template()->addTemplateBit('content', 'facturacion/transito.html');
+        template()->parseOutput();
+        template()->parseExtras();
+        print page()->getContent();
+    }
+    
+    public function consultaCambio(){
+        template()->buildFromTemplates('template_nofixed.html');
+        page()->setTitle('Consulta rápida de cambios');
+        page()->addEstigma("username", Session::singleton()->getUser());
+        page()->addEstigma("back_url", '/'.MODULE.'/factura/principal');
+        template()->addTemplateBit('content', 'facturacion/consulta_cambio.html');
+        template()->parseOutput();
+        template()->parseExtras();
+        print page()->getContent();
+    }
 
     public function descuentos($usuario) {
         template()->buildFromTemplates('template_nofixed.html');

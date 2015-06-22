@@ -59,13 +59,21 @@
         <button onclick="notas_procesadas();"><i class="icon-search on-left"></i>Notas procesadas</button>
     </div>
     <br/><br/>
-    <h2>Pendientes de procesar</h2>
-    <div id="bigbox" style="margin:15px;display:!none;float:left;">
-        <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
-
+    <div class="panel" style="float: left;">
+        <div class="panel-header">
+             <i class="icon-list"></i>
+             Notas de remisión pendientes de procesar
+        </div>
+        <div class="panel-content">
+            <div id="bigbox" style="margin:15px;display:!none;float:left;">
+                <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+        
+                </div>
+            </div>
+            <div style="clear: both;"></div>
         </div>
     </div>
-    <div style="width:400px;text-align:right;background:#F3F3F3;padding:15px;float:left;margin-top:15px;">
+    <div style="width:400px;text-align:right;background:#F3F3F3;padding:15px;float:left;margin-top:15px;margin-left: 15px;">
         <input type="text" id="codigo_cliente" placeholder="Código del cliente"/> <button onclick="cargar_cliente();
                 filtrar_notas();"><i class="icon-search"></i></button>
         <input type="text" id="nombre" disabled="disabled" />

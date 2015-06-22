@@ -73,7 +73,7 @@
                 
 
                 /* INBOX */
-                setInterval(function(){
+                /*setInterval(function(){
 
                     var uri = "/nymsa/modulo/inboxPendientes";
                     $.post(uri, {}, function(resp){
@@ -82,7 +82,7 @@
 
                     },"json");
 
-                }, 500);
+                }, 500);*/
 
                 var messages_handler = new url_handler();
                 messages_handler.initialize();
@@ -138,9 +138,9 @@
             }
         </script>
         <div>
-            <nav class="navigation-bar white fixed-top" >
+            <nav class="navigation-bar light fixed-top shadow" >
                 <nav class="navigation-bar-content">
-                    <a href="/{systemModuleName}/compras/principal" class="element brand">
+                    <a href="/facturacion/factura/principal" class="element brand">
                         <i class="icon-home"></i>
                         Inicio
                     </a>
@@ -159,16 +159,23 @@
                     <div class="element">
                         <a class="dropdown-toggle" href="#"><i class="icon-plus-2"></i> Más</a>
                         <ul class="dropdown-menu" data-role="dropdown">
-                            <!--<li><a href="/{systemModuleName}/inventario/catalogos"><i class="icon-broadcast"></i> Campañas</a></li>-->
-                          
+                            <li>
+                                <a href="/{systemModuleName}/factura/productoEntrante">
+                                    <i class="icon-cycle"></i> Producto en tránsito
+                                </a>
+                            </li>
+                            <li>
+                                <a href="/{systemModuleName}/factura/consultaCambio">
+                                    <i class="icon-clock"></i> Cambios pendientes
+                                </a>
+                            </li>
                         </ul>
                     </div>
-                    
-                    <span class="element-divider"></span>
                     
                     <div class="element place-right">
                         <a class="dropdown-toggle" href="#">
                             <span class="icon-cog"></span>
+                            &nbsp;&nbsp;&nbsp;
                         </a>
                         <ul class="dropdown-menu place-right" data-role="dropdown">
                             <!--<li><a href="/{systemModuleName}/modulo/cuenta">Cuenta</a></li>-->
@@ -178,26 +185,29 @@
                     </div>
                     <span class="element-divider place-right"></span>
                     <button class="element place-right">
-                        Bienvenido/a {username}
+                        Has iniciado sesión como: <strong>{username}</strong>
                     </button>
-                    <div class="element place-right" >
+                    <!--<div class="element place-right" >
                         <a href="javascript: void(0);" class="dropdown-toggle" onclick="inboxPreview();"><i class="icon-mail"></i></a>
                         <span id="inboxPending" class="fg-white" style="background: red; border-radius: 100px; width: 18px; height: 18px; display: blocK;text-align: center; font-size: 12px;font-weight: bold; float: right; position: relative; left: -14px;display:none; ">0</span>
                         <ul class="dropdown-menu place-right" id="bandeja" data-role="dropdown" style="padding: 10px; ">
                              <li onclick="location.href='/nymsa/modulo/inboxRead?inboxId=0&Compose=true'"><i class="icon-plus-2"></i> Redactar mensaje </li>   
                             <img id="loader" src="../static/img/loader.gif" />
                         </ul>   
-                    </div>
+                    </div>-->
                 </nav>
             </nav> 
             <br/>
             <br/>
 
 
-            <div class="page-region" style="padding-left:30px; padding-top: 50px;">
+            <div class="page-region" style="padding-left:30px; padding-top: 50px; padding-right: 15px;">
                 {content}
             </div>
-
+            <div style="clear:both;"></div>
+            <br/>
+            <br/>
+            <p class="text-center text-muted"><small>GUI powered by MetroUI, found on <a href="http://metroui.org.ua/" target="_blank">http://metroui.org.ua/</a></small></p>
         </div>
     </body>
 </html>

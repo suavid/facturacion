@@ -1,53 +1,72 @@
-<h2>Mantenimiento de series</h2>
-<br/>
-<br/>
-<p><strong>Importante:</strong> Las series no admiten edición o eliminación, verifique los datos antes de guardarlos.</p>
+<h3>Series</h3>
+<p class="text-muted">
+    Las series permiten controlar los documentos que la empresa emite
+</p>
 <hr/>
-<form method="post" action="/facturacion/factura/guardar_serie">
-    <div style="display:table;">
-        <span id="msg"></span>
-        <div style="width:300px;float:left;margin:10px;">
-            Tipo: 
-            <div class="input-control select">
-            <select style="font-family:monospace;width:100%;" id="tipo" name="tipo">
-                <option value="FC">FC | Factura</option>
-                <option value="NC">NC | N.Credito</option>
-                <option value="ND">ND | N.Debito</option>
-                <option value="NR">NR | N.Remision</option>
-                <option value="RC">RC | Recibo</option>
-                <option value="RI">RI | Retencion iva</option>
-                <option value="TI">TI | Ti</option>
-                <option value="CF">CF | Credito Fiscal</option>
-            </select>
-            </div>
-            <br/>
-            Serie: <div class="input-control text"><input type="text" name="serie" id="serie" onchange="check_serie();" required="required" /></div>
-            <br/>
-            Descripción: <div class="input-control text"><input type="text" name="descripcion" required="required" /></div>
-        </div>
+<p><strong>Importante:</strong> Las series no admiten edición o eliminación, verifique los datos antes de guardarlos.</p>
 
-        <div style="width:300px;float:left;margin:10px;">
-            # Resolución: <div class="input-control text"><input type="text" name="resolucion" /></div>
-            <br/>
-            Fecha resolución: <div class="input-control text"><input type="text" name="fecha_resolucion" /></div>
-            <br/>
-            Autorizado del: <div class="input-control text"><input type="text" value="0" name="del" /></div>
-            <br/>
-            Al: <div class="input-control text"><input type="text" value="99999999" name="al" /></div>
-        </div>
-
-        <div style="width:300px;float:left;margin:10px;">
-            Último utilizado: <div class="input-control text"><input type="text" disabled="disabled" /></div>
-            <br/>
-            <br/>
-            <br/>
-            <button type="submit" id="btnGuardar" class="primary">Guardar</button>
-        </div>
+<div class="panel">
+    <div class="panel-header">
+        <i class="icon-new"></i> 
+        Nueva serie
     </div>
-</form>
-<div id="bigbox" style="margin:15px;display:!none;">
-    <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
-
+    <div class="panel-content">
+        <form method="post" action="/facturacion/factura/guardar_serie">
+            <div style="display:table;">
+                <span id="msg"></span>
+                <div style="width:300px;float:left;margin:10px;">
+                    Tipo: 
+                    <div class="input-control select">
+                    <select style="font-family:monospace;width:100%;" id="tipo" name="tipo">
+                        <option value="FC">FC | Factura</option>
+                        <option value="NC">NC | N.Credito</option>
+                        <option value="ND">ND | N.Debito</option>
+                        <option value="NR">NR | N.Remision</option>
+                        <option value="RC">RC | Recibo</option>
+                        <option value="RI">RI | Retencion iva</option>
+                        <option value="TI">TI | Ti</option>
+                        <option value="CF">CF | Credito Fiscal</option>
+                    </select>
+                    </div>
+                    <br/>
+                    Serie: <div class="input-control text"><input type="text" name="serie" id="serie" onchange="check_serie();" required="required" /></div>
+                    <br/>
+                    Descripción: <div class="input-control text"><input type="text" name="descripcion" required="required" /></div>
+                </div>
+        
+                <div style="width:300px;float:left;margin:10px;">
+                    # Resolución: <div class="input-control text"><input type="text" name="resolucion" /></div>
+                    <br/>
+                    Fecha resolución: <div class="input-control text"><input type="text" name="fecha_resolucion" /></div>
+                    <br/>
+                    Autorizado del: <div class="input-control text"><input type="text" value="0" name="del" /></div>
+                    <br/>
+                    Al: <div class="input-control text"><input type="text" value="99999999" name="al" /></div>
+                </div>
+        
+                <div style="width:300px;float:left;margin:10px;">
+                    Último utilizado: <div class="input-control text"><input type="text" disabled="disabled" /></div>
+                    <br/>
+                    <br/>
+                    <br/>
+                    <button type="submit" id="btnGuardar" class="primary">Guardar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+<br/><br/>
+<div class="panel">
+    <div class="panel-header">
+        <i class="icon-database"></i>
+         Series
+    </div>
+    <div class="panel-content">
+        <div id="bigbox" style="margin:15px;display:!none;">
+            <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+        
+            </div>
+        </div>
     </div>
 </div>
 

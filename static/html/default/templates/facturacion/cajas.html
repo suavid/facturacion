@@ -1,169 +1,176 @@
-<h2>Mantenimiento de cajas</h2>
-<br/>
-<br/>
-
-<form method="post" action="/facturacion/factura/guardar_caja">
-    <legend>Crear una nueva caja</legend>
-    <div style="display:table;">
-        <div style="float:left;width:300px;margin:15px;text-align:right;">
-            
-            <div class="input-control text">
-                <input type="text" name="id" id="id_" placeholder="No. Caja (0 = nuevo)" onchange="cargar_datos();" />
-            </div>
-            <br/>
-            <div class="input-control text">
-                <input type="text" name="nombre" placeholder="Nombre" id="nombre" required/>
-            </div>
-            <br/>
-            <div class="input-control text">
-                <input type="text" placeholder="Formato facturas" name="f_factura" id="f_factura"/>
-            </div>
-            <br/>
-            <div class="input-control text">
-                <input type="text" placeholder="Formato F. de Exp" name="f_exp" id="f_exp" />
-            </div>
-            <br/>
-            <div class="input-control text">
-                <input type="text" placeholder="Formato despachos" name="f_despacho" id="f_despacho" />
-            </div>
-            <br/>
-            <div class="input-control text"> 
-                <input type="text" placeholder="Formato notas de crédito" name="f_nota_credito" id="f_nota_credito" />
-            </div>
-            <br/>
-            <div class="input-control text">
-                <input type="text" placeholder="Formato notas de débito" name="f_nota_debito" id="f_nota_debito"  />
-            </div>
-            <br/>
-            <div class="input-control text">
-                <input type="text" placeholder="Formato recibos" name="f_recibo" id="f_recibo" />
-            </div>
-            <br/>
-        </div>
-        <div style="float:left;width:300px;margin:15px;text-align:right;">
-            <div class="input-control select">
-                Encargado
-                <select style="width:150px;" name="encargado" id="encargado" >
-                    <!-- START usuario -->
-                    <option value="{usuario}">
-                        {usuario}
-                    </option>
-                    <!-- END usuario -->
-                </select>
-            </div>
-            <br/>
-            <div class="input-control text">
-                Ultimo pedido
-                <input type="text" style="width:150px;" id="ultimo_pedido" readonly="readonly" />
-            </div>
-            <br/>
-            <div class="input-control text">
-                Ultimo Cambio
-                <input type="text" style="width:150px;" id="ultimo_cambio" readonly="readonly"/>
-            </div>
-            <br/>
-            <div class="input-control select">
-                Bodega que utiliza
-                <select style="width:150px;" name="bodega_por_defecto" id="bodega_por_defecto" >
-                    <!-- START bodega -->
-                    <option value="{id}">
-                        {nombre}
-                    </option>
-                    <!-- END bodega -->
-                </select>
-            </div>
-            <br/>
-        </div>
-        <div style="float:left;width:300px;margin:15px;text-align:right;">
-            <div class="input-control select">
-            Serie factura
-            <select style="width:150px;" name="serie_factura" id="serie_factura" onchange="set_serie(event);" >
-                <!-- START s_factura -->
-                <option value="{id}">
-                    {serie} | {descripcion}
-                </option>
-                <!-- END s_factura -->
-            </select>
-            </div>
-            <br/>
-            <div class="input-control select">
-            Serie notas credito
-            <select style="width:150px;" name="serie_nota_credito" id="serie_nota_credito" onchange="set_serie(event);" >
-                <!-- START s_credito -->
-                <option value="{id}">
-                    {serie} | {descripcion}
-                </option>
-                <!-- END s_credito -->
-            </select>
-            </div>
-            <br/>
-            <div class="input-control select">
-            Serie recibo
-            <select style="width:150px;" name="serie_recibo" id="serie_recibo" onchange="set_serie(event);" >
-                <!-- START s_recibo -->
-                <option value="{id}">
-                    {serie} | {descripcion}
-                </option>
-                <!-- END s_recibo -->
-            </select>
-            </div>
-            <br/>
-            <div class="input-control select">
-            Serie ticket
-            <select style="width:150px;" name="serie_ticket" id="serie_ticket" onchange="set_serie(event);" >
-                <!-- START s_ticket -->
-                <option value="{id}">
-                    {serie} | {descripcion}
-                </option>
-                <!-- END s_ticket -->
-            </select>
-            </div>
-            <br/>
-            <div class="input-control select">
-            Serie credito fiscal
-            <select style="width:150px;" name="serie_credito_fiscal" id="serie_credito_fiscal" onchange="set_serie(event);" >
-                <!-- START s_cf -->
-                <option value="{id}">
-                    {serie} | {descripcion}
-                </option>
-                <!-- END s_cf -->
-            </select>
-            </div>
-            <br/>
-            <div class="input-control select">
-            Serie nota de remisión
-            <select style="width:150px;" name="serie_nota_remision" id="serie_nota_remision" onchange="set_serie(event);" >
-                <!-- START s_nr -->
-                <option value="{id}">
-                    {serie} | {descripcion}
-                </option>
-                <!-- END s_nr -->
-            </select>
-            </div>
-            <br/>
-            <input type="hidden" name="codigo_factura" id="codigo_factura" />
-            <input type="hidden" name="codigo_nota_credito" id="codigo_nota_credito" />
-            <input type="hidden" name="codigo_recibo" id="codigo_recibo" />
-            <input type="hidden" name="codigo_nota_remision" id="codigo_nota_remision" />
-            <input type="hidden" name="codigo_ticket" id="codigo_ticket" />
-            <input type="hidden" name="codigo_credito_fiscal" id="codigo_credito_fiscal" />
-            <br/>
-            <div class="input-control checkbox" style="text-align: left;">
-                <label>
-                    <input type="checkbox" name="p_cambio_bodega" id="p_cambio_bodega" />
-                    <span class="check"></span>
-                    Permiso para cambiar bodega
-                </label>
-            </div>
-            <br/>
-            <br/>
-
-        </div>
+<h3>Mantenimiento de cajas</h3>
+<p class="text-muted">
+    Por medio de las cajas serán emitidas las facturas y otras operaciones
+</p>
+<hr/>
+<div class="panel">
+    <div class="panel-header">
+        <i class="icon-new"> </i> Crear una nueva caja
     </div>
-    <div style="width: 600px; padding-left: 15px;"> 
-        <button class="primary large" type="submit">Guardar caja</button>
+    <div class="pane-content">
+        <form method="post" action="/facturacion/factura/guardar_caja">
+            <div style="display:table;">
+                <div style="float:left;width:300px;margin:15px;text-align:right;">
+                    
+                    <div class="input-control text">
+                        <input type="text" name="id" id="id_" placeholder="No. Caja (0 = nuevo)" onchange="cargar_datos();" />
+                    </div>
+                    <br/>
+                    <div class="input-control text">
+                        <input type="text" name="nombre" placeholder="Nombre" id="nombre" required/>
+                    </div>
+                    <br/>
+                    <div class="input-control text">
+                        <input type="text" placeholder="Formato facturas" name="f_factura" id="f_factura"/>
+                    </div>
+                    <br/>
+                    <div class="input-control text">
+                        <input type="text" placeholder="Formato F. de Exp" name="f_exp" id="f_exp" />
+                    </div>
+                    <br/>
+                    <div class="input-control text">
+                        <input type="text" placeholder="Formato despachos" name="f_despacho" id="f_despacho" />
+                    </div>
+                    <br/>
+                    <div class="input-control text"> 
+                        <input type="text" placeholder="Formato notas de crédito" name="f_nota_credito" id="f_nota_credito" />
+                    </div>
+                    <br/>
+                    <div class="input-control text">
+                        <input type="text" placeholder="Formato notas de débito" name="f_nota_debito" id="f_nota_debito"  />
+                    </div>
+                    <br/>
+                    <div class="input-control text">
+                        <input type="text" placeholder="Formato recibos" name="f_recibo" id="f_recibo" />
+                    </div>
+                    <br/>
+                </div>
+                <div style="float:left;width:300px;margin:15px;text-align:right;">
+                    <div class="input-control select">
+                        Encargado
+                        <select style="width:150px;" name="encargado" id="encargado" >
+                            <!-- START usuario -->
+                            <option value="{usuario}">
+                                {usuario}
+                            </option>
+                            <!-- END usuario -->
+                        </select>
+                    </div>
+                    <br/>
+                    <div class="input-control text">
+                        Ultimo pedido
+                        <input type="text" style="width:150px;" id="ultimo_pedido" readonly="readonly" />
+                    </div>
+                    <br/>
+                    <div class="input-control text">
+                        Ultimo Cambio
+                        <input type="text" style="width:150px;" id="ultimo_cambio" readonly="readonly"/>
+                    </div>
+                    <br/>
+                    <div class="input-control select">
+                        Bodega que utiliza
+                        <select style="width:150px;" name="bodega_por_defecto" id="bodega_por_defecto" >
+                            <!-- START bodega -->
+                            <option value="{id}">
+                                {nombre}
+                            </option>
+                            <!-- END bodega -->
+                        </select>
+                    </div>
+                    <br/>
+                </div>
+                <div style="float:left;width:300px;margin:15px;text-align:right;">
+                    <div class="input-control select">
+                    Serie factura
+                    <select style="width:150px;" name="serie_factura" id="serie_factura" onchange="set_serie(event);" >
+                        <!-- START s_factura -->
+                        <option value="{id}">
+                            {serie} | {descripcion}
+                        </option>
+                        <!-- END s_factura -->
+                    </select>
+                    </div>
+                    <br/>
+                    <div class="input-control select">
+                    Serie notas credito
+                    <select style="width:150px;" name="serie_nota_credito" id="serie_nota_credito" onchange="set_serie(event);" >
+                        <!-- START s_credito -->
+                        <option value="{id}">
+                            {serie} | {descripcion}
+                        </option>
+                        <!-- END s_credito -->
+                    </select>
+                    </div>
+                    <br/>
+                    <div class="input-control select">
+                    Serie recibo
+                    <select style="width:150px;" name="serie_recibo" id="serie_recibo" onchange="set_serie(event);" >
+                        <!-- START s_recibo -->
+                        <option value="{id}">
+                            {serie} | {descripcion}
+                        </option>
+                        <!-- END s_recibo -->
+                    </select>
+                    </div>
+                    <br/>
+                    <div class="input-control select">
+                    Serie ticket
+                    <select style="width:150px;" name="serie_ticket" id="serie_ticket" onchange="set_serie(event);" >
+                        <!-- START s_ticket -->
+                        <option value="{id}">
+                            {serie} | {descripcion}
+                        </option>
+                        <!-- END s_ticket -->
+                    </select>
+                    </div>
+                    <br/>
+                    <div class="input-control select">
+                    Serie credito fiscal
+                    <select style="width:150px;" name="serie_credito_fiscal" id="serie_credito_fiscal" onchange="set_serie(event);" >
+                        <!-- START s_cf -->
+                        <option value="{id}">
+                            {serie} | {descripcion}
+                        </option>
+                        <!-- END s_cf -->
+                    </select>
+                    </div>
+                    <br/>
+                    <div class="input-control select">
+                    Serie nota de remisión
+                    <select style="width:150px;" name="serie_nota_remision" id="serie_nota_remision" onchange="set_serie(event);" >
+                        <!-- START s_nr -->
+                        <option value="{id}">
+                            {serie} | {descripcion}
+                        </option>
+                        <!-- END s_nr -->
+                    </select>
+                    </div>
+                    <br/>
+                    <input type="hidden" name="codigo_factura" id="codigo_factura" />
+                    <input type="hidden" name="codigo_nota_credito" id="codigo_nota_credito" />
+                    <input type="hidden" name="codigo_recibo" id="codigo_recibo" />
+                    <input type="hidden" name="codigo_nota_remision" id="codigo_nota_remision" />
+                    <input type="hidden" name="codigo_ticket" id="codigo_ticket" />
+                    <input type="hidden" name="codigo_credito_fiscal" id="codigo_credito_fiscal" />
+                    <br/>
+                    <div class="input-control checkbox" style="text-align: left;">
+                        <label>
+                            <input type="checkbox" name="p_cambio_bodega" id="p_cambio_bodega" />
+                            <span class="check"></span>
+                            Permiso para cambiar bodega
+                        </label>
+                    </div>
+                    <br/>
+                    <br/>
+        
+                </div>
+            </div>
+            <div style="width: 600px; padding-left: 15px;"> 
+                <button class="primary large" type="submit">Guardar caja</button>
+            </div>
+        </form>
     </div>
-</form>
+</div>
 
 <script type="text/javascript">
 
@@ -288,10 +295,14 @@
 </script>
     <br/>
     <br/>
-    <h3>Mis cajas</h3>
-    <hr/>
-    <div id="bigbox" style="margin:15px;display:!none;">
-        <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
-
+    <div class="panel">
+        <div class="panel-header"> 
+            <i class="icon-database"></i> Mis cajas
+        </div>
+    <div class="panel-content">
+        <div id="bigbox" style="margin:15px;display:!none;">
+            <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+    
+            </div>
         </div>
     </div>

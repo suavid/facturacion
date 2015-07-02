@@ -1,0 +1,3 @@
+Para traslados:
+* Para las salidas usar la bodega indicada en el detalle_traslado.
+* Para las entradas usar la bodega indicada en el encabezado del traslado.

@@ -312,6 +312,7 @@ class facturaModel extends object {
 				$estilo = $item['estilo'];
 				$color = $item['color'];
 				$talla = $item['talla'];
+				$bodega = $item['bodega'];
 				$cantidad = $item['cantidad'];
 				$prod = $this->get_child('producto');
                 $prod->get(array("estilo"=>$estilo, "linea"=>$linea));
@@ -353,7 +354,31 @@ class facturaModel extends object {
 
                 if( $item['id_dsvd']>0 ){
                 	
+					$existe = "SELECT id,stock FROM estado_bodega WHERE linea=$linea AND estilo='{$estilo}' AND color=$color AND talla=$talla AND bodega=$bodega";
+		            data_model()->executeQuery($existe);
+		            $ect = data_model()->getResult()->fetch_assoc();
+		            $id_destino = $ect['id'];
+		
+		            if (data_model()->getNumRows() > 0) {
+		                $up = "UPDATE estado_bodega SET stock = (stock + $cantidad) WHERE id=$id_destino ";
+		                data_model()->executeQuery($up);
+		            } else {
+		                $ins_dat = array();
+		                $ins_dat['estilo'] = $estilo;
+		                $ins_dat['linea'] = $linea;
+		                $ins_dat['color'] = $color;
+		                $ins_dat['talla'] = $talla;
+		                $ins_dat['stock'] = $cantidad;
+		                $ins_dat['bodega'] = $bodega_destino;
+		
+		                $newItem = $this->get_child('estado_bodega');
+		                $newItem->get(0);
+		                $newItem->change_status($ins_dat);
+		                $newItem->save();
+		            }
+					
                 	$kardex->nueva_entrada(
+						'1A',
 	                    date("Y-m-d"), 
 	                    "ENTRADA POR CAMBIO DE PRODUCTO", 
 	                    $dato_articulo, 
@@ -382,6 +407,7 @@ class facturaModel extends object {
 
                 	/* indica que no es una fila correspondiente a un cambio */
                 	$kardex->nueva_salida(
+						'2A',
 	                    date("Y-m-d"), 
 	                    "FACTURA AL CONTADO", 
 	                    $dato_articulo, 
@@ -406,6 +432,13 @@ class facturaModel extends object {
     }
 
     public function consignar($id_factura, $serie) {
+		$tot_pares = 0;
+        $tot_costo = 0;
+        $codigo    = 0;
+        $bodega_s  = 0;
+		$proveedor = 0;
+		
+		
 		$query = "START TRANSACTION";
 		data_model()->executeQuery($query);
 		$query = "UPDATE factura SET  facturado = 1, formapago = 3 WHERE id_factura = $id_factura";
@@ -546,7 +579,11 @@ class facturaModel extends object {
 			
 			$remisionD->save();
 			
-			if(isInstalled("kardex")){
+			$tot_pares += $item['cantidad'];
+        	$tot_costo += $item['costo'] * $item['cantidad'];
+			$bodega_s = $item['bodega'];
+			
+			/*if(isInstalled("kardex")){
 				$linea = $item['linea'];
 				$estilo = $item['estilo'];
 				$color = $item['color'];
@@ -593,8 +630,9 @@ class facturaModel extends object {
 
    
                 $kardex->nueva_salida(
+					'2C',
 	                date("Y-m-d"), 
-	                "SALIDA DE INVENTARIO POR CONSIGNACION", 
+	                "Consignación de mercadería", 
 	                $dato_articulo, 
 	                0, 
 	                1000, 
@@ -607,9 +645,94 @@ class facturaModel extends object {
 	                $item['bodega']
 	            ); 
 				
+				$kardex->nueva_entrada(
+			    	date("Y-m-d"), 
+			        "ENTRADA POR CAMBIO DE PRODUCTO", 
+			        $dato_articulo, 
+			        0, 
+			        1000, 
+			        0, 
+			        $dato_proveedor,
+			        $system->periodo_actual,
+			        0, 
+			        $dato_entrada,
+			        "$Dserie-$Dnodoc",
+			        $item['bodega']
+			    );
+			}*/
+		}
+		
+		/* SE HA CREADO LA NOTA RE MISION */
+		/* REALIZAR MOVIMIENTOS DE INVENTARIO */
 			
+			
+		// creando un traslado de producto para salida por traslado 
+                   
+		// creando la cabecera del traslado 
+		$transaccion = $this->get_child('transacciones');
+        $transaccion->setVirtualId('cod');
+        $transaccion->get("2C"); // Salida por traslado
+        $codigo = $transaccion->get_attr('ultimo') + 1;
+        $transaccion->set_attr('ultimo', $codigo);
+        $transaccion->save();
+
+        $traslado = $this->get_child('traslado');
+        $traslado->get(0);
+
+        $traslado->fecha = date("Y-m-d");
+        $traslado->proveedor_origen = 0;
+        $traslado->proveedor_nacional = 0;
+        $traslado->bodega_origen  = $bodega_s;
+        $traslado->bodega_destino = 100; // bodega correspondiente a consignación de mercadería
+        $traslado->concepto = "Consignación de mercadería";
+        $traslado->transaccion = "2C";
+        $traslado->total_pares = $tot_pares;
+        $traslado->total_costo = $tot_costo;
+        $traslado->total_costo_p = $tot_pares;
+        $traslado->total_pares_p = $tot_costo;
+        $traslado->editable = "0";
+        $traslado->consigna = "1";
+        $traslado->usuario = Session::singleton()->getUser();
+        $traslado->concepto_alternativo = "";
+        $traslado->cliente = "0";
+        $traslado->cod = $codigo;
+        $traslado->referencia_retaceo = "0";
+
+        $traslado->save();
+
+        $idref = $traslado->last_insert_id();
+
+       	foreach($buffer_detail as $item){
+			$estilo = $item["estilo"];
+			$linea = $item["linea"];
+			$color = $item["color"];
+			$talla = $item["talla"];
+			$cantidad = $item["cantidad"];
+
+			$costo = (isset($item['costo']))? $item["costo"]:0; 
+			$bodega = (isset($item['bodega']))? $item["bodega"]:0;
+			$proveedor = (isset($item['proveedor']))? $item["proveedor"]:0;
+			$tot_pares += $cantidad;
+			$tot_costo += ($cantidad * $costo);
+
+			if($cantidad > 0){
+				$det = $this->get_child('detalle_traslado');
+				$det->get(0);
+				$det->id_ref = $idref;
+				$det->linea = $linea;
+				$det->estilo = $estilo;
+				$det->color = $color;
+				$det->talla = $talla;
+				$det->costo = $costo;
+				$det->cantidad = $cantidad;
+				$det->total = $costo * $cantidad;
+				$det->bodega = $bodega;
+				$det->save();
 			}
 		}
+		
+		$inventario = connectTo("inventario", "mdl.model.inventario", "inventario");	
+        $inventario->transaccionLibre($idref, $bodega_s, 100, "2C");
 		
 		$query = "COMMIT";
 		data_model()->executeQuery($query);
@@ -831,6 +954,7 @@ class facturaModel extends object {
 						$estilo = $item['estilo'];
 						$color = $item['color'];
 						$talla = $item['talla'];
+						$bodega = $item['bodega'];
 						$cantidad = $item['cantidad'];
 						$prod = $this->get_child('producto');
 		                $prod->get(array("estilo"=>$estilo, "linea"=>$linea));
@@ -873,8 +997,32 @@ class facturaModel extends object {
 		                $Dserie = $seriemd->get_attr('serie');
 
 		                if( $item['id_dsvd']>0 ){
-                	
+                			
+							$existe = "SELECT id,stock FROM estado_bodega WHERE linea=$linea AND estilo='{$estilo}' AND color=$color AND talla=$talla AND bodega=$bodega";
+				            data_model()->executeQuery($existe);
+				            $ect = data_model()->getResult()->fetch_assoc();
+				            $id_destino = $ect['id'];
+				
+				            if (data_model()->getNumRows() > 0) {
+				                $up = "UPDATE estado_bodega SET stock = (stock + $cantidad) WHERE id=$id_destino ";
+				                data_model()->executeQuery($up);
+				            } else {
+				                $ins_dat = array();
+				                $ins_dat['estilo'] = $estilo;
+				                $ins_dat['linea'] = $linea;
+				                $ins_dat['color'] = $color;
+				                $ins_dat['talla'] = $talla;
+				                $ins_dat['stock'] = $cantidad;
+				                $ins_dat['bodega'] = $bodega_destino;
+				
+				                $newItem = $this->get_child('estado_bodega');
+				                $newItem->get(0);
+				                $newItem->change_status($ins_dat);
+				                $newItem->save();
+				            }
+							
 		                	$kardex->nueva_entrada(
+								'1A',
 			                    date("Y-m-d"), 
 			                    "ENTRADA POR CAMBIO DE PRODUCTO", 
 			                    $dato_articulo, 
@@ -904,6 +1052,7 @@ class facturaModel extends object {
 		                }else{
 
 			                $kardex->nueva_salida(
+								"2A",
 			                    date("Y-m-d"), 
 			                    "FACTURA AL CREDITO", 
 			                    $dato_articulo, 
@@ -1066,6 +1215,7 @@ class facturaModel extends object {
 	        while ($res = data_model()->getResult()->fetch_assoc()) {
 	            $items[] = $res;
 	        }
+			
 	        foreach ($items as $item) {
 	            $bodega   = $item['bodega'];
 	            $linea    = $item['linea'];
@@ -1132,8 +1282,9 @@ class facturaModel extends object {
 
 
 	                $kardex->nueva_entrada(
-	                    date("Y-m-d"), 
-	                    "ANULACION DE FACTURA", 
+	                    "1E",
+						date("Y-m-d"), 
+	                    "Anulación de factura", 
 	                    $dato_articulo, 
 	                    0, 
 	                    1000, 

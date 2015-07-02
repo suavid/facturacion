@@ -38,14 +38,14 @@ class devolucionModel extends object {
             $productos[] = $res;
         }
 
-        foreach ($productos as $producto) {
+        /*foreach ($productos as $producto) {
             if ($oBodega->existe($producto['linea'], $producto['estilo'], $producto['color'], $producto['talla'], $producto['bodega'])) {
                 $oBodega->act_stock($producto['linea'], $producto['estilo'], $producto['color'], $producto['talla'], $producto['bodega'], $producto['cantidad']);
             } else {
                 $oBodega->ins_stock($producto['linea'], $producto['estilo'], $producto['color'], $producto['talla'], $producto['bodega'], $producto['cantidad']);
             }
             $this->suplir($producto['id']);
-        }
+        }*/
 
         $query = "UPDATE cambio SET editable = false WHERE id=$cambio";
         data_model()->executeQuery($query);

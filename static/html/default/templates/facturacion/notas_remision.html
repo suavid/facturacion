@@ -62,7 +62,7 @@
     <div class="panel" style="float: left;">
         <div class="panel-header">
              <i class="icon-list"></i>
-             Notas de remisión pendientes de procesar
+             Producto en consignación
         </div>
         <div class="panel-content">
             <div id="bigbox" style="margin:15px;display:!none;float:left;">
@@ -636,11 +636,14 @@
     }
 
     function anular_nota() {
+        
         uri = "/facturacion/factura/anular_nota_remision";
+        
         data = {
             "id": window.referencia_nota,
             "pedido": window.pedido
         };
+        
         if (confirm("esta seguro?")) {
             rq = $.post(uri, data, function(d) {
                 if (d.success) {

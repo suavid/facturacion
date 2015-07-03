@@ -8,7 +8,7 @@ class bodegaModel extends object {
      * */
 
     public function existe_producto($linea, $estilo, $color, $talla) {
-        $query = "SELECT * FROM estado_bodega WHERE estilo=$estilo AND linea=$linea AND talla=$talla AND color=$color";
+        $query = "SELECT * FROM estado_bodega WHERE estilo='{$estilo}' AND linea=$linea AND talla=$talla AND color=$color";
         data_model()->executeQuery($query);
         if (data_model()->getNumRows() > 0)
             return true;
@@ -28,7 +28,7 @@ class bodegaModel extends object {
     }
 
     public function crear_entrada($linea, $estilo, $color, $talla, $bodega) {
-        $query = "INSER INTO estado_bodega(estilo,linea,color,talla,bodega,stock) VALUES($estilo,$linea,$color,$talla,$bodega,0)";
+        $query = "INSER INTO estado_bodega(estilo,linea,color,talla,bodega,stock) VALUES('$estilo',$linea,$color,$talla,$bodega,0)";
         data_model()->executeQuery($query);
     }
 
@@ -36,7 +36,7 @@ class bodegaModel extends object {
         if ($cantidad < 0)
             $cantidad *= -1;
         if ($this->existe_producto($linea, $estilo, $color, $talla)) {
-            $query = "UPDATE estado_bodega SET stock=(stock+$cantidad) WHERE estilo=$estilo AND linea=$linea AND talla=$talla AND color=$color AND bodega=$bodega";
+            $query = "UPDATE estado_bodega SET stock=(stock+$cantidad) WHERE estilo='{$estilo}' AND linea=$linea AND talla=$talla AND color=$color AND bodega=$bodega";
             data_model()->executeQuery($query);
         } else {
             $this->crear_entrada($linea, $estilo, $color, $talla, $bodega);
@@ -47,12 +47,12 @@ class bodegaModel extends object {
     public function reducir_stock($linea, $estilo, $color, $talla, $bodega, $cantidad) {
         if ($cantidad < 0)
             $cantidad *= -1;
-        $query = "UPDATE estado_bodega SET stock=(stock-$cantidad) WHERE estilo=$estilo AND linea=$linea AND talla=$talla AND color=$color AND bodega=$bodega";
+        $query = "UPDATE estado_bodega SET stock=(stock-$cantidad) WHERE estilo='{$estilo}' AND linea=$linea AND talla=$talla AND color=$color AND bodega=$bodega";
         data_model()->executeQuery($query);
     }
 
     public function consultar_stock($linea, $estilo, $color, $talla, $bodega) {
-        $query = "SELECT stock FROM estado_bodega WHERE estilo=$estilo AND linea=$linea AND talla=$talla AND color=$color AND bodega=$bodega";
+        $query = "SELECT stock FROM estado_bodega WHERE estilo='{$estilo}' AND linea=$linea AND talla=$talla AND color=$color AND bodega=$bodega";
         data_model()->executeQuery($query);
         $stock = 0;
         while ($res = data_model()->getResult()->fetch_assoc()) {
@@ -76,7 +76,7 @@ class bodegaModel extends object {
     }
 
     public function existe($linea, $estilo, $color, $talla, $bodega) {
-        $query = "SELECT * FROM estado_bodega WHERE estilo=$estilo AND linea=$linea AND talla=$talla AND color=$color AND bodega=$bodega";
+        $query = "SELECT * FROM estado_bodega WHERE estilo='{$estilo}' AND linea=$linea AND talla=$talla AND color=$color AND bodega=$bodega";
         data_model()->executeQuery($query);
         if (data_model()->getNumRows() > 0)
             return true;
@@ -85,7 +85,7 @@ class bodegaModel extends object {
     }
 
     public function act_stock($linea, $estilo, $color, $talla, $bodega, $cantidad) {
-        $query = "UPDATE estado_bodega SET stock = (stock + $cantidad) WHERE estilo=$estilo AND linea=$linea AND talla=$talla AND color=$color AND bodega=$bodega";
+        $query = "UPDATE estado_bodega SET stock = (stock + $cantidad) WHERE estilo='{$estilo}' AND linea=$linea AND talla=$talla AND color=$color AND bodega=$bodega";
         data_model()->executeQuery($query);
     }
 

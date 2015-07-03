@@ -438,7 +438,6 @@ class facturaModel extends object {
         $bodega_s  = 0;
 		$proveedor = 0;
 		
-		
 		$query = "START TRANSACTION";
 		data_model()->executeQuery($query);
 		$query = "UPDATE factura SET  facturado = 1, formapago = 3 WHERE id_factura = $id_factura";
@@ -524,8 +523,7 @@ class facturaModel extends object {
 		$query = "SELECT * FROM detalle_factura WHERE id_factura=$id_factura";
 		data_model()->executeQuery($query);
 		$buffer_detail = array();
-		while($result = data_model()->getResult()->fetch_assoc()){
-			
+		while($result = data_model()->getResult()->fetch_assoc()){		
 			$buffer_detail[] = $result;
 		}
 		
@@ -581,85 +579,8 @@ class facturaModel extends object {
 			
 			$tot_pares += $item['cantidad'];
         	$tot_costo += $item['costo'] * $item['cantidad'];
-			$bodega_s = $item['bodega'];
+			$bodega_s   = $item['bodega'];
 			
-			/*if(isInstalled("kardex")){
-				$linea = $item['linea'];
-				$estilo = $item['estilo'];
-				$color = $item['color'];
-				$talla = $item['talla'];
-				$cantidad = $item['cantidad'];
-				$prod = $this->get_child('producto');
-                $prod->get(array("estilo"=>$estilo, "linea"=>$linea));
-                $prov = $this->get_child('proveedor');
-                $prov->get($prod->proveedor);
-                //data_model()->newConnection(HOST, USER, PASSWORD, "db_system");
-                //data_model()->setActiveConnection(1);
-
-                $system = $this->get_child('system');
-                $system->get(1);
-
-				
-				$kardex   = connectTo("kardex", "mdl.model.kardex", "kardex");
-				$articulo = connectTo("kardex", "objects.articulo", "articulo");
-				//$kardex->generar_salida($item['linea'], $item['estilo'], $item['color'], $item['talla'], $item['cantidad'], "Facturacion de producto al contado");
-
-				$articulo->nuevo_articulo($linea, $estilo, $color, $talla);
-                        
-                $dato_articulo = array(
-                    'codigo'=>$articulo->no_articulo($linea, $estilo, $color, $talla),
-                    'articulo'=>"$linea-$estilo-$color-$talla",
-                    'descripcion'=> $prod->descripcion
-                );
-
-                $dato_proveedor = array(
-                    'nombre_proveedor'=> $prov->nombre,
-                    'nacionalidad_proveedor'=> $prov->nacionalidad
-                );
-
-                $dato_salida = array(
-                    "sal_cantidad"=> $cantidad
-                );
-
-                $dato_entrada = array(
-                    "ent_cantidad"=> $cantidad,
-                    "ent_costo_unitario"=> $item['costo'],
-                    "ent_costo_total"=> $cantidad * $item['costo']
-                );
-
-
-   
-                $kardex->nueva_salida(
-					'2C',
-	                date("Y-m-d"), 
-	                "Consignación de mercadería", 
-	                $dato_articulo, 
-	                0, 
-	                1000, 
-	                0, 
-	                $dato_proveedor,
-	                $system->periodo_actual,
-	                0, 
-	                $dato_salida,
-	                "$Dserie-$Dnodoc",
-	                $item['bodega']
-	            ); 
-				
-				$kardex->nueva_entrada(
-			    	date("Y-m-d"), 
-			        "ENTRADA POR CAMBIO DE PRODUCTO", 
-			        $dato_articulo, 
-			        0, 
-			        1000, 
-			        0, 
-			        $dato_proveedor,
-			        $system->periodo_actual,
-			        0, 
-			        $dato_entrada,
-			        "$Dserie-$Dnodoc",
-			        $item['bodega']
-			    );
-			}*/
 		}
 		
 		/* SE HA CREADO LA NOTA RE MISION */
@@ -682,39 +603,54 @@ class facturaModel extends object {
         $traslado->fecha = date("Y-m-d");
         $traslado->proveedor_origen = 0;
         $traslado->proveedor_nacional = 0;
-        $traslado->bodega_origen  = $bodega_s;
-        $traslado->bodega_destino = 100; // bodega correspondiente a consignación de mercadería
-        $traslado->concepto = "Consignación de mercadería";
-        $traslado->transaccion = "2C";
+        $traslado->bodega_origen  = 0;
+        $traslado->bodega_destino = BODEGA_CONSIGNACIONES; 
+        $traslado->concepto = "Consignación de mercadería - ".$nomcli;
+        $traslado->transaccion = "2C";   // Salida por traslado
         $traslado->total_pares = $tot_pares;
         $traslado->total_costo = $tot_costo;
         $traslado->total_costo_p = $tot_pares;
         $traslado->total_pares_p = $tot_costo;
         $traslado->editable = "0";
-        $traslado->consigna = "1";
+        $traslado->consigna = "0";
         $traslado->usuario = Session::singleton()->getUser();
         $traslado->concepto_alternativo = "";
         $traslado->cliente = "0";
         $traslado->cod = $codigo;
         $traslado->referencia_retaceo = "0";
-
+		
         $traslado->save();
 
         $idref = $traslado->last_insert_id();
+		
+		unset($item);
+		
+		// obtencion de los detalles de las facturas
+		$query = "SELECT * FROM detalle_factura WHERE id_factura=$id_factura";
+		data_model()->executeQuery($query);
+		$buffer_detail = array();
+		while($result = data_model()->getResult()->fetch_assoc()){
+			
+			$buffer_detail[] = $result;
+		}
+		
+       	foreach($buffer_detail as $itemprod){
+			$estilo = $itemprod["estilo"];
+			$linea = $itemprod["linea"];
+			$color = $itemprod["color"];
+			$talla = $itemprod["talla"];
+			$cantidad = $itemprod["cantidad"];
 
-       	foreach($buffer_detail as $item){
-			$estilo = $item["estilo"];
-			$linea = $item["linea"];
-			$color = $item["color"];
-			$talla = $item["talla"];
-			$cantidad = $item["cantidad"];
-
-			$costo = (isset($item['costo']))? $item["costo"]:0; 
-			$bodega = (isset($item['bodega']))? $item["bodega"]:0;
-			$proveedor = (isset($item['proveedor']))? $item["proveedor"]:0;
-			$tot_pares += $cantidad;
-			$tot_costo += ($cantidad * $costo);
-
+			$costo = (isset($itemprod['costo']))? $itemprod["costo"]:0; 
+			$bodega = (isset($itemprod['bodega']))? $itemprod["bodega"]:0;
+			$proveedor = (isset($itemprod['proveedor']))? $item["proveedor"]:0;
+			
+			/* PARCHE: la transaccion decrementa el stock, pero como aca ya ha sido decrementado por el pedido 
+			** debe incrementarse una vez para solverntar el problema
+			 */
+			$bodObj = $this->get_child('bodega');
+			$bodObj->aumentar_stock($linea, $estilo, $color, $talla, $bodega, $cantidad);
+			
 			if($cantidad > 0){
 				$det = $this->get_child('detalle_traslado');
 				$det->get(0);
@@ -732,7 +668,7 @@ class facturaModel extends object {
 		}
 		
 		$inventario = connectTo("inventario", "mdl.model.inventario", "inventario");	
-        $inventario->transaccionLibre($idref, $bodega_s, 100, "2C");
+        $inventario->transaccionLibre($idref, $bodega_s, BODEGA_CONSIGNACIONES, "2C");
 		
 		$query = "COMMIT";
 		data_model()->executeQuery($query);

@@ -288,9 +288,13 @@
 				
                 if(d.estado==1){
 					$('#festado').append("<option>PROCESADO</option>");
-				}else{
+				}else if(d.estado==2){
 					$('#festado').append("<option>PENDIENTE</option>");
-				}
+				}else if(d.estado == 3){
+                    $('#festado').append("<option>ANULADO</option>");
+                }else{
+                    $('#festado').append("<option>PENDIENTE</option>");
+                }
 				
                 $('#ftipo option').remove();
 				

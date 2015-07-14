@@ -10,6 +10,7 @@
         </div>
     </div>
 </div>
+
 <div id="nanuladas" style="background:#fff;width:100%;height:100%;position:fixed;top:0px;left:0px;z-index:100002;display:none;">
     <button onclick="cerrar_anuladas();">Cerrar</button>
     <div style="padding-left:30px;">
@@ -22,6 +23,7 @@
         </div>
     </div>
 </div>
+
 <div id="nprocesadas" style="background:#fff;width:100%;height:100%;position:fixed;top:0px;left:0px;z-index:100002;display:none;">
     <button onclick="cerrar_procesadas();">Cerrar</button>
     <div style="padding-left:30px;">
@@ -34,6 +36,8 @@
         </div>
     </div>
 </div>
+
+<!-- Formulario para procesar notas de remisión -->
 <div id="proccess" style="background:#fff;width:100%;height:100%;position:fixed;top:0px;left:0px;z-index:100002;display:none;">
     <button onclick="cerrar_proceso();">Cerrar</button>
     <div style="padding-left:30px;">
@@ -45,14 +49,15 @@
             </div>
         </div>
         <br/>
-        <button id="prnota" class="primary" onclick="this.disabled = true;
-                $('#annota').attr('disabled', 'disabled');
-                procesar_nota();">Procesar</button>
-        <button id="annota" onclick="this.disabled = true;
-                $('#prnota').attr('disabled', 'disabled');
-                anular_nota();">Anular</button>
+        <button id="prnota" class="primary" onclick="this.disabled = true;$('#annota').attr('disabled', 'disabled');procesar_nota();">
+            Procesar
+        </button>
+        <button id="annota" onclick="this.disabled = true;$('#prnota').attr('disabled', 'disabled');anular_nota();">
+            Anular
+        </button>
     </div>
 </div>
+
 <section style="display:table;">
     <div class="toolbar transparent">
         <button onclick="notas_anuladas();"><i class="icon-search on-left"></i>Notas anuladas</button>
@@ -157,8 +162,8 @@
                     "pedido": window.pedido
                 };
 
-                rq = $.post(uri, data, function(d) {
-                    if (d.success) {
+                $.post(uri, data, function(d) {
+                    /*if (d.success) {
                         alert('Nota de credito procesada con exito');
                         if (d.data.pedido > 0) {
                             var vestilos = window.open('/facturacion/factura/nuevo?nt_r=ok&cod=' + d.data.pedido + '&tipo=' + tipo_factura, '_blank');
@@ -172,36 +177,21 @@
                         alert(d.message);
                     }
                     $('#fcredito').removeAttr('disabled');
-                    $('#fcontado').removeAttr('disabled');
+                    $('#fcontado').removeAttr('disabled');*/
                 }, "json");
             } else {
                 alert("Ups!, algo salio mal");
             }
+            
+            concluir_proceso();
         }
     }
 
     function procesar_nota() {
-        concluir_proceso();
+        //
         $('#prnota').removeAttr('disabled');
         $('#annota').removeAttr('disabled');
-        $.Dialog({
-            overlay: true,
-            shadow: true,
-            flat: true,
-            title: 'Opciones de facturacion',
-            content: '',
-            width: 400,
-            onShow: function(_dialog) {
-                var content = _dialog.children('.content');
-                html = [
-                    '<br/><br/><div style="text-align:center;">',
-                    '<button class="shortcut" id="fcredito" onclick="this.disabled=true;$(\'#fcontado\').attr(\'disabled\',\'disabled\');facturar(\'credito\');"><i class="icon-credit-card"></i>Crédito</button>',
-                    '<button class="shortcut" id="fcontado" onclick="this.disabled=true;$(\'#fcredito\').attr(\'disabled\',\'disabled\');facturar(\'contado\');"><i class="icon-dollar"></i>Contado</button>'
-                ].join("");
-
-                content.html(html);
-            }
-        });
+        facturar();
     }
 
     var grid_demo_id = "genero_grid";
@@ -224,10 +214,18 @@
     }
 
     function acciones_render(value, record, columnObj, grid, colNo, rowNo) {
+        
         var detalle  = '<a href="javascript:void(0);" onclick="ver_detalle(' + record['noped'] + ',' + record['caja'] + ');"> ver detalle </a>';
-        var procesar = '<a href="javascript:void(0);" onclick="procesar(' + record['noped'] + ',' + record['caja'] + ');"> procesar </a>';
+        
+        if(record['anulado']!=1){    
+            var procesar = '<a href="javascript:void(0);" onclick="procesar(' + record['noped'] + ',' + record['caja'] + ');"> procesar </a>';    
+            return detalle + '|' + procesar;
+        }
+        else{
+          return detalle;  
+        }
 
-        return detalle + '|' + procesar;
+        
     }
 
     function acciones2_render(value, record, columnObj, grid, colNo, rowNo) {
@@ -635,11 +633,14 @@
         $('#proccess').css('display', 'none');
     }
 
+    /**
+     * Anular nota de remisión  
+     */
     function anular_nota() {
         
-        uri = "/facturacion/factura/anular_nota_remision";
+        var uri = "/facturacion/factura/anular_nota_remision";
         
-        data = {
+        var data = {
             "id": window.referencia_nota,
             "pedido": window.pedido
         };
@@ -647,7 +648,7 @@
         if (confirm("esta seguro?")) {
             rq = $.post(uri, data, function(d) {
                 if (d.success) {
-                    alert('Nota de credito anulada con exito');
+                    alert('Nota de remisión anulada con exito');
                     var grid = Sigma.$grid("genero_grid");
                     grid.reload();
                     cerrar_proceso();
@@ -656,6 +657,7 @@
                 }
             }, "json");
         }
+        
         $('#prnota').removeAttr('disabled');
         $('#annota').removeAttr('disabled');
     }

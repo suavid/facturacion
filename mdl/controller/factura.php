@@ -100,6 +100,10 @@ class facturaController extends controller {
         $res['transaction'] = "anulacion nota de remision"; // operacion que se esta realizando
         $res['message'] = "";               // mensaje de la operacion (puede ser mensaje de error u otro)
         $res['success'] = false;            // estado de la operacion (true si tuvo exito o false si ocurre algun error)
+        
+        $tot_pares = 0;
+        $tot_costo = 0;
+		$bodega_s  = 0;
 
         /* informacion asociada al registro de la operacion */
         $registro = array();
@@ -107,44 +111,128 @@ class facturaController extends controller {
         $registro['fecha'] = date("Y-m-d");                        # fecha de la operacion
         $registro['usuario'] = Session::singleton()->getUser();    # usuario que lleva a cabo la operacion
         $registro['n_pedido'] = $_POST['pedido'];                     # referencia a pedido
+        
+        // id de referencia al registro de la factura en la base de datos
+        $id = $_POST['id'];
+        
         // datos de caja del usuario
         list($tieneCaja, $data) = $this->model->tieneCaja(Session::singleton()->getUser());
 
-
-        // obteniendo estado de la factura
-        $id = $_POST['id'];
         $this->model->get($id);
-        $estado = $this->model->get_attr('estado');
-
-        // verificar si la factura esta pendiente de procesar
-        if ($estado == "PENDIENTE") {
-            // anular inmediatamente
-            $this->model->set_attr('estado', 'ANULADO');
-            $this->model->save();
-
-            // se regresa todo el producto a inventario y se revierten los cambios que 
-            // fueron realizados a la cuenta del cliente
-            $nt = $this->model->get_child('detalle_factura');
-            $nt->anular_pedido_total($id);
-
-            // se terminan de almacenar los datos asociados al registro
-            $registro['caja'] = $this->model->get_attr('caja');
-            $cj = $this->model->get_child('caja');
-            $cj->get($this->model->get_attr('caja'));
-            $registro['serie'] = $cj->get_attr('codigo_factura');
-            // se ha registrado ademas del pedido la caja de facturacion y la serie que estaba activa
-            // almacenamos el registros de la operacion realizada
-            $op = $this->model->get_child('pnota_remision');
-            $op->get(0);
-            $op->change_status($registro);
-            $op->save();
-
-            $res['success'] = true;   # indicamos el exito de la operacion al cliente
-        } else {
-            $res['success'] = false;
-            $res['message'] = "Error!, El pedido ya habia sido procesado";
+        
+        // actualizamos el estado del pedido y de la nota de remisión
+        $caja          = $this->model->caja;
+        $nota_remision = $this->model->get_child('nota_remision');
+        $id_nota       = $nota_remision->obtenerId($_POST['pedido'], $caja);
+        
+        $this->model->facturado = 3;
+        $this->model->save();
+        $nota_remision->get($id_nota);
+        $nota_remision->anulado = "1";
+        $nota_remision->save();
+        // Se han actualizaado los documentos para indicar que han sido anulados
+        
+        // se obtiene el nombre del cliente
+        $cliente = $this->model->get_sibling('cliente');   
+		$cliente->get($this->model->id_cliente);
+        
+        $nomcli = '';
+		$nomcli .= $cliente->get_attr('primer_nombre').' ';
+		$nomcli .= $cliente->get_attr('segundo_nombre').' ';
+		$nomcli .= $cliente->get_attr('primer_apellido').' ';
+		$nomcli .= $cliente->get_attr('segundo_apellido');
+        
+        // obtencion de los detalles de las facturas
+		$query = "SELECT * FROM detalle_factura WHERE id_factura=$id";
+		data_model()->executeQuery($query);
+		$buffer_detail = array();
+		while($result = data_model()->getResult()->fetch_assoc()){		
+			$buffer_detail[] = $result;
+		}
+        
+        
+        // proceso del detalle de la factura
+		foreach($buffer_detail as $item){
+            $tot_pares += $item['cantidad'];
+        	$tot_costo += $item['costo'] * $item['cantidad'];
+			$bodega_s   = $item['bodega'];
         }
+        
+        // creando la cabecera del traslado 
+		$transaccion = $this->model->get_child('transacciones');
+        $transaccion->setVirtualId('cod');
+        $transaccion->get("1C"); // Ingreso por traslado
+        $codigo = $transaccion->get_attr('ultimo') + 1;
+        $transaccion->set_attr('ultimo', $codigo);
+        $transaccion->save();
 
+        $traslado = $this->model->get_child('traslado');
+        $traslado->get(0);
+
+        $traslado->fecha = date("Y-m-d");
+        $traslado->proveedor_origen = 0;
+        $traslado->proveedor_nacional = 0;
+        $traslado->bodega_origen  = 0;
+        $traslado->bodega_destino = BODEGA_CONSIGNACIONES; 
+        $traslado->concepto = "Anulación de nota de remisión a nombre de ".$nomcli;
+        $traslado->transaccion = "1C";   // Ingreso por traslado
+        $traslado->total_pares = $tot_pares;
+        $traslado->total_costo = $tot_costo;
+        $traslado->total_costo_p = $tot_pares;
+        $traslado->total_pares_p = $tot_costo;
+        $traslado->editable = "0";
+        $traslado->consigna = "0";
+        $traslado->usuario = Session::singleton()->getUser();
+        $traslado->concepto_alternativo = "";
+        $traslado->cliente = "0";
+        $traslado->cod = $codigo;
+        $traslado->referencia_retaceo = "0";
+		
+        $traslado->save();
+
+        $idref = $traslado->last_insert_id();
+        
+        unset($item);
+        
+        // obtencion de los detalles de las facturas
+		$query = "SELECT * FROM detalle_factura WHERE id_factura=$id";
+		data_model()->executeQuery($query);
+		$buffer_detail = array();
+		while($result = data_model()->getResult()->fetch_assoc()){
+			
+			$buffer_detail[] = $result;
+		}
+		
+       	foreach($buffer_detail as $itemprod){
+			$estilo = $itemprod["estilo"];
+			$linea = $itemprod["linea"];
+			$color = $itemprod["color"];
+			$talla = $itemprod["talla"];
+			$cantidad = $itemprod["cantidad"];
+
+			$costo = (isset($itemprod['costo']))? $itemprod["costo"]:0; 
+			$bodega = (isset($itemprod['bodega']))? $itemprod["bodega"]:0;
+			$proveedor = (isset($itemprod['proveedor']))? $item["proveedor"]:0;
+			
+			if($cantidad > 0){
+				$det = $this->model->get_child('detalle_traslado');
+				$det->get(0);
+				$det->id_ref = $idref;
+				$det->linea = $linea;
+				$det->estilo = $estilo;
+				$det->color = $color;
+				$det->talla = $talla;
+				$det->costo = $costo;
+				$det->cantidad = $cantidad;
+				$det->total = $costo * $cantidad;
+				$det->bodega = BODEGA_CONSIGNACIONES;
+				$det->save();
+			}
+		}
+		
+		$inventario = connectTo("inventario", "mdl.model.inventario", "inventario");	
+        $inventario->transaccionLibre($idref, BODEGA_CONSIGNACIONES,$bodega_s, "2C");
+        $res['success'] = true;
         echo json_encode($res);
     }
 
@@ -639,7 +727,7 @@ class facturaController extends controller {
 				$ret['fecha'] 	= $this->model->get_attr('fecha');		// obtiene la fecha en la cual se hizo el pedido
 				$ret['estado'] 	= $this->model->get_attr('facturado');	// obtiene el estado del pedido, 1 = facturado, 0 = pendiente 
 				$ret['flete'] 	= $this->model->get_attr('flete');		// tiene flete
-				$ret['tipo'] 		= $this->model->get_attr('formapago');;	// tipo
+				$ret['tipo'] 		= $this->model->get_attr('formapago');	// tipo
 				$ret['ref'] 		= $pedido;							// referencia
 			}
 		} else {
@@ -1274,7 +1362,7 @@ class facturaController extends controller {
         $cliente = (isset($_POST['cliente'])) ? " AND rd_cod=" . $_POST['cliente'] : "";
 
         //to get how many records totally.
-        $sql = "select count(*) as cnt from nota_remision WHERE facturado = 0 " . $cliente;
+        $sql = "select count(*) as cnt from nota_remision WHERE facturado = 0 AND anulado = 0" . $cliente;
         $handle = mysqli_query(conManager::getConnection(), $sql);
         $row = mysqli_fetch_object($handle);
         $totalRec = $row->cnt;
@@ -1285,7 +1373,7 @@ class facturaController extends controller {
         endif;
 
         if ($json->{'action'} == 'load'):
-            $sql = "select * from nota_remision WHERE facturado = 0 " . $cliente . " limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
+            $sql = "select * from nota_remision WHERE facturado = 0 AND anulado = 0" . $cliente . " limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
             $handle = mysqli_query(conManager::getConnection(), $sql);
             $retArray = array();
             while ($row = mysqli_fetch_object($handle)):
@@ -1308,7 +1396,7 @@ class facturaController extends controller {
         $cliente = (isset($_POST['cliente'])) ? " AND id_cliente=" . $_POST['cliente'] : "";
 
         //to get how many records totally.
-        $sql = "select count(*) as cnt from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE tipo='REMISION' AND estado='ANULADO'" . $cliente;
+        $sql = "select count(*) as cnt from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE facturado=3 AND formapago = 3 " . $cliente;
         $handle = mysqli_query(conManager::getConnection(), $sql);
         $row = mysqli_fetch_object($handle);
         $totalRec = $row->cnt;
@@ -1319,7 +1407,7 @@ class facturaController extends controller {
         endif;
 
         if ($json->{'action'} == 'load'):
-            $sql = "select * from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE tipo='REMISION' AND estado='ANULADO'" . $cliente . " limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
+            $sql = "select * from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE  facturado=3 AND formapago = 3 " . $cliente . " limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
             $handle = mysqli_query(conManager::getConnection(), $sql);
             $retArray = array();
             while ($row = mysqli_fetch_object($handle)):

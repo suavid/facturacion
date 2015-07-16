@@ -214,7 +214,9 @@ class detalle_facturaModel extends object {
 
     public function total_facturable($pedido) {
         /* selecciona extraidos y entrantes por cada entrada del detalle */
-        $query = "SELECT cantidad,entran FROM detalle_factura WHERE id_factura=$pedido";
+        $query = "SELECT * FROM detalle_factura WHERE id_factura=$pedido";
+        $items = array();
+        
         data_model()->executeQuery($query);
 
         $buffer_mem = array();
@@ -227,10 +229,15 @@ class detalle_facturaModel extends object {
 
         // calculo de totales
         foreach ($buffer_mem as $item) {
-            $totl += ($item['cantidad'] - $item['entran']);
+            if(($item['cantidad'] - $item['entran']) > 0){
+                $item['cantidad'] = $item['cantidad'] - $item['entran'];
+                $item['entran'] = 0;
+                $item['bodega'] = BODEGA_CONSIGNACIONES;
+                $items[] = $item;
+            }
         }
 
-        return $totl;
+        return $items;
     }
 
 }

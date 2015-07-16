@@ -125,6 +125,9 @@
         </table>
     </div>
 </section>
+<form action="/facturacion/factura/nuevo" method="post" id="frmDataRem">
+    <input type="hidden" name="informacionRemision" id="informacionRemision" />
+</form>
 
 <script type="text/javascript" >
 
@@ -163,8 +166,18 @@
                 };
 
                 $.post(uri, data, function(d) {
+                    
+                    var data_pedido = {
+                        "cliente" : d.data.cliente,
+                        "productos" : d.data.pendientes
+                    }
+                    
+                    $("#informacionRemision").val(JSON.stringify(data_pedido));
+                    
+                    $("#frmDataRem").submit();
+                    
                     /*if (d.success) {
-                        alert('Nota de credito procesada con exito');
+                        alert('Nota de remision procesada con exito');
                         if (d.data.pedido > 0) {
                             var vestilos = window.open('/facturacion/factura/nuevo?nt_r=ok&cod=' + d.data.pedido + '&tipo=' + tipo_factura, '_blank');
                         }

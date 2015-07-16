@@ -34,6 +34,8 @@
         
         $('#n_pedido').focus();
         
+        window.procesarRemision = false;
+        window.productos = [];
         window.codPedido = 0;
         window.editable  = false;
         window.lbl       = 0;
@@ -72,7 +74,26 @@
                 facturar_contado();
             }
         }
+        
+        var infoRem = '{infoRem}';
+        
+        if(infoRem.trim()!="")
+        {
+            var dataRem = JSON.parse(infoRem);
+            
+            $('#codigo_cliente').val(dataRem.cliente);
+            $('#codigo_cliente').focus();
+            window.procesarRemision = true;
+            window.productos = dataRem.productos;
+            $('#codigo_cliente').blur();
+            
+            
+        }
+        
+        
     });
+    
+    
     
     /* impresion de factura */        
     function crear_sffs(){
@@ -334,6 +355,57 @@
 					desHabilitar();
 					$('#buy').removeAttr("disabled");
 				}
+                
+                
+                if(window.procesarRemision){
+                    info = [ ]; // datos de los productos a ser insertados al mismo tiempo
+					
+				    for(var k = 0; k < window.productos.length; k++){
+						data_send = {
+							"linea":  	window.productos[k].linea,
+							"estilo": 	window.productos[k].estilo,
+							"color": 	window.productos[k].color,
+							"talla": 	window.productos[k].talla,
+							"costo":   	window.productos[k].costo,
+							"precio":   window.productos[k].precio,
+							"cantidad": window.productos[k].cantidad,
+							"total": 	window.productos[k].cantidad * window.productos[k].precio 
+						};
+							
+						PORCENTAJE  = window.productos[k].porcentaje;
+						BODEGA 	    = window.productos[k].bodega;
+						CLIENTE 	= $('#codigo_cliente').val();
+						DESCRIPCION = window.productos[k].descripcion;
+						chunck      = null;
+						chunck      = {};
+						chunck      = {
+                            bodega:BODEGA,
+                            estilo:data_send.estilo,
+							color:data_send.color,
+							linea:data_send.linea,
+							talla:data_send.talla,
+							cantidad:data_send.cantidad,
+							descripcion:DESCRIPCION,
+							cliente:CLIENTE,
+							factura:window.codPedido,
+							precio:data_send.precio,
+							porcentaje:PORCENTAJE,
+                            costo: data_send.costo
+						};
+							
+						info.push(chunck);
+				    }
+								
+				    send = { "productos": JSON.stringify(info) };
+                
+    				$.post('/facturacion/factura/insercionMultiple', send, function(dC){
+    					//alert(dC.sql);
+                        var grid = Sigma.$grid("factura_grid");
+    					grid.reload();
+    					cargar_totales();
+    					if (dC.error){ alert("No se agregaron algunos pedidos por falta de stock"); }
+    				}, "json");
+                } 
 			}
 		}, "json");
 	}
@@ -851,6 +923,7 @@
     </div>
     <hr/>
     <!-- formulario de factura -->
+
     <form>
         <div style="display:table;">
             <div style="width:600px;float:left;margin-right: 10px;margin-bottom: 20px;">

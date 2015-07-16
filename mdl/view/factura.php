@@ -284,7 +284,7 @@ class facturaView {
         print page()->getContent();
     }
 
-    public function formulario_facturacion($numero_factura, $cache, $data) {
+    public function formulario_facturacion($numero_factura, $cache, $data, $informacionRemision) {
         template()->buildFromTemplates('template_nofixed.html');
         $this->load_settings();
         $campos_str = "";
@@ -293,6 +293,7 @@ class facturaView {
         page()->addEstigma("TITULO", 'Cajero');
         page()->addEstigma("n_caja", $data['id']);
         page()->addEstigma("t_caja", $data['nombre']);
+        page()->addEstigma("infoRem", $informacionRemision);
         page()->addEstigma("serie_factura", $data['serie_factura']);
         page()->addEstigma("serie_remision", $data['serie_nota_remision']);
         page()->addEstigma("bodega_por_defecto", $data['bodega_por_defecto']);

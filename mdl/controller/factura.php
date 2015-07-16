@@ -261,10 +261,10 @@ class facturaController extends controller {
         // estandar para toda comunicacion asincrona dentro el sistema
         // cada transaccion debe poseer al menos los siguientes elementos
         $res                = array();
-        $res['transaction'] = "procesar nota de remision"; // operacion que se esta realizando
-        $res['message']     = "";               // mensaje de la operacion (puede ser mensaje de error u otro)
-        $res['success']     = false;            // estado de la operacion (true si tuvo exito o false si ocurre algun error)
-        $res['data']        = array();                 // se agrega esta variable solo si se quiere retornar informacion
+        $res['transaction'] = "procesar nota de remision";  // operacion que se esta realizando
+        $res['message']     = "";                           // mensaje de la operacion (puede ser mensaje de error u otro)
+        $res['success']     = false;                        // estado de la operacion (true si tuvo exito o false si ocurre algun error)
+        $res['data']        = array();                      // se agrega esta variable solo si se quiere retornar informacion
 		
 		try{
 			$id = $_POST['id'];       # id de referencia al pedido
@@ -287,7 +287,7 @@ class facturaController extends controller {
 			/* la nota solo se procesa en caso que este pendiente */
 			if ($estado == "PENDIENTE") {
 				$this->model->set_attr('estado', 'PROCESADO');
-				$this->model->save();   # automaticamente su estado cambia a procesado para bloquear la nota
+				//$this->model->save();   # automaticamente su estado cambia a procesado para bloquear la nota
 				// cargamos los datos de caja del usuario
 				// un usuario sin caja no puede procesar notas de remision
 				list($tieneCaja, $data) = $this->model->tieneCaja(Session::singleton()->getUser());
@@ -301,9 +301,8 @@ class facturaController extends controller {
 					// se terminan de almacenar los datos asociados al registro
 					$registro['caja']  = $this->model->get_attr('caja');
 					$cj                = $this->model->get_child('caja');
+                    $cj->get($this->model->get_attr('caja'));
 					$registro['serie'] = $cj->get_attr('codigo_factura');
-					
-					$cj->get($this->model->get_attr('caja'));
 					
 					// se ha registrado ademas del pedido la caja de facturacion y la serie que estaba activa
 
@@ -311,41 +310,130 @@ class facturaController extends controller {
 					// anulacion parcial del pedido, todos aquellos productos marcados como 'entran' son
 					// regresados al inventario y descontados de la cuenta del usuario (se abona), con el fin
 					// de reducir la carga al credito que habia provocado la adquisicion del producto
-					$nt->anular_pedido_parcial($id);
+                    // NOTA: ya no se tiene carga crediticia
+					
+                    //$nt->anular_pedido_parcial($id);
+                    $clienteObj = $this->model->get_sibling('cliente');   
+            		$clienteObj->get($this->model->id_cliente);
+                    
+                    $tot_pares = 0;
+                    $tot_costo = 0;
+            	    $bodega_s  = 0;
+                    
+                    $nomcli = '';
+            		$nomcli .= $clienteObj->get_attr('primer_nombre').' ';
+            		$nomcli .= $clienteObj->get_attr('segundo_nombre').' ';
+            		$nomcli .= $clienteObj->get_attr('primer_apellido').' ';
+            		$nomcli .= $clienteObj->get_attr('segundo_apellido');
+                    
+                    // obtencion de los detalles de las facturas
+            		$query = "SELECT * FROM detalle_factura WHERE id_factura=$id";
+            		data_model()->executeQuery($query);
+            		$buffer_detail = array();
+            		while($result = data_model()->getResult()->fetch_assoc()){		
+            			$buffer_detail[] = $result;
+            		}
+                    
+                    
+                    // proceso del detalle de la factura
+            		foreach($buffer_detail as $item){
+                        $tot_pares += $item['entran'];
+                    	$tot_costo += $item['costo'] * $item['entran'];
+            			$bodega_s   = $item['bodega'];
+                    }
+                    
+                    // creando la cabecera del traslado 
+            		$transaccion = $this->model->get_child('transacciones');
+                    $transaccion->setVirtualId('cod');
+                    $transaccion->get("1C"); // Ingreso por traslado
+                    $codigo = $transaccion->get_attr('ultimo') + 1;
+                    $transaccion->set_attr('ultimo', $codigo);
+                    $transaccion->save();
+            
+                    $traslado = $this->model->get_child('traslado');
+                    $traslado->get(0);
+            
+                    $traslado->fecha = date("Y-m-d");
+                    $traslado->proveedor_origen = 0;
+                    $traslado->proveedor_nacional = 0;
+                    $traslado->bodega_origen  = 0;
+                    $traslado->bodega_destino = BODEGA_CONSIGNACIONES; 
+                    $traslado->concepto = "Devolución por consignación a nombre de ".$nomcli;
+                    $traslado->transaccion = "1C";   // Ingreso por traslado
+                    $traslado->total_pares = $tot_pares;
+                    $traslado->total_costo = $tot_costo;
+                    $traslado->total_costo_p = $tot_pares;
+                    $traslado->total_pares_p = $tot_costo;
+                    $traslado->editable = "0";
+                    $traslado->consigna = "0";
+                    $traslado->usuario = Session::singleton()->getUser();
+                    $traslado->concepto_alternativo = "";
+                    $traslado->cliente = "0";
+                    $traslado->cod = $codigo;
+                    $traslado->referencia_retaceo = "0";
+            		
+                    $traslado->save();
+            
+                    $idref = $traslado->last_insert_id();
+                    
+                    unset($item);
+                    
+                    // obtencion de los detalles de las facturas
+            		$query = "SELECT * FROM detalle_factura WHERE id_factura=$id";
+            		data_model()->executeQuery($query);
+            		$buffer_detail = array();
+            		while($result = data_model()->getResult()->fetch_assoc()){
+            			
+            			$buffer_detail[] = $result;
+            		}
+            		
+                   	foreach($buffer_detail as $itemprod){
+            			$estilo = $itemprod["estilo"];
+            			$linea = $itemprod["linea"];
+            			$color = $itemprod["color"];
+            			$talla = $itemprod["talla"];
+            			$cantidad = $itemprod["entran"];
+            
+            			$costo = (isset($itemprod['costo']))? $itemprod["costo"]:0; 
+            			$bodega = (isset($itemprod['bodega']))? $itemprod["bodega"]:0;
+            			$proveedor = (isset($itemprod['proveedor']))? $item["proveedor"]:0;
+            			
+            			if($cantidad > 0){
+            				$det = $this->model->get_child('detalle_traslado');
+            				$det->get(0);
+            				$det->id_ref = $idref;
+            				$det->linea = $linea;
+            				$det->estilo = $estilo;
+            				$det->color = $color;
+            				$det->talla = $talla;
+            				$det->costo = $costo;
+            				$det->cantidad = $cantidad;
+            				$det->total = $costo * $cantidad;
+            				$det->bodega = BODEGA_CONSIGNACIONES;
+            				$det->save();
+            			}
+            		}
+            		
+            		$inventario = connectTo("inventario", "mdl.model.inventario", "inventario");	
+                    $inventario->transaccionLibre($idref, BODEGA_CONSIGNACIONES,$bodega_s, "2C");                
 
-					// se calculan los productos faltantes, es decir aquellos productos que salieron y no regresaron
+					// se calculan los obtienen faltantes, es decir aquellos productos que salieron y no regresaron
 					// a nivel de registro se manejan como cantidad_que_salio - productos_que_entran = productos faltantes
 					$pendiente = $nt->total_facturable($id);
-
-					// si faltan productos, es decir que hay producto que no
-					// ha regresado, se factura toda esta diferencia porque el cliente debe pagarla 
-
-					if ($pendiente > 0) {
-						$pedido = $nt->facturar_diferencia($id, $cliente, $data['id'], $pactual);
-						$res['success'] = true;
-						// retorna el numero de pedido que se ha creado
-						// el numero de pedido retornado no es la referencia a la base de datos, sino la 
-						// referencia de pedido por caja, para que la informacion de facturacion
-						// pueda cargarse de forma automatica desde la caja para generar la factura
-						// (este proceso debe ser automatico porque una nota de remision procesada no se puede
-						// manipular en caja)
-						$res['data']['pedido'] = $pedido;
-					} else {
-						// si no hay pendientes retorna -1 como numero de pedido en aviso de el estado del proceso
-						// (ya que no existen pedidos negativos es una buena manera de notificar la accion)
-						$res['data']['pedido'] = -1;
-						$res['success'] = true;
-					}
+					
+                    $res['data']['pendientes'] = $pendiente;
+                    $res['data']['cliente'] = $cliente;
+				    $res['success'] = true;
+                    
 					$op = $this->model->get_child('pnota_remision');
 					$op->get(0);
 					$op->change_status($registro);
-					$op->save();  // simplemente guarda el registro del suceso
+					//$op->save();  // simplemente guarda el registro del suceso
 				}
 			} else {
 				/* si la nota ya estaba en proceso se le comunica al respecto al usuario */
 				$res['success'] = false;
 				$res['message'] = "Error!, El pedido ya habia sido procesado";
-				$res['data']['pedido'] = -1;
 			}
 		}catch(Exception $e){
 			$res['message'] = $e->getMessage();
@@ -693,6 +781,8 @@ class facturaController extends controller {
         $response['referencia'] = $referencia;
         $response['existe'] = $existe;
         $response['en_uso'] = false;
+        $query = "UPDATE detalle_factura set entran = 0 WHERE id_factura = $referencia";
+        data_model()->executeQuery($query);
         echo json_encode($response);
     }
 
@@ -780,7 +870,8 @@ class facturaController extends controller {
         $cache[1] = $this->model->get_child('linea')->get_list('','', array('nombre'));
         $cache[2] = $this->model->get_sibling('modulo')->obtener_actualizables();
         $numero_factura = $data['ultimo_pedido'] + 1;
-        $this->view->formulario_facturacion($numero_factura, $cache, $data);
+        $informacionRemision = (isset($_POST['informacionRemision'])) ? $_POST['informacionRemision']: "";
+        $this->view->formulario_facturacion($numero_factura, $cache, $data, $informacionRemision);
     }
 
     public function nueva_nota_remision() {
@@ -960,10 +1051,17 @@ class facturaController extends controller {
                 $response[] = data_model()->getResult()->fetch_assoc();
             }
 
-            if(isset($info['porcentaje']))
-                $info['porcentaje'] = $response[0]['descuento'] * 100;
-            else
+            if(isset($info['porcentaje'])){
+                if(count($response) > 0){
+                    $info['porcentaje'] = $response[0]['descuento'] * 100;
+                }else{
+                    $info['porcentaje'] = 0;    
+                }
+            }
+            else{
                 $info['porcentaje'] = 0;
+            }
+            
             $info['descuento']  = $info['importe'] * ($info['porcentaje'] / 100) ;
             $info['importe']    = $info['importe'] - $info['descuento'];
 

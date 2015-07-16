@@ -297,7 +297,14 @@ class facturaController extends controller {
 					$ret['message'] = "Lo sentimos, no posee permiso de facturacion";
 					$res['success'] = false;
 				} else {
-
+                    
+                    $nota_remision = $this->model->get_child('nota_remision');
+                    $id_nota       = $nota_remision->obtenerId($_POST['pedido'], $this->model->get_attr('caja'));
+                    
+                    $nota_remision->get($id_nota);
+                    $nota_remision->facturado = "1";
+                    $nota_remision->save();
+                    
 					// se terminan de almacenar los datos asociados al registro
 					$registro['caja']  = $this->model->get_attr('caja');
 					$cj                = $this->model->get_child('caja');
@@ -1494,7 +1501,7 @@ class facturaController extends controller {
         $cliente = (isset($_POST['cliente'])) ? " AND id_cliente=" . $_POST['cliente'] : "";
 
         //to get how many records totally.
-        $sql = "select count(*) as cnt from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE facturado=3 AND formapago = 3 " . $cliente;
+        $sql = "select count(*) as cnt from nota_remision WHERE anulado = 1" . $cliente;
         $handle = mysqli_query(conManager::getConnection(), $sql);
         $row = mysqli_fetch_object($handle);
         $totalRec = $row->cnt;
@@ -1505,7 +1512,7 @@ class facturaController extends controller {
         endif;
 
         if ($json->{'action'} == 'load'):
-            $sql = "select * from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE  facturado=3 AND formapago = 3 " . $cliente . " limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
+            $sql = "select * from nota_remision WHERE anulado = 1" . $cliente . " limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
             $handle = mysqli_query(conManager::getConnection(), $sql);
             $retArray = array();
             while ($row = mysqli_fetch_object($handle)):
@@ -1528,7 +1535,7 @@ class facturaController extends controller {
         $cliente = (isset($_POST['cliente'])) ? " AND id_cliente=" . $_POST['cliente'] : "";
 
         //to get how many records totally.
-        $sql = "select count(*) as cnt from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE tipo='REMISION' AND estado='ANULADO'" . $cliente;
+        $sql = "select count(*) as cnt from nota_remision WHERE facturado = 1" . $cliente;
         $handle = mysqli_query(conManager::getConnection(), $sql);
         $row = mysqli_fetch_object($handle);
         $totalRec = $row->cnt;
@@ -1539,7 +1546,7 @@ class facturaController extends controller {
         endif;
 
         if ($json->{'action'} == 'load'):
-            $sql = "select * from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE tipo='REMISION' AND estado='PROCESADO'" . $cliente . " limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
+            $sql = "select * from nota_remision WHERE facturado = 1" . $cliente . " limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
             $handle = mysqli_query(conManager::getConnection(), $sql);
             $retArray = array();
             while ($row = mysqli_fetch_object($handle)):

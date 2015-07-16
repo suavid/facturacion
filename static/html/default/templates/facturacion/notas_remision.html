@@ -1,7 +1,7 @@
 <div id="detail" style="background:#fff;width:100%;height:100%;position:fixed;top:0px;left:0px;z-index:100003;display:none;">
     <button onclick="cerrar_detalle();">Cerrar</button>
     <div style="padding-left:30px;">
-        <h3>Detalle [nota de remisión]</h3>
+        <h3>Detalle</h3>
         <hr/>
         <div id="bigbox2" style="margin:15px;display:!none;">
             <div id="gridbox2" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
@@ -14,7 +14,7 @@
 <div id="nanuladas" style="background:#fff;width:100%;height:100%;position:fixed;top:0px;left:0px;z-index:100002;display:none;">
     <button onclick="cerrar_anuladas();">Cerrar</button>
     <div style="padding-left:30px;">
-        <h3>Anuladas [nota de remisión]</h3>
+        <h3>Notas de remisión anuladas</h3>
         <hr/>
         <div id="bigbox4" style="margin:15px;display:!none;">
             <div id="gridbox4" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
@@ -27,7 +27,7 @@
 <div id="nprocesadas" style="background:#fff;width:100%;height:100%;position:fixed;top:0px;left:0px;z-index:100002;display:none;">
     <button onclick="cerrar_procesadas();">Cerrar</button>
     <div style="padding-left:30px;">
-        <h3>Procesadas [nota de remisión]</h3>
+        <h3>Notas de remisión procesadas</h3>
         <hr/>
         <div id="bigbox5" style="margin:15px;display:!none;">
             <div id="gridbox5" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
@@ -240,9 +240,21 @@
 
         
     }
+    
+    function cliente_render(value, record, columnObj, grid, colNo, rowNo) {
+        
+        return '<a href="javascript: void(0);" onclick="verCliente('+record['rd_cod']+')">'+record['rd_cod']+'</a>';
+
+        
+    }
+    
+    function verCliente(idCliente){
+        $('#codigo_cliente').val(idCliente);
+        cargar_cliente();
+    }
 
     function acciones2_render(value, record, columnObj, grid, colNo, rowNo) {
-        var detalle = '<a href="javascript:void(0);" onclick="ver_detalle(' + record['pedido'] + ',' + record['caja'] + ');"> ver detalle </as>';
+        var detalle  = '<a href="javascript:void(0);" onclick="ver_detalle(' + record['noped'] + ',' + record['caja'] + ');"> ver detalle </a>';
         return detalle;
     }
 
@@ -296,13 +308,12 @@
         {id: 'serie', header: "Serie ", width: 50},
         {id: 'nodoc', header: "No. Doc", width: 72},
         {id: 'caja', header: "Caja", width: 50},
-        {id: 'rd_cod', header: "Cliente", width: 50},
+        {id: 'rd_cod', header: "Cliente", width: 50, renderer:cliente_render},
         {id: 'fedoc', header: "Fecha", width: 80},
-        {id: 'facturado', header: "Estado", width: 80, renderer: estado_render},
         {id: 'venta_b', header: "Subtotal", width: 80},
         {id: 'descuento', header: "Descuento", width: 70},
         {id: 'venta_n', header: "Total", width: 70},
-        {id: 'acciones', header: "Acciones [click]", width: 145, renderer: acciones_render}
+        {id: 'acciones', header: "Acciones [click]", width: 225, renderer: acciones_render}
 
     ];
 
@@ -352,16 +363,15 @@
     }
 
     var colsOption4 = [
-        {id: 'codigo_factura', header: "Serie ", width: 50},
-        {id: 'pedido', header: "No. Pedido", width: 60},
+        {id: 'serie', header: "Serie ", width: 50},
+        {id: 'nodoc', header: "No. Doc", width: 72},
         {id: 'caja', header: "Caja", width: 50},
-        {id: 'id_cliente', header: "Cliente", width: 50},
-        {id: 'fecha', header: "Fecha", width: 80},
-        {id: 'estado', header: "Estado", width: 80},
-        {id: 'subtotal', header: "Subtotal", width: 80},
+        {id: 'rd_cod', header: "Cliente", width: 50},
+        {id: 'fedoc', header: "Fecha", width: 80},
+        {id: 'venta_b', header: "Subtotal", width: 80},
         {id: 'descuento', header: "Descuento", width: 70},
-        {id: 'total', header: "Total", width: 70},
-        {id: 'acciones', header: "Acciones [click]", width: 150, renderer: acciones2_render}
+        {id: 'venta_n', header: "Total", width: 70},
+        {id: 'acciones', header: "Acciones [click]", width: 225, renderer: acciones2_render}
 
     ];
 
@@ -370,7 +380,7 @@
         id: grid_demo4_id,
         loadURL: '/facturacion/factura/cargarRemisionAnulada',
         saveURL: '',
-        width: "760", //"100%", // 700,
+        width: "750", //"100%", // 700,
         height: "360", //"100%", // 330,
         container: 'gridbox4',
         replaceContainer: true,
@@ -411,16 +421,15 @@
     }
 
     var colsOption5 = [
-        {id: 'codigo_factura', header: "Serie ", width: 50},
-        {id: 'pedido', header: "No. Pedido", width: 60},
+        {id: 'serie', header: "Serie ", width: 50},
+        {id: 'nodoc', header: "No. Doc", width: 72},
         {id: 'caja', header: "Caja", width: 50},
-        {id: 'id_cliente', header: "Cliente", width: 50},
-        {id: 'fecha', header: "Fecha", width: 80},
-        {id: 'estado', header: "Estado", width: 80},
-        {id: 'subtotal', header: "Subtotal", width: 80},
+        {id: 'rd_cod', header: "Cliente", width: 50},
+        {id: 'fedoc', header: "Fecha", width: 80},
+        {id: 'venta_b', header: "Subtotal", width: 80},
         {id: 'descuento', header: "Descuento", width: 70},
-        {id: 'total', header: "Total", width: 70},
-        {id: 'acciones', header: "Acciones [click]", width: 150, renderer: acciones2_render}
+        {id: 'venta_n', header: "Total", width: 70},
+        {id: 'acciones', header: "Acciones [click]", width: 225, renderer: acciones2_render}
 
     ];
 
@@ -429,7 +438,7 @@
         id: grid_demo5_id,
         loadURL: '/facturacion/factura/cargarRemisionProcesada',
         saveURL: '',
-        width: "760", //"100%", // 700,
+        width: "750", //"100%", // 700,
         height: "360", //"100%", // 330,
         container: 'gridbox5',
         replaceContainer: true,

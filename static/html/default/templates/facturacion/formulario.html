@@ -15,6 +15,7 @@
         padding-bottom: 5px;
         padding-top: 5px;
         padding-left: 15px;
+        margin-bottom: 0px;
     }
 
     #info-titles p{
@@ -24,6 +25,8 @@
         float: left;
         text-align: center;
         font-size: 12px;
+        padding-bottom: 0px;
+        margin-bottom: 0px;
     }
 </style>
 
@@ -31,7 +34,7 @@
 
     /* Inicializacion de UI */
     $(document).ready(function(){
-        
+ 
         $('#n_pedido').focus();
         
         window.procesarRemision = false;
@@ -679,7 +682,7 @@
         loadURL : '',
         saveURL : '',
         width: "732", //"100%", // 700,
-        height: "260", //"100%", // 330,
+        height: "250", //"100%", // 330,
         container : 'gridbox',
         replaceContainer : true,
         encoding : 'UTF-8', // Sigma.$encoding(), 
@@ -919,15 +922,19 @@
             <button onclick="showPane('fpendientes');"><i class="icon-search on-left"></i>Pendientes</button>
             <button onclick="showPane('ffiscal');"><i class="icon-search on-left"></i>Credito fiscal</button>
             <button onclick="traer_cambio();"><i class="icon-tab on-left"></i>Traer cambio</button>
+            <strong>VALE DESCUENTO</strong>
+            <div class="input-control select span3">
+            <select id="descuentos">
+                
+            </select>
+            </div>
         </div>
     </div>
-    <hr/>
     <!-- formulario de factura -->
 
     <form>
         <div style="display:table;">
-            <div style="width:600px;float:left;margin-right: 10px;margin-bottom: 20px;">
-            <h5>Datos del pedido</h5>
+            <div style="width:600px;float:left;margin-right: 40px;margin-bottom: 20px;">
                 <ul style="list-style:none;display:table;text-align:left;width:550px;font-size:12px;">
                     <li style="float:left;width:100px;">
                         # Pedido
@@ -942,7 +949,7 @@
                     <li style="float:left;width:70px;">
                         Cliente
                         <br/>
-                        <input type="text" id="codigo_cliente" onblur="cclientef()" value="0" style="width:60px;"/>
+                        <input type="text" id="codigo_cliente" onblur="cclientef();" value="0" style="width:60px;"/>
                     </li>
 					
                     <li style="float:left;width:140px;">
@@ -958,8 +965,7 @@
                         </select>
                     </li>
                 </ul>
-				<hr/>
-                <h5>Datos del cliente</h5>
+                <hr/>
                 <table style="width:600px;">
                     <tr>
                         <td>
@@ -1015,7 +1021,7 @@
                                         Concepto 
                                     </td>
                                     <td>	
-                                        <input type="text" style="width:100%;" value="VENTAS" readonly />
+                                        <input type="text" style="width:100%;" value="COMPRAS" readonly />
                                     </td>
                                 </tr>   
                             </table>
@@ -1025,8 +1031,6 @@
             </div>
 			
             <div style="width:400px;background:#F3F3F3;padding:15px;float:left;margin-left: 20px;">
-				<h5>Estado de cuenta del  cliente</h5>
-				<hr/>
                 <div style="display:table;width:100%;">
                     <div style="float:left;">
                         <input type="text" id="credito" style="width:50px;" readonly="readonly" />
@@ -1073,10 +1077,7 @@
 					</tr>
 				</table>
             </div>
-
         </div>
-        <hr/>
-        <h5>Selección de producto</h5>
         <!-- busqueda del producto -->
         <div class="input-control text" id="info-bar">
 
@@ -1123,23 +1124,21 @@
             <p>%</p>
             <p>Descuento</p> 
             <p>Importe</p> 
-            <p>Serie garant&iacute;a</p> 
+            <p>S. garant&iacute;a</p> 
         </div>
 
     </form>
     <br/>
-    <br/>
-    <hr/>
     <div id="bigbox" style="margin-top: 10px; margin-right:25px;display:!none;float:left;">
         <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
 
         </div>
     </div>
-    <div style="width:300px;float:left;text-align:right;background:#F3F3F3;padding-right:30px;margin-top:10px;margin-bottom: 30px;">
+    <div style="width:300px;float:left;text-align:right;background:#F3F3F3;padding-right:30px;margin-top:10px;margin-bottom: 5px;">
         <form>
             <div>
                 <h6>[Caja No. {n_caja} / {t_caja}]</h6>
-                <h6>Siguiente Pedido: <span id="NoFactura">{numero_factura}</span> </h6>
+                <h6>Siguiente pedido: <span id="NoFactura">{numero_factura}</span> </h6>
 				<h6>Serie factura: {codigo_serie_factura} / Serie remisión: {codigo_serie_remision}</h6>
                 <div style="padding:0px;">
                     (+) Flete <input type="checkbox" id="FLETE" disabled="disabled" />
@@ -1154,8 +1153,7 @@
                 <br/>
                 <button class="bg-color-blue fg-color-white" type="button" onclick="facturacion();" id="buy" disabled="disabled">Efectuar compra</button>
             </div>
-        </form>
-        <br/>   
+        </form>   
     </div>
 
     <section>
@@ -1171,6 +1169,19 @@
             <button class="success large" onclick="cerrarResumen();"> <i class="icon-arrow-down-3"></i> Aceptar</button>
         </div>
         <script type="text/javascript">
+
+            function cargarVales(){
+                var uri = '/facturacion/factura/valesCliente'; 
+                var data = {
+                        "cliente":$('#codigo_cliente').val()
+                    };
+                $.post(uri, data, function(d){
+                    $('#descuentos option').remove();
+                    for(var i = 0; i < d.descuentos.length; i++){
+                        $('#descuentos').append('<option value="'+d.descuentos[i].id+'">'+d.descuentos[i].monto+' '+d.descuentos[i].concepto+' </option>');
+                    }
+                }, "json");
+            }
 
             function verificarExistencia(){
                 var _linea = $('#bLinea').val().trim();
@@ -1223,6 +1234,10 @@
                         $('#extra_credito').attr("checked", true);
                     else
                         $('#extra_credito').removeAttr("checked");
+                        
+                        
+                    cargarVales();
+                    
                 }, "json");
             }
 

@@ -16,6 +16,25 @@ class facturaController extends controller {
         //    HttpHandler::redirect('/facturacion/modulo/listar');
     }
 
+    public function valesCliente(){
+        $response = array();
+        
+        $response['msg'] = "";
+        $response['descuentos'] = array();
+        
+        $cliente = (isset($_POST['cliente']) &&!empty($_POST['cliente'])) ? $_POST['cliente'] : 0;
+        
+        $query = "SELECT id, monto, concepto FROM descuento WHERE cliente=".$cliente;
+        
+        data_model()->executeQuery($query);
+        
+        while($row = data_model()->getResult()->fetch_assoc()){
+            $response['descuentos'][] = $row;
+        }
+        
+        echo json_encode($response);
+    }
+
     public function principal() {
         $this->validar();
         $this->view->principal(Session::singleton()->getUser());

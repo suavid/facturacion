@@ -18,7 +18,7 @@ class facturaView {
         page()->setTitle('Factura');
         page()->addEstigma("username", $usuario);
         page()->addEstigma('back_url', '/'.MODULE.'/factura/principal');
-        page()->addEstigma("TITULO", 'Facturas');
+        page()->addEstigma("TITULO", 'Página principal');
         template()->addTemplateBit('content', 'factura/principal.html');
         template()->parseOutput();
         template()->parseExtras();
@@ -43,6 +43,7 @@ class facturaView {
         page()->addEstigma("username", Session::singleton()->getUser());
         page()->addEstigma("back_url", '/'.MODULE.'/factura/principal');
         template()->addTemplateBit('content', 'facturacion/consulta_cambio.html');
+        page()->addEstigma("TITULO", 'Consultar cambios');
         template()->parseOutput();
         template()->parseExtras();
         print page()->getContent();
@@ -190,7 +191,7 @@ class facturaView {
         page()->addEstigma("time_stamp", date("Y-m-d H:i:s "));
         page()->addEstigma("fecha", date("Y-m-d"));
         page()->addEstigma('back_url', '/facturacion/factura/principal');
-        page()->addEstigma("TITULO", 'Cambios');
+        page()->addEstigma("TITULO", 'Cambio de productos');
         template()->addTemplateBit('content', 'facturacion/cambios.html');
         template()->parseOutput();
         template()->parseExtras();
@@ -241,7 +242,7 @@ class facturaView {
         page()->setTitle('Mantenimiento de Series');
         page()->addEstigma("username", $usuario);
         page()->addEstigma('back_url', '/facturacion/factura/principal');
-        page()->addEstigma("TITULO", 'Series');
+        page()->addEstigma("TITULO", 'Mantenimiento a series');
         template()->addTemplateBit('content', 'facturacion/series.html');
         template()->parseOutput();
         template()->parseExtras();
@@ -262,7 +263,7 @@ class facturaView {
         page()->addEstigma("s_cf", array('SQL', $cache[6]));
         page()->addEstigma("s_nr", array('SQL', $cache[7]));
         page()->addEstigma('back_url', '/facturacion/factura/principal');
-        page()->addEstigma("TITULO", 'Cajas');
+        page()->addEstigma("TITULO", 'Mantenimiento a cajas');
         template()->addTemplateBit('content', 'facturacion/cajas.html');
         template()->parseOutput();
         template()->parseExtras();
@@ -275,7 +276,7 @@ class facturaView {
         page()->setTitle('Caja');
         $this->load_settings();
         page()->addEstigma('back_url', '/facturacion/factura/principal');
-        page()->addEstigma("TITULO", 'Cajero');
+        page()->addEstigma("TITULO", 'Notas de remisión');
         page()->addEstigma("numero_factura", $numero_remision);
         page()->addEstigma('username', Session::singleton()->getUser());
         template()->addTemplateBit('content', 'facturacion/remision.html');
@@ -290,7 +291,7 @@ class facturaView {
         $campos_str = "";
         page()->setTitle('Caja');
         page()->addEstigma('back_url', '/facturacion/factura/principal');
-        page()->addEstigma("TITULO", 'Cajero');
+        page()->addEstigma("TITULO", 'Pedidos y facturación');
         page()->addEstigma("n_caja", $data['id']);
         page()->addEstigma("t_caja", $data['nombre']);
         page()->addEstigma("infoRem", $informacionRemision);

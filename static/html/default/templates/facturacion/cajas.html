@@ -1,11 +1,6 @@
-<h3>Mantenimiento de cajas</h3>
-<p class="text-muted">
-    Por medio de las cajas serán emitidas las facturas y otras operaciones
-</p>
-<hr/>
 <div class="panel">
     <div class="panel-header">
-        <i class="icon-new"> </i> Crear una nueva caja
+        <i class="icon-file"> </i> Crear una nueva caja
     </div>
     <div class="pane-content">
         <form method="post" action="/facturacion/factura/guardar_caja">
@@ -44,6 +39,7 @@
                         <input type="text" placeholder="Formato recibos" name="f_recibo" id="f_recibo" />
                     </div>
                     <br/>
+                    
                 </div>
                 <div style="float:left;width:300px;margin:15px;text-align:right;">
                     <div class="input-control select">
@@ -162,12 +158,15 @@
                     </div>
                     <br/>
                     <br/>
-        
+                    <p>
+                        <a href="javascript: void(0);" onclick="$('#windowCajas').css('display','block'); $('#blsBScreen').css('display', 'blocK');"><i class="icon-database"></i> Ver cajas registradas</a>
+                    </p>
                 </div>
             </div>
             <div style="width: 600px; padding-left: 15px;"> 
                 <button class="primary large" type="submit">Guardar caja</button>
             </div>
+            
         </form>
     </div>
 </div>
@@ -256,15 +255,14 @@
 
     var colsOption = [
         {id: 'id', header: "Codigo", width: 70},
-        {id: 'nombre', header: "Nombre", width: 150},
-        {id: 'encargado', header: "Encargado", width: 100},
-        {id: 'codigo_factura', header: "Factura", width: 100},
-        {id: 'codigo_nota_credito', header: "Nota de credito", width: 100},
-        {id: 'codigo_credito_fiscal', header: "Credito Fiscal", width: 100},
-        {id: 'codigo_recibo', header: "Recibo", width: 100},
-        {id: 'codigo_ticket', header: "Descripcion", width: 100},
+        {id: 'nombre', header: "Nombre", width: 130},
+        {id: 'encargado', header: "Encargado", width: 75},
+        {id: 'codigo_factura', header: "Factura", width: 90},
+        {id: 'codigo_nota_credito', header: "Nota de credito", width: 90},
+        {id: 'codigo_credito_fiscal', header: "Credito Fiscal", width: 90},
+        {id: 'codigo_recibo', header: "Recibo", width: 90},
+        {id: 'codigo_ticket', header: "Descripcion", width: 90},
         {id: 'bodega_por_defecto', header: "Bodega", width: 100}
-
     ];
 
 
@@ -272,7 +270,7 @@
         id: grid_demo_id,
         loadURL: '/facturacion/inventario/cargar?tblname=caja',
         saveURL: '/facturacion/inventario/actualizar?tblname=caja',
-        width: "923", //"100%", // 700,
+        width: "830", //"100%", // 700,
         height: "360", //"100%", // 330,
         container: 'gridbox',
         replaceContainer: true,
@@ -295,14 +293,17 @@
 </script>
     <br/>
     <br/>
-    <div class="panel">
-        <div class="panel-header"> 
-            <i class="icon-database"></i> Mis cajas
+    <div id="windowCajas" class="window flat shadow span11" style="position: fixed; top: 100px; left:50%; margin-left: -400px; display: none; z-index: 1000000;">
+        <div class="caption">
+            <span class="icon icon-database"></span> 
+            <div class="title">Cajas registradas</div> 
+            <button class="btn-close" onclick=" $('#blsBScreen').css('display', 'none');$('#windowCajas').css('display','none');"></button>
         </div>
-    <div class="panel-content">
-        <div id="bigbox" style="margin:15px;display:!none;">
-            <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
-    
+        <div class="content">
+             <div id="bigbox" style="margin:15px;display:!none;">
+                <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+            
+                </div>
             </div>
         </div>
     </div>

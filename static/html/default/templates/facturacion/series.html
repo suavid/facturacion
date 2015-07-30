@@ -1,16 +1,10 @@
-<h3>Series</h3>
-<p class="text-muted">
-    Las series permiten controlar los documentos que la empresa emite
-</p>
-<hr/>
-<p><strong>Importante:</strong> Las series no admiten edición o eliminación, verifique los datos antes de guardarlos.</p>
-
 <div class="panel">
     <div class="panel-header">
-        <i class="icon-new"></i> 
+        <i class="icon-file"></i> 
         Nueva serie
     </div>
     <div class="panel-content">
+        <p><strong>Importante:</strong> Las series no admiten edición o eliminación, verifique los datos antes de guardarlos.</p>
         <form method="post" action="/facturacion/factura/guardar_serie">
             <div style="display:table;">
                 <span id="msg"></span>
@@ -53,22 +47,26 @@
                 </div>
             </div>
         </form>
+        <p>
+            <a href="javascript: void(0);" onclick="$('#windowSeries').css('display','block'); $('#blsBScreen').css('display', 'blocK');"><i class="icon-database"></i> Ver series registradas</a>
+        </p>
     </div>
 </div>
 <br/><br/>
-<div class="panel">
-    <div class="panel-header">
-        <i class="icon-database"></i>
-         Series
-    </div>
-    <div class="panel-content">
-        <div id="bigbox" style="margin:15px;display:!none;">
-            <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
-        
+    <div id="windowSeries" class="window flat shadow span11" style="position: fixed; top: 100px; left:50%; margin-left: -400px; display: none; z-index: 1000000;">
+        <div class="caption">
+            <span class="icon icon-database"></span> 
+            <div class="title">Series registradas</div> 
+            <button class="btn-close" onclick=" $('#blsBScreen').css('display', 'none');$('#windowSeries').css('display','none');"></button>
+        </div>
+        <div class="content">
+             <div id="bigbox" style="margin:15px;display:!none;">
+                <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+            
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 <script type="text/javascript" >
 
@@ -109,12 +107,12 @@
     }
 
     var colsOption = [
-        {id: 'tipo', header: "Tipo", width: 150},
+        {id: 'tipo', header: "Tipo", width: 100},
         {id: 'serie', header: "Serie", width: 100},
-        {id: 'del', header: "Del", width: 150},
-        {id: 'al', header: "Al", width: 150},
-        {id: 'ultimo_utilizado', header: "Ultimo utilizado", width: 150},
-        {id: 'descripcion', header: "Descripcion", width: 300}
+        {id: 'del', header: "Del", width: 75},
+        {id: 'al', header: "Al", width: 75},
+        {id: 'ultimo_utilizado', header: "Ultimo utilizado", width: 100},
+        {id: 'descripcion', header: "Descripcion", width: 350}
 
     ];
 
@@ -123,7 +121,7 @@
         id: grid_demo_id,
         loadURL: '/facturacion/inventario/cargar?tblname=serie',
         saveURL: '/facturacion/inventario/actualizar?tblname=serie',
-        width: "1003", //"100%", // 700,
+        width: "800", //"100%", // 700,
         height: "360", //"100%", // 330,
         container: 'gridbox',
         replaceContainer: true,

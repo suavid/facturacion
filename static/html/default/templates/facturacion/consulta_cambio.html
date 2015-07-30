@@ -1,13 +1,8 @@
-<h3>Consula rápida de cambios</h3>
-<p class="text-muted">
-	Proporcione el código de un cliente para ver los cambios pendientes
-</p>
-<hr/>
 <label>Código de afiliado</label>
 <div class="input-control text span3">
 	<input type="text" onchange="cargarCambios(event);"/>
 </div>
-<div class="panel">
+<div class="panel span12">
 	<div class="panel-header">
 		<i class="icon-clock"></i>
 		Cambios pendientes
@@ -22,7 +17,7 @@
 </div>
 <br/>
 <br/>
-<div class="panel">
+<div class="panel span12">
 	<div class="panel-header">
 		<i class="icon-list"></i> 
 		Detalle del cambio
@@ -95,12 +90,12 @@
     }
 
     var colsOption = [
-        {id: 'id', header: "# Cambio", width: 100},
+        {id: 'id', header: "# Cambio", width: 75},
         {id: 'fecha', header: "Fecha", width: 100},
         {id: 'editable', header: "Aplicado?", width: 100, renderer: editable_render},
-        {id: 'en_factura', header: "En pedido?", width: 100, renderer: en_factura_render},
-        {id: 'activo', header: "Facturado?", width: 100, renderer: facturado_render},
-        {id: 'caja', header: "Caja", width: 100},
+        {id: 'en_factura', header: "En pedido?", width: 75, renderer: en_factura_render},
+        {id: 'activo', header: "Facturado?", width: 75, renderer: facturado_render},
+        {id: 'caja', header: "Caja", width: 75},
         {id: 'serie', header: "Serie", width: 100},
         {id: 'pedido', header: "# Pedido", width: 100},
         {id: 'factura', header: "Factura que aplica", width: 100},
@@ -112,7 +107,7 @@
         id: grid_demo_id,
         loadURL: '',
         saveURL: '',
-        width: "1005", //"100%", // 700,
+        width: "900", //"100%", // 700,
         height: "280", //"100%", // 330,
         container: 'gridbox',
         replaceContainer: true,

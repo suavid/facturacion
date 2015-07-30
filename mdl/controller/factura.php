@@ -24,7 +24,7 @@ class facturaController extends controller {
         
         $cliente = (isset($_POST['cliente']) &&!empty($_POST['cliente'])) ? $_POST['cliente'] : 0;
         
-        $query = "SELECT id, monto, concepto FROM descuento WHERE cliente=".$cliente;
+        $query = "SELECT id, monto, concepto, saldo FROM descuento WHERE saldo > 0 and cliente=".$cliente;
         
         data_model()->executeQuery($query);
         

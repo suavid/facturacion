@@ -1,16 +1,11 @@
-<h3>Cambio de producto</h3>
-<p class="text-muted">
-    Preparación de cambios de productos para el cliente
-</p>
-<hr/>
-<div class="panel span12">
+<div class="panel span4" style="float: left;">
     <div class="panel-header">
-       <i class="icon-pencil"></i> Crear o editar un cambio
+       <i class="icon-file"></i> Crear o editar un cambio
     </div>
     <div class="panel-content">
         <br/>
         <div style="display:table;">
-            <div style="width:300px;text-align:right;float:left;">
+            
                 # (Nuevo = 0) 
                 <div class="input-control text">
                     <input type="text" style="text-align:center" id="id_cambio" value="0" onchange="cargar_cambio();" /><br/><br/>
@@ -19,26 +14,20 @@
                 <div class="input-control text"> 
                     <input type="text" id="codigo_cliente" style="text-align:center" onchange="obtenerDatos();" /><br/><br/>
                 </div>
+                Nombre del cliente
+                <div class="input-control text"> 
+                    <input type="text" id="nombre_cliente" readonly="readonly" />
+                </div>
                 Fecha 
                 <div class="input-control text">
                     <input type="text" id="fecha" style="text-align:center" value="{fecha}"/>
                 </div>
                 <button onclick="crear();" class="primary">Crear / Abrir cambio</button>
             </div>
-            <div style="width:400px;text-align:right;float:left;padding-left:10px;">
-                Nombre del cliente
-                <div class="input-control text"> 
-                    <input type="text" id="nombre_cliente" style="width:70%;" readonly="readonly" />
-                </div>
-                <br/>
-            </div>
-        </div>
         <br/>
     </div>
 </div>
-<br/>
-<br/>
-<div class="panel">
+<div class="panel span12" style="float: left;margin-left: 30px;">
     <div class="panel-header">
         <i class="icon-list"></i> 
         Cambios pendientes
@@ -51,6 +40,7 @@
         </div>
     </div>
 </div>
+<div style="clear: both;"
 <br/><br/>
 <script>
 
@@ -149,16 +139,16 @@
     }
 
     var colsOption = [
-        {id: 'id', header: "# Cambio", width: 100},
-        {id: 'cliente', header: "Cliente", width: 100},
+        {id: 'id', header: "# Cambio", width: 75},
+        {id: 'cliente', header: "Cliente", width: 75},
         {id: 'fecha', header: "Fecha", width: 100},
-        {id: 'editable', header: "Aplicado?", width: 100, renderer: editable_render},
-        {id: 'en_factura', header: "En pedido?", width: 100, renderer: en_factura_render},
-        {id: 'activo', header: "Facturado?", width: 100, renderer: facturado_render},
+        {id: 'editable', header: "Aplicado?", width: 75, renderer: editable_render},
+        {id: 'en_factura', header: "En pedido?", width: 75, renderer: en_factura_render},
+        {id: 'activo', header: "Facturado?", width: 75, renderer: facturado_render},
         {id: 'caja', header: "Caja", width: 100},
         {id: 'serie', header: "Serie", width: 100},
         {id: 'pedido', header: "# Pedido", width: 100},
-        {id: 'factura', header: "Factura que aplica", width: 100},
+        {id: 'factura', header: "Factura que aplica", width: 120},
     ];
 
 
@@ -166,7 +156,7 @@
         id: grid_demo_id,
         loadURL: '/facturacion/grid_tables/dsvdiah',
         saveURL: '',
-        width: "1010", //"100%", // 700,
+        width: "900", //"100%", // 700,
         height: "260", //"100%", // 330,
         container: 'gridbox',
         replaceContainer: true,

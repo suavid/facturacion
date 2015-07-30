@@ -1178,7 +1178,7 @@
                 $.post(uri, data, function(d){
                     $('#descuentos option').remove();
                     for(var i = 0; i < d.descuentos.length; i++){
-                        $('#descuentos').append('<option value="'+d.descuentos[i].id+'">'+d.descuentos[i].monto+' '+d.descuentos[i].concepto+' </option>');
+                        $('#descuentos').append('<option value="'+d.descuentos[i].id+'">'+d.descuentos[i].saldo+' - '+d.descuentos[i].concepto+' </option>');
                     }
                 }, "json");
             }
@@ -1243,42 +1243,54 @@
 
             function facturacion()
             {
-                if (($('#TOTAL').val().trim() * 1) > 0){
-                    uri = "/facturacion/factura/esta_vacia/" + window.codPedido;
-                    data = { };
-                    $.post(uri, data, function(d){
-
-                        if (d.vacia)
-                        {
-                            alert("Pedido vacio, no se puede procesar");
-                        }
-                        else
-                        {
-                            $.Dialog({
-                                overlay: true,
-                                shadow: true,
-                                flat: true,
-                                title: 'Opciones de facturacion',
-                                content: '',
-                                width:400,
-                                onShow: function(_dialog){
-                                    var content = _dialog.children('.content');
-                                    htmls = [
-                                        '<br/><br/><div style="text-align:center;">',
-                                        '<button class="shortcut" id="fcredito" onclick="facturar_credito();"><i class="icon-credit-card"></i>Crédito</button>',
-                                        '<button class="shortcut" id="fcontado" onclick="facturar_contado();"><i class="icon-dollar"></i>Contado</button>',
-                                        '<button class="shortcut" id="ffiscal" onclick="consignar();"><i class="icon-briefcase"></i>Consignar mercadería</button>'
-                                    ];
-                                    if (window.nt) htmls.pop();
-                                        html = htmls.join("");
-                                    content.html(html);
-                                }
-                            });
-                        }
-
-                    }, "json");
-                } else{
-                    alert("No se puede procesar un saldo menor o igual a cero");
+                if($('#descuentos').val() != null){
+                    var desctext = $("#descuentos option:selected").text();
+                    var valor = parseFloat(desctext.split("-")[0].trim());
+                }else{
+                    var valor = -1;
+                }
+                
+                if(valor >= parseFloat($('#TOTAL').val().trim()) ){
+                    alert("No es posible facturar, debe superar el valor del descuento!");
+                }else{
+                 
+                    if (($('#TOTAL').val().trim() * 1) > 0){
+                        uri = "/facturacion/factura/esta_vacia/" + window.codPedido;
+                        data = { };
+                        $.post(uri, data, function(d){
+    
+                            if (d.vacia)
+                            {
+                                alert("Pedido vacio, no se puede procesar");
+                            }
+                            else
+                            {
+                                $.Dialog({
+                                    overlay: true,
+                                    shadow: true,
+                                    flat: true,
+                                    title: 'Opciones de facturacion',
+                                    content: '',
+                                    width:400,
+                                    onShow: function(_dialog){
+                                        var content = _dialog.children('.content');
+                                        htmls = [
+                                            '<br/><br/><div style="text-align:center;">',
+                                            '<button class="shortcut" id="fcredito" onclick="facturar_credito();"><i class="icon-credit-card"></i>Crédito</button>',
+                                            '<button class="shortcut" id="fcontado" onclick="facturar_contado();"><i class="icon-dollar"></i>Contado</button>',
+                                            '<button class="shortcut" id="ffiscal" onclick="consignar();"><i class="icon-briefcase"></i>Consignar mercadería</button>'
+                                        ];
+                                        if (window.nt) htmls.pop();
+                                            html = htmls.join("");
+                                        content.html(html);
+                                    }
+                                });
+                            }
+    
+                        }, "json");
+                    } else{
+                        alert("No se puede procesar un saldo menor o igual a cero");
+                    }
                 }
             }
 

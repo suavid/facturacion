@@ -719,6 +719,7 @@ class facturaController extends controller {
         $cache[5] = $this->model->get_child('empleado')->filter('modulo','facturacion');
         $cache[6] = $this->model->get_child('serie')->get_by_type('CF');
         $cache[7] = $this->model->get_child('serie')->get_by_type('NR');
+        $cache[8] = $this->model->get_child('serie')->get_by_type('ND');
         $this->view->cajas($usuario, $cache);
     }
 
@@ -1134,7 +1135,9 @@ class facturaController extends controller {
 
      public function contado($id_factura) {
         $serie = $_POST['serie'];
-        $this->model->contado($id_factura, $serie);
+        $vale = $_POST['vale'];
+        $cf = $_POST['CF'];
+        $this->model->contado($id_factura, $serie, $vale, $cf);
         echo json_encode(array("msg"=>""));
      }
 
@@ -1152,7 +1155,9 @@ class facturaController extends controller {
 
     public function credito($id_factura) {
         $serie = $_POST['serie'];
-        $this->model->credito($id_factura, $serie);
+        $vale = $_POST['vale'];
+        $cf = $_POST['CF'];
+        $this->model->credito($id_factura, $serie, $vale, $cf);
     }
 
     public function cf_credito($id_factura) {
@@ -1368,6 +1373,48 @@ class facturaController extends controller {
 
         if ($json->{'action'} == 'load'):
             $sql = "select * from detalle_factura WHERE id_factura = $factura limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
+            $handle = mysqli_query(conManager::getConnection(), $sql);
+            $retArray = array();
+            while ($row = mysqli_fetch_object($handle)):
+                $retArray[] = $row;
+            endwhile;
+            $data = json_encode($retArray);
+            $ret = "{data:" . $data . ",\n";
+            $ret .= "pageInfo:{totalRowNum:" . $totalRec . "},\n";
+            $ret .= "recordType : 'object'}";
+            echo $ret;
+        endif;
+    }
+    
+    public function despachar(){
+        $id = $_POST['id'];
+        $query = "UPDATE facmesd SET despachado = 1 WHERE id=$id";
+        data_model()->executeQuery($query);
+        
+        echo json_encode(array("msg"=>""));
+    }
+    
+    function cargar_detalle_fac() {
+        //$this->validar();
+        header('Content-type:text/javascript;charset=UTF-8');
+        $json = json_decode(stripslashes($_POST["_gt_json"]));
+        $pageNo = $json->{'pageInfo'}->{'pageNum'};
+        $pageSize = 10; //10 rows per page
+        //to get how many records totally.
+        $serie = $_POST['serie'];
+        $nofac = $_POST['nofac'];
+        $sql = "select count(*) as cnt from facmesd WHERE serie = '{$serie}' AND nofac=$nofac AND despachado = 0 ";
+        $handle = mysqli_query(conManager::getConnection(), $sql);
+        $row = mysqli_fetch_object($handle);
+        $totalRec = $row->cnt;
+
+        //make sure pageNo is inbound
+        if ($pageNo < 1 || $pageNo > ceil(($totalRec / $pageSize))):
+            $pageNo = 1;
+        endif;
+
+        if ($json->{'action'} == 'load'):
+            $sql = "select * from facmesd WHERE serie = '{$serie}' AND nofac=$nofac AND despachado = 0 limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
             $handle = mysqli_query(conManager::getConnection(), $sql);
             $retArray = array();
             while ($row = mysqli_fetch_object($handle)):

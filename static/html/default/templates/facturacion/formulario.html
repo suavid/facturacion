@@ -1141,6 +1141,7 @@
                 <h6>Siguiente pedido: <span id="NoFactura">{numero_factura}</span> </h6>
 				<h6>Serie factura: {codigo_serie_factura} / Serie remisión: {codigo_serie_remision}</h6>
                 <div style="padding:0px;">
+                    Crédito fiscal <input type="checkbox" id="ES_CF" />
                     (+) Flete <input type="checkbox" id="FLETE" disabled="disabled" />
                 </div>
                 <br/>
@@ -1370,12 +1371,17 @@
             {
 				/* proceso de facturacion al contado */
 
-				factura = window.codPedido; // numero de factura a procesar
+				var factura = window.codPedido; // numero de factura a procesar
 
-                uri = "/facturacion/factura/contado"; // url de proceso de facturacion contado
-
-                resource = [ uri, factura ].join("/");
-				request = $.post(resource, { "serie": {serie_factura} }, function(data){
+                var uri = "/facturacion/factura/contado"; // url de proceso de facturacion contado
+                var es_cf = 0;
+               
+                if ($('#ES_CF').attr('checked')){
+                    es_cf = 1;
+                }
+               
+                var resource = [ uri, factura ].join("/");
+				$.post(resource, { "serie": {serie_factura}, "vale":$('#descuentos').val(), "CF":es_cf }, function(data){
 
 					  // punto de respuesta de la peticion
 					window.editable = false;
@@ -1441,12 +1447,18 @@
 
                 /* proceso de facturacion al credito */
 
-                factura = window.codPedido; // numero de factura a procesar
+                var factura = window.codPedido; // numero de factura a procesar
 
-                uri = "/facturacion/factura/credito"; // url de proceso de facturacion credito
-
-                resource = [ uri, factura ].join("/");
-                request = $.post(resource, { "serie": {serie_factura} }, function(data){
+                var uri = "/facturacion/factura/credito"; // url de proceso de facturacion credito
+                
+                var es_cf = 0;
+               
+                if ($('#ES_CF').attr('checked')){
+                    es_cf = 1;
+                }
+                
+                var resource = [ uri, factura ].join("/");
+                $.post(resource, { "serie": {serie_factura}, "vale":$('#descuentos').val(), "CF":es_cf }, function(data){
                     
                     if (data.message != null) alert(data.message);
                     // punto de respuesta de la peticion

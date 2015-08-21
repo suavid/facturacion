@@ -88,13 +88,24 @@
                     </div>
                     <br/>
                     <div class="input-control select">
-                    Serie notas credito
+                    Serie notas crédito
                     <select style="width:150px;" name="serie_nota_credito" id="serie_nota_credito" onchange="set_serie(event);" >
                         <!-- START s_credito -->
                         <option value="{id}">
                             {serie} | {descripcion}
                         </option>
                         <!-- END s_credito -->
+                    </select>
+                    </div>
+                    <br/>
+                    <div class="input-control select">
+                    Serie notas débito
+                    <select style="width:150px;" name="serie_nota_debito" id="serie_nota_debito" onchange="set_serie(event);" >
+                        <!-- START s_debito -->
+                        <option value="{id}">
+                            {serie} | {descripcion}
+                        </option>
+                        <!-- END s_debito -->
                     </select>
                     </div>
                     <br/>

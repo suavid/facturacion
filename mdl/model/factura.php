@@ -166,10 +166,17 @@ class facturaModel extends object {
         echo json_encode($ret);
     }
 
-    public function contado($id_factura, $serie) {
+    public function contado($id_factura, $serie, $vale, $cf) {
 		$query = "START TRANSACTION";
+		
+		$descuento = $this->get_child('descuento');
+		$descuento->get($vale);
+		$monto_vale = $descuento->monto;
+		$descuento->saldo = $descuento->saldo - $monto_vale;
+		$descuento->save();
+		
 		data_model()->executeQuery($query);
-		$query = "UPDATE factura SET efectivo = monto, venta = monto,  facturado = 1, formapago = 1 WHERE id_factura = $id_factura";
+		$query = "UPDATE factura SET efectivo = (monto-$monto_vale), venta = (monto-$monto_vale), vale = $monto_vale,  facturado = 1, formapago = 1 WHERE id_factura = $id_factura";
 		data_model()->executeQuery($query);
 		$query = "UPDATE serie SET ultimo_utilizado = (ultimo_utilizado + 1) WHERE id = $serie";
 		data_model()->executeQuery($query);
@@ -214,6 +221,16 @@ class facturaModel extends object {
 		$facmesh->set_attr('ta_casa', $this->get_attr('ta_casa'));
 		$facmesh->set_attr('deposito', $this->get_attr('deposito'));
 		
+		$desc_aplicados = $this->get_child('descuentos_aplicados');
+		$desc_aplicados->get(0);
+		$desc_aplicados->caja = $this->get_attr('caja');
+		$desc_aplicados->pedido = $cpr->obtener_pedido($this->get_attr('caja'), $id_factura);
+		$desc_aplicados->monto_utilizado = $monto_vale;
+		$desc_aplicados->fecha = date("Y-m-d");
+		$desc_aplicados->concepto = $descuento->concepto;
+		$desc_aplicados->cliente = $this->get_attr('id_cliente');
+		$desc_aplicados->save();
+		
 		// esta siendo facturado al contado
 		$credito = '0';
 		
@@ -225,6 +242,7 @@ class facturaModel extends object {
 		$facmesh->set_attr('despacho', '0');  // no se ocupa al parecer
 		$facmesh->set_attr('prepedido', '0'); // no se ocupa al parecer
 		$facmesh->set_attr('usuario', '0');   // no se ocupa al parecer
+		$facmesh->set_attr('vale', $this->get_attr('vale'));   // monto descontado en concepto de vale
 		
 		$nomcli = '';
 		$nomcli .= $cliente->get_attr('primer_nombre').' ';
@@ -691,7 +709,7 @@ class facturaModel extends object {
         data_model()->executeQuery($query);
     }
 
-    public function credito($id_factura, $serie) {
+    public function credito($id_factura, $serie, $vale, $cf) {
         $ret = array();
         $query = "START TRANSACTION";
         data_model()->executeQuery($query);
@@ -701,10 +719,14 @@ class facturaModel extends object {
         $cliente    = $this->get_sibling('cliente');
         $cliente->get($id_cliente);
 
+		$descuento = $this->get_child('descuento');
+		$descuento->get($vale);
+		$monto_vale = $descuento->monto;
+
         $credito = $cliente->get_attr('credito') + $cliente->get_attr('monto_extra');
         $usado   = $cliente->get_attr('credito_usado');
         $disponible = $credito - $usado;
-        $monto      = $this->get_attr('total');
+        $monto      = $this->get_attr('total')-$monto_vale;
 
         if ($cliente->get_attr('tcredito') == 1) {
             if ($monto <= $disponible) {
@@ -718,9 +740,12 @@ class facturaModel extends object {
                 $this->set_attr('fecha_vence', sumar_dias_habiles($this->get_attr('fecha'), $cliente->get_attr('dias_credito')));
                 $this->save();
 				
-                $query = "UPDATE factura SET financiado = total, saldofinanciar = total, cuota = total, facturado = 1, formapago = 2 WHERE id_factura=$id_factura";
+				$descuento->saldo = $descuento->saldo - $monto_vale;
+				$descuento->save();
+				
+                $query = "UPDATE factura SET financiado = (total-$monto_vale),vale = $monto_vale, saldofinanciar = (total-$monto_vale), cuota = (total-$monto_vale), facturado = 1, formapago = 2 WHERE id_factura=$id_factura";
                 data_model()->executeQuery($query);
-                $query = "UPDATE factura SET cuota = total WHERE id_factura=$id_factura";
+                $query = "UPDATE factura SET cuota = (total-$monto_vale) WHERE id_factura=$id_factura";
                 data_model()->executeQuery($query);
                 $query = "UPDATE serie SET ultimo_utilizado = (ultimo_utilizado + 1) WHERE id = $serie ";
                 data_model()->executeQuery($query);
@@ -766,6 +791,16 @@ class facturaModel extends object {
 				$facmesh->set_attr('ta_casa', $this->get_attr('ta_casa'));
 				$facmesh->set_attr('deposito', $this->get_attr('deposito'));
 				
+				$desc_aplicados = $this->get_child('descuentos_aplicados');
+				$desc_aplicados->get(0);
+				$desc_aplicados->caja = $this->get_attr('caja');
+				$desc_aplicados->pedido = $cpr->obtener_pedido($this->get_attr('caja'), $id_factura);
+				$desc_aplicados->monto_utilizado = $monto_vale;
+				$desc_aplicados->fecha = date("Y-m-d");
+				$desc_aplicados->concepto = $descuento->concepto;
+				$desc_aplicados->cliente = $this->get_attr('id_cliente');
+				$desc_aplicados->save();
+				
 				// esta siendo facturado al credito
 				$credito = '1';
 				
@@ -795,21 +830,20 @@ class facturaModel extends object {
 				$facmesh->set_attr('facturadop', '0');
 				$facmesh->set_attr('fefacturad', '');
 				$facmesh->set_attr('descuentop', '0');
+				$facmesh->set_attr('vale', $this->get_attr('vale'));
 				
 				$facmesh->save();
 				
 				
-				/* Apertura de una cuenta por pagar */
+				/* Apertura de una cuenta por cobrar */
 				$ccdiah = $this->get_child('ccdiah');
 				$ccdiah->get(0); 
-				
-				
 				
 				$ccdiah->set_attr('codrut',0); 
 				$ccdiah->set_attr('codven',0); 
 				$ccdiah->set_attr('codcli',$this->get_attr('id_cliente')); 
-				$ccdiah->set_attr('tdoc',5); 
-				$ccdiah->set_attr('ttra',4); 
+				$ccdiah->set_attr('tdoc',1); 
+				$ccdiah->set_attr('ttra',1); 
 				$ccdiah->set_attr('caja', $this->get_attr('caja')); 
 				$ccdiah->set_attr('serie',$seriemd->get_attr('serie')); 
 				$ccdiah->set_attr('nodoc',$nofac); 
@@ -817,10 +851,10 @@ class facturaModel extends object {
 				$ccdiah->set_attr('vence',sumar_dias_habiles(date("Y-m-d"), 21)); 
 				$ccdiah->set_attr('femora',sumar_dias_habiles(date("Y-m-d"), 21)); 
 				$ccdiah->set_attr('nmoras',0); 
-				$ccdiah->set_attr('monto',$this->get_attr('total')); 
-				$ccdiah->set_attr('cargos',$this->get_attr('total')); 
+				$ccdiah->set_attr('monto',$this->get_attr('total')-$monto_vale); 
+				$ccdiah->set_attr('cargos',$this->get_attr('total')-$monto_vale); 
 				$ccdiah->set_attr('abonos',0.0); 
-				$ccdiah->set_attr('saldo',$this->get_attr('total')); 
+				$ccdiah->set_attr('saldo',$this->get_attr('total')-$monto_vale); 
 				$ccdiah->set_attr('diascred',0); 
 				$ccdiah->set_attr('concepto', $this->get_attr('concepto')); 
 				$ccdiah->set_attr('operadopor',0); 

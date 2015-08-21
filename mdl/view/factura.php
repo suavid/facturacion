@@ -262,6 +262,7 @@ class facturaView {
         page()->addEstigma("usuario", array('SQL', $cache[5]));
         page()->addEstigma("s_cf", array('SQL', $cache[6]));
         page()->addEstigma("s_nr", array('SQL', $cache[7]));
+        page()->addEstigma("s_debito", array('SQL', $cache[8]));
         page()->addEstigma('back_url', '/facturacion/factura/principal');
         page()->addEstigma("TITULO", 'Mantenimiento a cajas');
         template()->addTemplateBit('content', 'facturacion/cajas.html');

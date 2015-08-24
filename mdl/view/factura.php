@@ -303,6 +303,7 @@ class facturaView {
         page()->addEstigma("serie_credito_fiscal", $data['serie_credito_fiscal']);
         page()->addEstigma("codigo_serie_factura", $data['codigo_factura']);
         page()->addEstigma("codigo_serie_remision", $data['codigo_nota_remision']);
+        page()->addEstigma("codigo_serie_credito_fiscal", $data['codigo_credito_fiscal']);
         page()->addEstigma("numero_factura", $numero_factura);
         page()->addEstigma("bodegas", array('SQL', $cache[0]));
         page()->addEstigma("lineas", array('SQL', $cache[1]));

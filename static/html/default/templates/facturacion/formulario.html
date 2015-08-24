@@ -920,7 +920,7 @@
             <button onclick="reservar();"><i class="icon-tag on-left"></i>Reservar</button>
             <button onclick="showPane('ffacturas');"><i class="icon-search on-left"></i>Facturas</button>
             <button onclick="showPane('fpendientes');"><i class="icon-search on-left"></i>Pendientes</button>
-            <button onclick="showPane('ffiscal');"><i class="icon-search on-left"></i>Credito fiscal</button>
+            <button onclick="showPane('ffiscal');"><i class="icon-search on-left"></i>Crédito fiscal</button>
             <button onclick="traer_cambio();"><i class="icon-tab on-left"></i>Traer cambio</button>
             <strong>VALE DESCUENTO</strong>
             <div class="input-control select span3">
@@ -1139,7 +1139,7 @@
             <div>
                 <h6>[Caja No. {n_caja} / {t_caja}]</h6>
                 <h6>Siguiente pedido: <span id="NoFactura">{numero_factura}</span> </h6>
-				<h6>Serie factura: {codigo_serie_factura} / Serie remisión: {codigo_serie_remision}</h6>
+				<h6>SERIES: {codigo_serie_factura} | {codigo_serie_remision} | {codigo_serie_credito_fiscal}</h6>
                 <div style="padding:0px;">
                     Crédito fiscal <input type="checkbox" id="ES_CF" />
                     (+) Flete <input type="checkbox" id="FLETE" disabled="disabled" />
@@ -1244,11 +1244,11 @@
 
             function facturacion()
             {
+                var valor = -1;
+                
                 if($('#descuentos').val() != null){
                     var desctext = $("#descuentos option:selected").text();
-                    var valor = parseFloat(desctext.split("-")[0].trim());
-                }else{
-                    var valor = -1;
+                    valor = parseFloat(desctext.split("-")[0].trim());
                 }
                 
                 if(valor >= parseFloat($('#TOTAL').val().trim()) ){
@@ -1375,13 +1375,22 @@
 
                 var uri = "/facturacion/factura/contado"; // url de proceso de facturacion contado
                 var es_cf = 0;
-               
-                if ($('#ES_CF').attr('checked')){
+                var serie = {serie_factura};
+                
+                if ($('#ES_CF').is(':checked')){
                     es_cf = 1;
+                    serie = {serie_credito_fiscal};
+                }
+                
+                var vale = -1;
+                
+                if($('#descuentos').val()!=null){
+                    
+                    vale = $('#descuentos').val();
                 }
                
                 var resource = [ uri, factura ].join("/");
-				$.post(resource, { "serie": {serie_factura}, "vale":$('#descuentos').val(), "CF":es_cf }, function(data){
+				$.post(resource, { "serie": serie, "vale": vale, "CF":es_cf }, function(data){
 
 					  // punto de respuesta de la peticion
 					window.editable = false;
@@ -1453,12 +1462,22 @@
                 
                 var es_cf = 0;
                
-                if ($('#ES_CF').attr('checked')){
+                var serie = {serie_factura};
+                
+                if ($('#ES_CF').is(':checked')){
                     es_cf = 1;
+                    serie = {serie_credito_fiscal};
+                }
+                
+                 var vale = -1;
+                
+                if($('#descuentos').val()!=null){
+                    
+                    vale = $('#descuentos').val();
                 }
                 
                 var resource = [ uri, factura ].join("/");
-                $.post(resource, { "serie": {serie_factura}, "vale":$('#descuentos').val(), "CF":es_cf }, function(data){
+                $.post(resource, { "serie": serie, "vale":vale, "CF":es_cf }, function(data){
                     
                     if (data.message != null) alert(data.message);
                     // punto de respuesta de la peticion
@@ -1854,7 +1873,7 @@
         {id: 'noped', header: "# Pedido", width: 70},
         {id: 'rd_cod', header: "Cliente", width: 75},
         {id: 'fefac', header: "Fecha emision", width: 100},
-        {id: 'formapago', header: "Tipo de factura", width: 100, renderer:tipo_render},
+        {id: 'formapago', header: "Forma pago", width: 100, renderer:tipo_render},
         {id: 'anulado', header: "Anulado", width: 70},
         {id: 'venta_b', header: "Subtotal", width: 70},
         {id: 'descuento', header: "Descuento", width: 80},
@@ -1911,16 +1930,18 @@
     }
 
     var colsOptionCF = [
-        {id: 'serie', header: "Serie ", width: 80},
-        {id: 'id', header: "No. Factura", width: 80},
-        {id: 'caja', header: "Caja", width: 50},
-        {id: 'pedido', header: "# pedido", width: 100},
-        {id: 'fecha', header: "Fecha emision", width: 100},
-        {id: 'tipo', header: "Tipo de factura", width: 100},
-        {id: 'estado', header: "Estado de factura", width: 100},
-        {id: 'subtotal', header: "Subtotal", width: 100},
-        {id: 'descuento', header: "Descuento", width: 100},
-        {id: 'total', header: "Total", width: 100}
+        {id: 'serie', header: "Serie ", width: 50},
+        {id: 'nofac', header: "No. Factura", width: 80},
+        {id: 'caja', header: "Caja", width: 40},
+        {id: 'noped', header: "# Pedido", width: 70},
+        {id: 'rd_cod', header: "Cliente", width: 75},
+        {id: 'fefac', header: "Fecha emision", width: 100},
+        {id: 'formapago', header: "Forma pago", width: 100, renderer:tipo_render},
+        {id: 'anulado', header: "Anulado", width: 70},
+        {id: 'monto', header: "Subtotal", width: 70},
+        {id: 'iva', header: "IVA", width: 70},
+        {id: 'descuento', header: "Descuento", width: 80},
+        {id: 'total', header: "Total", width: 70}
 
     ];
 
@@ -1929,7 +1950,7 @@
         id: creditofiscal_grid,
         loadURL: '/facturacion/factura/resumenFiscal',
         saveURL: '',
-        width: "735", //"100%", // 700,
+        width: "880", //"100%", // 700,
         height: "360", //"100%", // 330,
         container: 'gridbox12',
         replaceContainer: true,
@@ -1939,7 +1960,7 @@
         skin: 'mac',
         remotePaging: true,
         autoLoad: true,
-        columns: colsOption,
+        columns: colsOptionCF,
         clickStartEdit: true,
         defaultRecord: {'id': "00", 'nombre': ""},
         pageSize: 30,

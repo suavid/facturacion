@@ -759,7 +759,7 @@ class facturaController extends controller {
         $serie->change_status($_POST);
         $serie->save();
 
-        HttpHandler::redirect('/facturacion/factura/series');
+        HttpHandler::redirect('/facturacion/factura/series?success=true');
     }
 
     public function guardar_caja() {
@@ -776,7 +776,7 @@ class facturaController extends controller {
         $caja->get($id);
         $caja->change_status($data);
         $caja->save();
-        HttpHandler::redirect('/facturacion/factura/cajas');
+        HttpHandler::redirect('/facturacion/factura/cajas?success=true');
     }
 
     public function datos_anulacion() {
@@ -1435,7 +1435,7 @@ class facturaController extends controller {
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
         $pageSize = 10; //10 rows per page
         //to get how many records totally.
-        $sql = "select count(*) as cnt from facmesh ORDER BY nofac DESC";
+        $sql = "select count(*) as cnt from facmesh where cf=0 ORDER BY nofac DESC";
         $handle = mysqli_query(conManager::getConnection(), $sql);
         $row = mysqli_fetch_object($handle);
         $totalRec = $row->cnt;
@@ -1446,7 +1446,7 @@ class facturaController extends controller {
         endif;
 
         if ($json->{'action'} == 'load'):
-            $sql = "select * from facmesh ORDER BY nofac DESC limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
+            $sql = "select * from facmesh where cf=0 ORDER BY nofac DESC limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
             $handle = mysqli_query(conManager::getConnection(), $sql);
             $retArray = array();
             while ($row = mysqli_fetch_object($handle)):
@@ -1467,7 +1467,7 @@ class facturaController extends controller {
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
         $pageSize = 10; //10 rows per page
         //to get how many records totally.
-        $sql = "select count(*) as cnt from id_creditos_fiscales join factura on id_factura=id_pedido join caja on caja=caja.id join caja_pedido_referencia on id_factura=referencia";
+        $sql = "select count(*) as cnt from facmesh where cf=1 ORDER BY nofac DESC";
         $handle = mysqli_query(conManager::getConnection(), $sql);
         $row = mysqli_fetch_object($handle);
         $totalRec = $row->cnt;
@@ -1478,7 +1478,7 @@ class facturaController extends controller {
         endif;
 
         if ($json->{'action'} == 'load'):
-            $sql = "select id_creditos_fiscales.id as id, factura.caja, caja_pedido_referencia.pedido as pedido,factura.fecha as fecha,factura.estado as estado, factura.tipo as tipo,codigo_factura as serie, factura.subtotal as subtotal, factura.descuento as descuento, factura.total as total from id_creditos_fiscales join factura on id_factura=id_pedido join caja on caja=caja.id join caja_pedido_referencia on id_factura=referencia limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
+            $sql = "select * from facmesh where cf=1 ORDER BY nofac DESC limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
             $handle = mysqli_query(conManager::getConnection(), $sql);
             $retArray = array();
             while ($row = mysqli_fetch_object($handle)):

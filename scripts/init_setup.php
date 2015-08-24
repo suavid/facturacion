@@ -60,6 +60,14 @@ function CANCELAR_OFERTAS(){
 
 }
 
+function ANULAR_PEDIDOS_PENDIENTES(){
+    
+}
+
+function ANULAR_RESERVAS_VENCIDAS(){
+    
+}
+
 function GENERAR_INTERESES() {
     import('scripts.alias');
 

@@ -169,11 +169,17 @@ class facturaModel extends object {
     public function contado($id_factura, $serie, $vale, $cf) {
 		$query = "START TRANSACTION";
 		
-		$descuento = $this->get_child('descuento');
-		$descuento->get($vale);
-		$monto_vale = $descuento->monto;
-		$descuento->saldo = $descuento->saldo - $monto_vale;
-		$descuento->save();
+		$monto_vale = 0;
+		
+		if($vale > 0){
+			$descuento = $this->get_child('descuento');
+			if($descuento->exists($vale)){
+				$descuento->get($vale);
+				$monto_vale = $descuento->monto;
+				$descuento->saldo = $descuento->saldo - $monto_vale;
+				$descuento->save();
+			}
+		}
 		
 		data_model()->executeQuery($query);
 		$query = "UPDATE factura SET efectivo = (monto-$monto_vale), venta = (monto-$monto_vale), vale = $monto_vale,  facturado = 1, formapago = 1 WHERE id_factura = $id_factura";
@@ -221,15 +227,17 @@ class facturaModel extends object {
 		$facmesh->set_attr('ta_casa', $this->get_attr('ta_casa'));
 		$facmesh->set_attr('deposito', $this->get_attr('deposito'));
 		
-		$desc_aplicados = $this->get_child('descuentos_aplicados');
-		$desc_aplicados->get(0);
-		$desc_aplicados->caja = $this->get_attr('caja');
-		$desc_aplicados->pedido = $cpr->obtener_pedido($this->get_attr('caja'), $id_factura);
-		$desc_aplicados->monto_utilizado = $monto_vale;
-		$desc_aplicados->fecha = date("Y-m-d");
-		$desc_aplicados->concepto = $descuento->concepto;
-		$desc_aplicados->cliente = $this->get_attr('id_cliente');
-		$desc_aplicados->save();
+		if($vale > 0){
+			$desc_aplicados = $this->get_child('descuentos_aplicados');
+			$desc_aplicados->get(0);
+			$desc_aplicados->caja = $this->get_attr('caja');
+			$desc_aplicados->pedido = $cpr->obtener_pedido($this->get_attr('caja'), $id_factura);
+			$desc_aplicados->monto_utilizado = $monto_vale;
+			$desc_aplicados->fecha = date("Y-m-d");
+			$desc_aplicados->concepto = $descuento->concepto;
+			$desc_aplicados->cliente = $this->get_attr('id_cliente');
+			$desc_aplicados->save();
+		}
 		
 		// esta siendo facturado al contado
 		$credito = '0';
@@ -718,11 +726,14 @@ class facturaModel extends object {
         $id_cliente = $this->get_attr('id_cliente');
         $cliente    = $this->get_sibling('cliente');
         $cliente->get($id_cliente);
-
-		$descuento = $this->get_child('descuento');
-		$descuento->get($vale);
-		$monto_vale = $descuento->monto;
-
+		
+		$monto_vale = 0;
+		
+		if($vale > 0){
+			$descuento = $this->get_child('descuento');
+			$descuento->get($vale);
+			$monto_vale = $descuento->monto;
+		}
         $credito = $cliente->get_attr('credito') + $cliente->get_attr('monto_extra');
         $usado   = $cliente->get_attr('credito_usado');
         $disponible = $credito - $usado;
@@ -790,16 +801,18 @@ class facturaModel extends object {
 				$facmesh->set_attr('ta_numero', $this->get_attr('ta_numero'));
 				$facmesh->set_attr('ta_casa', $this->get_attr('ta_casa'));
 				$facmesh->set_attr('deposito', $this->get_attr('deposito'));
-				
-				$desc_aplicados = $this->get_child('descuentos_aplicados');
-				$desc_aplicados->get(0);
-				$desc_aplicados->caja = $this->get_attr('caja');
-				$desc_aplicados->pedido = $cpr->obtener_pedido($this->get_attr('caja'), $id_factura);
-				$desc_aplicados->monto_utilizado = $monto_vale;
-				$desc_aplicados->fecha = date("Y-m-d");
-				$desc_aplicados->concepto = $descuento->concepto;
-				$desc_aplicados->cliente = $this->get_attr('id_cliente');
-				$desc_aplicados->save();
+			
+				if($vale > 0){	
+					$desc_aplicados = $this->get_child('descuentos_aplicados');
+					$desc_aplicados->get(0);
+					$desc_aplicados->caja = $this->get_attr('caja');
+					$desc_aplicados->pedido = $cpr->obtener_pedido($this->get_attr('caja'), $id_factura);
+					$desc_aplicados->monto_utilizado = $monto_vale;
+					$desc_aplicados->fecha = date("Y-m-d");
+					$desc_aplicados->concepto = $descuento->concepto;
+					$desc_aplicados->cliente = $this->get_attr('id_cliente');
+					$desc_aplicados->save();
+				}
 				
 				// esta siendo facturado al credito
 				$credito = '1';

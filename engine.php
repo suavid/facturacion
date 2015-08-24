@@ -121,6 +121,10 @@ BM::singleton()->getObject('temp')->getPage()->setJs('static/js/hot.js');
 BM::singleton()->getObject('db')->newConnection(HOST, USER, PASSWORD, DATABASE);
 
 //CANCELAR_OFERTAS();
+
+ANULAR_PEDIDOS_PENDIENTES();
+ANULAR_RESERVAS_VENCIDAS();
+
 #####	fin de configuraciones #####
 
 $front = new frontController(array());  # crear controlador 'front'

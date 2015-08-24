@@ -1,14 +1,12 @@
-<div class="panel">
+<div class="panel span12">
     <div class="panel-header">
-        <i class="icon-file"></i> 
         Nueva serie
     </div>
     <div class="panel-content">
-        <p><strong>Importante:</strong> Las series no admiten edición o eliminación, verifique los datos antes de guardarlos.</p>
         <form method="post" action="/facturacion/factura/guardar_serie">
             <div style="display:table;">
                 <span id="msg"></span>
-                <div style="width:300px;float:left;margin:10px;">
+                <div style="width:200px;float:left;margin:10px;">
                     Tipo: 
                     <div class="input-control select">
                     <select style="font-family:monospace;width:100%;" id="tipo" name="tipo">
@@ -50,6 +48,15 @@
         <p>
             <a href="javascript: void(0);" onclick="$('#windowSeries').css('display','block'); $('#blsBScreen').css('display', 'blocK');"><i class="icon-database"></i> Ver series registradas</a>
         </p>
+    </div>
+</div>
+<br/>
+<div class="panel span12">
+    <div class="panel-header">
+        <i class="icon-warning"></i> Advertencia
+    </div>
+    <div class="panel-content">
+        <p>Las series no admiten edición o eliminación, verifique los datos antes de guardarlos.</p>
     </div>
 </div>
 <br/><br/>

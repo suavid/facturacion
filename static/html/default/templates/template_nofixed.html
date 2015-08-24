@@ -86,20 +86,14 @@
 
                 var messages_handler = new url_handler();
                 messages_handler.initialize();
-                if (messages_handler.isKey('error')) {
+                if (messages_handler.isKey('success')) {
 
-                    if (messages_handler.getValue('error') == 1530) {
-                        $.Dialog({
-                            overlay: true,
-                            shadow: true,
-                            flat: true,
-                            icon: '<i class="icon-warning"></i>',
-                            title: 'ACCESO RESTRINGIDO',
-                            content: '',
-                            onShow: function(_dialog){
-                                var content = _dialog.children('.content');
-                                content.html('<p style="padding: 15px;">No posee autorización para visualizar el contenido</p>');
-                            }
+                    if (messages_handler.getValue('success')) {
+                        var not = $.Notify({
+                            caption: "Transacción correcta",
+                            style: {background:'green', color:'white'},
+                            content: "Los cambios se han guardado correctamente",
+                            timeout: 5000 // 10 seconds
                         });
                     }
                 }

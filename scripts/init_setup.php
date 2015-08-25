@@ -61,11 +61,80 @@ function CANCELAR_OFERTAS(){
 }
 
 function ANULAR_PEDIDOS_PENDIENTES(){
+    import('scripts.alias');
+    import('objects.bodega');
+    
+    $cls = "bodegaModel";
+    $bodega = new $cls();
+    
+    // Obtener los pedidos de ayer que están pendientes y no han sido reservados 
+    $query = "SELECT id_factura FROM factura WHERE fecha < CURRENT_DATE() AND facturado = 0 AND estado !='RESERVADO' AND (monto > 0 OR iva > 0 OR subtotal > 0 OR total > 0)";
+    data_model()->executeQuery($query);
+    $pedidosAnulables = array();
+    
+    while($row = data_model()->getResult()->fetch_assoc()){
+        $pedidosAnulables[] = $row;
+    }
+    
+    foreach($pedidosAnulables as $pedido){
+        $id_factura = $pedido['id_factura'];
+        $qdetalle = "SELECT id, linea, estilo, color, talla, bodega, cantidad FROM detalle_factura WHERE id_factura = $id_factura";
+        
+        data_model()->executeQuery($qdetalle);
+        
+        $detalle = array();
+        while($row = data_model()->getResult()->fetch_assoc()){        
+            $detalle = $row;
+        }    
+        
+        foreach($detalle as $item){
+            $bodega->aumentar_stock($item['linea'], $item['estilo'], $item['color'], $item['talla'], $item['bodega'], $item['cantidad']);
+            $qdel = "DELETE FROM detalle_factura WHERE id = ".$item['id'];
+            data_model()->executeQuery($qdel);
+        }
+        
+        $qupdate = "UPDATE factura SET monto = 0, iva = 0, subtotal = 0, total = 0, descuento = 0 WHERE id_factura = $id_factura";
+        data_model()->executeQuery($qupdate);
+    }
     
 }
 
 function ANULAR_RESERVAS_VENCIDAS(){
+    import('scripts.alias');
+    import('objects.bodega');
     
+    $cls = "bodegaModel";
+    $bodega = new $cls();
+    
+    // Obtener los pedidos de ayer que están pendientes y no han sido reservados 
+    $query = "SELECT id_factura FROM factura WHERE fecha <= DATE_ADD(CURRENT_DATE(), INTERVAL -3 DAY) AND facturado = 0 AND estado ='RESERVADO' AND (monto > 0 OR iva > 0 OR subtotal > 0 OR total > 0)";
+    data_model()->executeQuery($query);
+    $pedidosAnulables = array();
+    
+    while($row = data_model()->getResult()->fetch_assoc()){
+        $pedidosAnulables[] = $row;
+    }
+    
+    foreach($pedidosAnulables as $pedido){
+        $id_factura = $pedido['id_factura'];
+        $qdetalle = "SELECT id, linea, estilo, color, talla, bodega, cantidad FROM detalle_factura WHERE id_factura = $id_factura";
+        
+        data_model()->executeQuery($qdetalle);
+        
+        $detalle = array();
+        while($row = data_model()->getResult()->fetch_assoc()){        
+            $detalle = $row;
+        }    
+        
+        foreach($detalle as $item){
+            $bodega->aumentar_stock($item['linea'], $item['estilo'], $item['color'], $item['talla'], $item['bodega'], $item['cantidad']);
+            $qdel = "DELETE FROM detalle_factura WHERE id = ".$item['id'];
+            data_model()->executeQuery($qdel);
+        }
+        
+        $qupdate = "UPDATE factura SET monto = 0, iva = 0, subtotal = 0, total = 0,descuento = 0, estado='PENDIENTE' WHERE id_factura = $id_factura";
+        data_model()->executeQuery($qupdate);
+    }
 }
 
 function GENERAR_INTERESES() {

@@ -90,7 +90,7 @@ class facturaModel extends object {
     }
 
     public function totales($codPedido) {
-        $query = "SELECT total,subtotal,descuento FROM factura WHERE id_factura=$codPedido";
+        $query = "SELECT total,subtotal,descuento,iva FROM factura WHERE id_factura=$codPedido";
         data_model()->executeQuery($query);
         $data = data_model()->getResult()->fetch_assoc();
         echo json_encode($data);
@@ -146,11 +146,12 @@ class facturaModel extends object {
 		$system->get(1);
 		$iva    = $system->get_attr('iva');
 		$poriva = $iva / 100;
-		$total  = $importe;
-		$monto  = $total / (1 + $poriva);
-		$mntiva = $total - $monto;
+		$monto  = $importe;
+		$mntiva = $monto * $poriva;
+		$total  = $monto + $mntiva;
+		$org = $monto + $descuento;
 		
-		$query = "UPDATE factura SET iva = (iva - $mntiva), monto = (monto - $monto), subtotal=(subtotal - $total) , descuento = ( descuento - $descuento), total= (total - ( $total + $descuento ) ) WHERE id_factura=$factura";
+		$query = "UPDATE factura SET iva = (iva - $mntiva), monto = (monto - $monto), subtotal=(subtotal - $org) , descuento = ( descuento - $descuento), total= (total - $total ) WHERE id_factura=$factura";
 		data_model()->executeQuery($query);
 
 		echo json_encode(array("msg"=>""));

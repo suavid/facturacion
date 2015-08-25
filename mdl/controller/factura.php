@@ -896,6 +896,7 @@ class facturaController extends controller {
         $cache[0] = $this->model->get_child('bodega')->get_list('','', array('nombre'));
         $cache[1] = $this->model->get_child('linea')->get_list('','', array('nombre'));
         $cache[2] = $this->model->get_sibling('modulo')->obtener_actualizables();
+        $cache[3] = $this->model->get_child('color')->get_list('','', array('nombre'));
         $numero_factura = $data['ultimo_pedido'] + 1;
         $informacionRemision = (isset($_POST['informacionRemision'])) ? $_POST['informacionRemision']: "";
         $this->view->formulario_facturacion($numero_factura, $cache, $data, $informacionRemision);
@@ -1115,9 +1116,9 @@ class facturaController extends controller {
 				$system->get(1);
 				$iva    = $system->get_attr('iva');
 				$poriva = $iva / 100;
-				$total  = $info['importe'];
-				$monto  = $total / (1 + $poriva);
-				$mntiva = $total - $monto;
+				$monto  = $info['importe'];
+                $mntiva = $monto * $poriva;
+                $total  = $monto + $mntiva;
 				$descuento = $info['descuento'];
 				
 				// Nota: en este punto no interese incluir el iva en los detalles, solamente se incluye el iva en el total
@@ -1264,14 +1265,15 @@ class facturaController extends controller {
 				$system->get(1);
 				$iva    = $system->get_attr('iva');
 				$poriva = $iva / 100;
-				$total  = $d['importe'];
-				$monto  = $total / (1 + $poriva);
-				$mntiva = $total - $monto;
+                $monto  = $d['importe']; // Ya se ha aplicado el descuento
+                $mntiva = $monto * $poriva; 
+				$total  = $monto + $mntiva;
 				$descuento = $d['descuento'];
+                $org = $monto + $d['descuento'];
 				
 				// Nota: en este punto no interese incluir el iva en los detalles, solamente se incluye el iva en el total
 				// se actualizan los totales de la cabecera de factura
-				$query = "UPDATE factura SET iva = (iva + $mntiva), monto=( monto + $monto) , descuento=( descuento + $descuento), total=(total + ( $total + $descuento )), subtotal=(subtotal + $total)  WHERE id_factura=$factura";
+				$query = "UPDATE factura SET iva = (iva + $mntiva), monto=( monto + $monto) , descuento=( descuento + $descuento), total=(total + $total), subtotal=(subtotal + $org)  WHERE id_factura=$factura";
 				data_model()->executeQuery($query);
 			
 				$response['STATUS'] = "OK";	// informa del exito del proceso al cliente
@@ -1499,7 +1501,7 @@ class facturaController extends controller {
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
         $pageSize = 10; //10 rows per page
         //to get how many records totally.
-        $sql = "select count(*) as cnt from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE facturado=0";
+        $sql = "select count(*) as cnt from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE facturado=0 and factura.fecha = CURRENT_DATE() and estado!='RESERVADO'";
         $handle = mysqli_query(conManager::getConnection(), $sql);
         $row = mysqli_fetch_object($handle);
         $totalRec = $row->cnt;
@@ -1510,7 +1512,39 @@ class facturaController extends controller {
         endif;
 
         if ($json->{'action'} == 'load'):
-            $sql = "select * from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE facturado=0 ORDER BY id_factura DESC limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
+            $sql = "select * from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE facturado=0 and factura.fecha = CURRENT_DATE() and estado!='RESERVADO' ORDER BY id_factura DESC limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
+            $handle = mysqli_query(conManager::getConnection(), $sql);
+            $retArray = array();
+            while ($row = mysqli_fetch_object($handle)):
+                $retArray[] = $row;
+            endwhile;
+            $data = json_encode($retArray);
+            $ret = "{data:" . $data . ",\n";
+            $ret .= "pageInfo:{totalRowNum:" . $totalRec . "},\n";
+            $ret .= "recordType : 'object'}";
+            echo $ret;
+        endif;
+    }
+    
+    public function cargarReservas() {
+        $this->validar();
+        header('Content-type:text/javascript;charset=UTF-8');
+        $json = json_decode(stripslashes($_POST["_gt_json"]));
+        $pageNo = $json->{'pageInfo'}->{'pageNum'};
+        $pageSize = 10; //10 rows per page
+        //to get how many records totally.
+        $sql = "select count(*) as cnt from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE facturado=0 and estado='RESERVADO'";
+        $handle = mysqli_query(conManager::getConnection(), $sql);
+        $row = mysqli_fetch_object($handle);
+        $totalRec = $row->cnt;
+
+        //make sure pageNo is inbound
+        if ($pageNo < 1 || $pageNo > ceil(($totalRec / $pageSize))):
+            $pageNo = 1;
+        endif;
+
+        if ($json->{'action'} == 'load'):
+            $sql = "select * from caja_pedido_referencia join factura on referencia=id_factura join caja on factura.caja=caja.id WHERE facturado=0 and estado='RESERVADO' ORDER BY id_factura DESC limit " . ($pageNo - 1) * $pageSize . ", " . $pageSize;
             $handle = mysqli_query(conManager::getConnection(), $sql);
             $retArray = array();
             while ($row = mysqli_fetch_object($handle)):

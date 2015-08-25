@@ -1981,17 +1981,27 @@ class inventarioModel extends object {
     public function existsTalla($bodega, $linea, $estilo, $color, $talla) {
         $bodega = set_type($bodega);
         $linea = set_type($linea);
-        $estilo = set_type($estilo);
+        $estilo = $estilo;
         $color = set_type($color);
         $talla = set_type($talla);
-        $sql_stock = "SELECT * FROM estado_bodega WHERE bodega=$bodega AND linea=$linea AND estilo=$estilo AND color=$color AND talla=$talla AND stock > 0";
+        $sql_stock = "SELECT * FROM estado_bodega WHERE bodega=$bodega AND linea=$linea AND estilo='{$estilo}' AND color=$color AND talla=$talla AND stock > 0";
         data_model()->executeQuery($sql_stock);
         $res = array();
         $res["STOCK"] = data_model()->getResult()->fetch_assoc();
+        $res["PORCENTAJE"] = 0;
         $ct = data_model()->getNumRows();
-        $sql_precio = "SELECT * FROM control_precio WHERE linea=$linea AND control_estilo=$estilo AND color=$color AND talla=$talla";
+        $sql_oferta = "SELECT id_oferta FROM oferta_producto WHERE linea=$linea AND estilo='{$estilo}' AND color=$color AND talla=$talla";
+        data_model()->executeQuery($sql_oferta);
+        if(data_model()->getNumRows()>0){
+            $row = data_model()->getResult()->fetch_assoc();
+            $id_ofer = $row['id_oferta'];
+            $sql_porcentaje = "SELECT descuento FROM oferta WHERE id = $id_ofer";
+            data_model()->executeQuery($sql_porcentaje);
+            $row2 = data_model()->getResult()->fetch_assoc();
+            $res["PORCENTAJE"] = $row2['descuento'] * 100;
+        }
+        $sql_precio = "SELECT * FROM control_precio WHERE linea=$linea AND control_estilo='{$estilo}' AND color=$color AND talla=$talla";
         data_model()->executeQuery($sql_precio);
-        $res = array();
         $res["PRECIO"] = data_model()->getResult()->fetch_assoc();
         if (data_model()->getNumRows() > 0 && $ct > 0):
             $res['STATUS'] = 'OK';

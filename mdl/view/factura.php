@@ -307,6 +307,7 @@ class facturaView {
         page()->addEstigma("numero_factura", $numero_factura);
         page()->addEstigma("bodegas", array('SQL', $cache[0]));
         page()->addEstigma("lineas", array('SQL', $cache[1]));
+        page()->addEstigma("nColors", array('SQL', $cache[3]));
         foreach ($cache[2] as $campos) {
             $val = "";
             if (strpos($campos['nombre_campo'], 'telef') > -1 || strpos($campos['nombre_campo'], 'celul') > -1)

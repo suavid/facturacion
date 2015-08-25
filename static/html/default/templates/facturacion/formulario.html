@@ -89,8 +89,6 @@
             window.procesarRemision = true;
             window.productos = dataRem.productos;
             $('#codigo_cliente').blur();
-            
-            
         }
         
         
@@ -104,6 +102,14 @@
         res = $.post(uri, {"pedido":window.codPedido}, function(d){
             facturar_contado();
         }, "json");
+    }
+
+    function nColor_render(value, record, columnObj, grid, colNo, rowNo){
+		var nColors = [];
+        <!-- START nColors -->
+            nColors[{id}] = "{nombre}";
+        <!-- END nColors -->
+        return nColors[record['color']];
     }
 
     /* renderizado para el grid, permite la eliminacion de elementos en las facturas */
@@ -605,13 +611,14 @@
             var ESTILO = $('#bEstilo').val().trim();
             var COLOR  = $('#bColor').val().trim();
             var TALLA  = $('#bTalla').val().trim();
-            var ajaxRequest = $.post(uri, {bodega:BODEGA, linea:LINEA, estilo:ESTILO, color:COLOR, talla:TALLA}, function(data){
+            $.post(uri, {bodega:BODEGA, linea:LINEA, estilo:ESTILO, color:COLOR, talla:TALLA}, function(data){
                 if (data.STATUS == "OK"){
                     $('#bCantidad').removeAttr("disabled");
                     $('#bCantidad').focus();
                     $('#bPrecio').val(data.PRECIO.precio);
                     $('#bCosto').val(data.PRECIO.costo);
                     $('#bTalla').css('border-color', '#D3D3D3');
+                    $('#bPorcentaje').val(data.PORCENTAJE);
                 } else{
                     $('#bCantidad').attr("disabled", "disabled");
                 }
@@ -632,9 +639,10 @@
         uri  = "/facturacion/factura/totales/" + window.codPedido;
         data = { };
         fq = $.post(uri, data, function(d){
-            $('#TOTAL').val(d.total);
             $('#SUBTOTAL').val(d.subtotal);
             $('#DESCUENTO').val(d.descuento);
+            $('#IVA').val(d.iva);
+            $('#TOTAL').val(d.total);
         }, "json");
     }
 
@@ -917,12 +925,13 @@
     <div style="text-align:right;padding-right:40px;">
         <div class="toolbar transparent">
             <button onclick="imprimirFactura();"><i class="icon-printer on-left"></i>Imprimir</button>
-            <button onclick="reservar();"><i class="icon-tag on-left"></i>Reservar</button>
-            <button onclick="showPane('ffacturas');"><i class="icon-search on-left"></i>Facturas</button>
-            <button onclick="showPane('fpendientes');"><i class="icon-search on-left"></i>Pendientes</button>
-            <button onclick="showPane('ffiscal');"><i class="icon-search on-left"></i>Crédito fiscal</button>
-            <button onclick="traer_cambio();"><i class="icon-tab on-left"></i>Traer cambio</button>
-            <strong>VALE DESCUENTO</strong>
+            <button onclick="reservar();"><i class="icon-clock on-left"></i>Reservar</button>
+            <button onclick="showPane('fpendientes');"><i class="icon-search on-left"></i>Pendiente</button>
+            <button onclick="showPane('ffacturas');"><i class="icon-search on-left"></i>Facturado</button>
+            <button onclick="showPane('ffiscal');"><i class="icon-search on-left"></i>C.F</button>
+            <button onclick="showPane('freservas');"><i class="icon-search on-left"></i>Reservas</button>
+            <button onclick="traer_cambio();"><i class="icon-tab on-left"></i>Cambios</button>
+            <strong>VALE POR</strong>
             <div class="input-control select span3">
             <select id="descuentos">
                 
@@ -1030,20 +1039,20 @@
                 </table>
             </div>
 			
-            <div style="width:400px;background:#F3F3F3;padding:15px;float:left;margin-left: 20px;">
+            <div style="width:410px;background:#F3F3F3;padding:15px;float:left;margin-left: 20px;">
                 <div style="display:table;width:100%;">
                     <div style="float:left;">
-                        <input type="text" id="credito" style="width:50px;" readonly="readonly" />
-                        Límite de crédito
+                        <input type="text" id="credito" style="width:50px; margin-top: 2px;" readonly="readonly" />
+                        &nbsp;&nbsp;Límite de crédito
 						<br/>
-                        <input type="text" id="credito_usado" style="width:50px;" readonly="readonly" />
-                        Deuda actual
+                        <input type="text" id="credito_usado" style="width:50px;margin-top: 2px;" readonly="readonly" />
+                        &nbsp;&nbsp;Deuda actual
 						<br/>
-                        <input type="text" id="disponible" style="width:50px;" readonly="readonly" />
-                        Saldo disponible
+                        <input type="text" id="disponible" style="width:50px;margin-top: 2px;" readonly="readonly" />
+                        &nbsp;&nbsp;Saldo disponible
 						<br/>
-                        <input type="text" id="monto_extra" style="width:50px;" readonly="readonly" />
-                        Monto refinanciado
+                        <input type="text" id="monto_extra" style="width:50px;margin-top: 2px;" readonly="readonly" />
+                        &nbsp;&nbsp;Monto refinanciado
 						<br/>
                     </div>
                     <div style="float:left;width:50%;margin-left: 20px;">
@@ -1134,25 +1143,26 @@
 
         </div>
     </div>
-    <div style="width:300px;float:left;text-align:right;background:#F3F3F3;padding-right:30px;margin-top:10px;margin-bottom: 5px;">
+    <div style="width:310px;float:left;text-align:right;background:#F3F3F3;padding-right:30px;margin-top:10px;margin-bottom: 5px;">
         <form>
             <div>
                 <h6>[Caja No. {n_caja} / {t_caja}]</h6>
-                <h6>Siguiente pedido: <span id="NoFactura">{numero_factura}</span> </h6>
-				<h6>SERIES: {codigo_serie_factura} | {codigo_serie_remision} | {codigo_serie_credito_fiscal}</h6>
+                <h6>Siguiente pedido: <span id="NoFactura">{numero_factura}</span> [SERIES: {codigo_serie_factura} | {codigo_serie_remision} | {codigo_serie_credito_fiscal}]</h6>
                 <div style="padding:0px;">
                     Crédito fiscal <input type="checkbox" id="ES_CF" />
                     (+) Flete <input type="checkbox" id="FLETE" disabled="disabled" />
                 </div>
                 <br/>
-                Subtotal <input type="text" id="SUBTOTAL" readonly style="width:75px;" />
+                Subtotal <input type="text" id="SUBTOTAL" readonly style="width:75px; margin-bottom: 1px;" />
                 <br/>
-                (-) Descuento <input type="text" id="DESCUENTO" readonly style="width:75px;" />
+                (-) Descuento <input type="text" id="DESCUENTO" readonly style="width:75px; margin-bottom: 1px;" />
                 <br/>
-                Total <input type="text" readonly id="TOTAL" style="width:75px;" />
+                (+) IVA <input type="text" id="IVA" readonly style="width:75px; margin-bottom: 1px;" />
+                <br/>
+                <strong>TOTAL A FACTURAR</strong> <input type="text" readonly id="TOTAL" style="width:75px; margin-bottom: 2px;" />
                 <br/>
                 <br/>
-                <button class="bg-color-blue fg-color-white" type="button" onclick="facturacion();" id="buy" disabled="disabled">Efectuar compra</button>
+                <button class="bg-color-blue fg-color-white" type="button" onclick="facturacion();" id="buy" disabled="disabled">Efectuar venta</button>
             </div>
         </form>   
     </div>
@@ -1277,9 +1287,9 @@
                                         var content = _dialog.children('.content');
                                         htmls = [
                                             '<br/><br/><div style="text-align:center;">',
-                                            '<button class="shortcut" id="fcredito" onclick="facturar_credito();"><i class="icon-credit-card"></i>Crédito</button>',
-                                            '<button class="shortcut" id="fcontado" onclick="facturar_contado();"><i class="icon-dollar"></i>Contado</button>',
-                                            '<button class="shortcut" id="ffiscal" onclick="consignar();"><i class="icon-briefcase"></i>Consignar mercadería</button>'
+                                            '<button class="shortcut" onclick="facturar_credito();"><i class="icon-credit-card"></i>Crédito</button>',
+                                            '<button class="shortcut" onclick="facturar_contado();"><i class="icon-dollar"></i>Contado</button>',
+                                            '<button class="shortcut" onclick="consignar();"><i class="icon-briefcase"></i>Consignar mercadería</button>'
                                         ];
                                         if (window.nt) htmls.pop();
                                             html = htmls.join("");
@@ -1629,7 +1639,7 @@
             var colsOption3 = [
                 {id: 'linea', header: "Linea", width :100 },
                 {id: 'estilo', header: "Estilo", width :100},
-                {id: 'color', header: "Color", width :100},
+                {id: 'color', header: "Color", width :100, renderer: nColor_render},
                 {id: 'talla', header: "Talla", width :100},
                 {id: 'ingresan', header: "Ingresan", width :100, renderer:input_render},
                 {id: 'stock', header: "Stock", width :100, renderer:stock_render},
@@ -1745,7 +1755,8 @@
         </section>
         <!-- PANELES -->
         <div id="fpendientes" class="sidePane" style="width:600px;height:100%;background:#fff;position:fixed;top:0px;right:-620px;z-index:100000;box-shadow:-1px -1px 4px 1px #000;padding-left:20px;">
-            <h3>Pedidos</h3>
+            <h3>Pedidos pendientes</h3>
+            <p>Los pedidos pendientes se pierden después de 1 día sin ser facturados</p>
             <br/>
             <br/>
             <div id="bigbox10" style="margin:15px;display:!none;float:left;">
@@ -1779,6 +1790,19 @@
             </div>
             <br/>
             <button onclick="closePane('ffiscal')" class="primary">Cerrar panel</button>
+        </div>
+        <div id="freservas" class="sidePane" style="width:600px;height:100%;background:#fff;position:fixed;top:0px;right:-620px;z-index:100000;box-shadow:-1px -1px 4px 1px #000;padding-left:20px;overflow: auto;">
+            <h3>Reservas</h3>
+            <p>Las reservas se pierden de forma automática después de 3 días</p>
+            <br/>
+            <br/>
+            <div id="bigbox13" style="margin:15px;display:!none;float:left;">
+                <div id="gridbox13" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+
+                </div>
+            </div>
+            <br/>
+            <button onclick="closePane('freservas')" class="primary">Cerrar panel</button>
         </div>
 
 <script type="text/javascript" >
@@ -1837,6 +1861,62 @@
     var mygridPendientes = new Sigma.Grid(gridOptionPendientes);
         Sigma.Util.onLoad(function() {
         mygridPendientes.render();
+    });
+    
+    var reservas_grid = "reservas_grid";
+
+
+    var dsOptionReservas = {
+        fields: [
+            {name: 'serie'},
+            {name: 'pedido'},
+            {name: 'caja'},
+            {name: 'pedido'},
+            {name: 'fecha'},
+            {name: 'subtotal'},
+            {name: 'descuento'},
+            {name: 'total'}
+        ],
+        recordType: 'object'
+    }
+
+    var colsOptionReservas = [
+        {id: 'codigo_factura', header: "Serie ", width: 50},
+        {id: 'pedido', header: "No.Pedido", width: 80},
+        {id: 'caja', header: "Caja", width: 40},
+        {id: 'fecha', header: "Fecha emision", width: 100},
+        {id: 'subtotal', header: "Subtotal", width: 90},
+        {id: 'descuento', header: "Descuento", width: 90},
+        {id: 'total', header: "Total", width: 90}
+
+    ];
+
+
+    var gridOptionReservas = {
+        id: reservas_grid,
+        loadURL: '/facturacion/factura/cargarReservas',
+        saveURL: '',
+        width: "543", //"100%", // 700,
+        height: "360", //"100%", // 330,
+        container: 'gridbox13',
+        replaceContainer: true,
+        encoding: 'UTF-8', // Sigma.$encoding(), 
+        dataset: dsOptionReservas,
+        columns: colsOptionReservas,
+        clickStartEdit: true,
+        allowCustomSkin: true,
+        skin: 'mac',
+        remotePaging: true,
+        autoLoad: true,
+        defaultRecord: {'id': "00", 'nombre': ""},
+        pageSize: 30,
+        toolbarContent: 'reload | filter | nav state'
+    };
+
+
+    var mygridReservas = new Sigma.Grid(gridOptionReservas);
+        Sigma.Util.onLoad(function() {
+        mygridReservas.render();
     });
 
      var facturas_grid = "facturas_grid";

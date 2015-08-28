@@ -735,6 +735,7 @@ class facturaModel extends object {
 			$descuento->get($vale);
 			$monto_vale = $descuento->monto;
 		}
+		
         $credito = $cliente->get_attr('credito') + $cliente->get_attr('monto_extra');
         $usado   = $cliente->get_attr('credito_usado');
         $disponible = $credito - $usado;
@@ -752,8 +753,10 @@ class facturaModel extends object {
                 $this->set_attr('fecha_vence', sumar_dias_habiles($this->get_attr('fecha'), $cliente->get_attr('dias_credito')));
                 $this->save();
 				
-				$descuento->saldo = $descuento->saldo - $monto_vale;
-				$descuento->save();
+				if($vale > 0){
+					$descuento->saldo = $descuento->saldo - $monto_vale;
+					$descuento->save();
+				}
 				
                 $query = "UPDATE factura SET financiado = (total-$monto_vale),vale = $monto_vale, saldofinanciar = (total-$monto_vale), cuota = (total-$monto_vale), facturado = 1, formapago = 2 WHERE id_factura=$id_factura";
                 data_model()->executeQuery($query);

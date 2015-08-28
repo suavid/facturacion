@@ -83,8 +83,9 @@ function ANULAR_PEDIDOS_PENDIENTES(){
         data_model()->executeQuery($qdetalle);
         
         $detalle = array();
+        
         while($row = data_model()->getResult()->fetch_assoc()){        
-            $detalle = $row;
+            $detalle[] = $row;
         }    
         
         foreach($detalle as $item){
@@ -123,7 +124,7 @@ function ANULAR_RESERVAS_VENCIDAS(){
         
         $detalle = array();
         while($row = data_model()->getResult()->fetch_assoc()){        
-            $detalle = $row;
+            $detalle[] = $row;
         }    
         
         foreach($detalle as $item){

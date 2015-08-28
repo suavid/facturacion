@@ -1074,20 +1074,16 @@ class facturaController extends controller {
             $response = array();
 
             foreach ($rep as $id) {
-                $query = "SELECT * FROM oferta WHERE id = $id";
+                $query = "SELECT descuento FROM oferta WHERE id = $id";
                 data_model()->executeQuery($query);
-                $response[] = data_model()->getResult()->fetch_assoc();
+                $row = data_model()->getResult()->fetch_assoc();
+                $response[] = $row['descuento'];
             }
 
-            if(isset($info['porcentaje'])){
-                if(count($response) > 0){
-                    $info['porcentaje'] = $response[0]['descuento'] * 100;
-                }else{
-                    $info['porcentaje'] = 0;    
-                }
-            }
-            else{
-                $info['porcentaje'] = 0;
+            if(count($response) > 0){
+                $info['porcentaje'] = $response[0] * 100;
+            }else{
+                $info['porcentaje'] = 0;    
             }
             
             $info['descuento']  = $info['importe'] * ($info['porcentaje'] / 100) ;
@@ -1120,10 +1116,11 @@ class facturaController extends controller {
                 $mntiva = $monto * $poriva;
                 $total  = $monto + $mntiva;
 				$descuento = $info['descuento'];
+                $org = $monto + $descuento;
 				
 				// Nota: en este punto no interese incluir el iva en los detalles, solamente se incluye el iva en el total
 				// se actualizan los totales de la cabecera de factura
-				$query = "UPDATE factura SET iva = (iva + $mntiva), monto=( monto + $monto) , descuento=( descuento + $descuento), total=(total + ( $total + $descuento )), subtotal=(subtotal + $total)  WHERE id_factura=$factura";
+				$query = "UPDATE factura SET iva = (iva + $mntiva), monto=( monto + $monto) , descuento=( descuento + $descuento), total=(total + $total), subtotal=(subtotal + $org)  WHERE id_factura=$factura";
 				data_model()->executeQuery($query);
                 //$ret['sql'] = $query;
 			} else {

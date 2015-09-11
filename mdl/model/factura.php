@@ -167,7 +167,7 @@ class facturaModel extends object {
         echo json_encode($ret);
     }
 
-    public function contado($id_factura, $serie, $vale, $cf) {
+    public function contado($id_factura, $serie, $vale, $cf, $tipo, $boleta, $banco) {
 		$query = "START TRANSACTION";
 		
 		$monto_vale = 0;
@@ -182,8 +182,23 @@ class facturaModel extends object {
 			}
 		}
 		
+		$tipo_pago  = "efectivo = (total-$monto_vale)";
+                
+        if($tipo == 1){
+        	$tipo_pago = "efectivo = (total-$monto_vale)";
+        }
+        if($tipo == 2){
+        	$tipo_pago = "cheque = (total-$monto_vale)";
+        }
+        if($tipo == 3){
+        	$tipo_pago = "tarjeta = (total-$monto_vale)";
+        }
+        if($tipo == 4){
+        	$tipo_pago = "deposito = (total-$monto_vale)";
+        }
+		
 		data_model()->executeQuery($query);
-		$query = "UPDATE factura SET efectivo = (monto-$monto_vale), venta = (monto-$monto_vale), vale = $monto_vale,  facturado = 1, formapago = 1 WHERE id_factura = $id_factura";
+		$query = "UPDATE factura SET $tipo_pago, venta = (total-$monto_vale), vale = $monto_vale,  facturado = 1, formapago = 1 WHERE id_factura = $id_factura";
 		data_model()->executeQuery($query);
 		$query = "UPDATE serie SET ultimo_utilizado = (ultimo_utilizado + 1) WHERE id = $serie";
 		data_model()->executeQuery($query);
@@ -239,6 +254,15 @@ class facturaModel extends object {
 			$desc_aplicados->cliente = $this->get_attr('id_cliente');
 			$desc_aplicados->save();
 		}
+		
+		// Si se trata de un deposito actualizar la boleta utilizada
+        if($tipo==4){
+			$tot = $this->get_attr('total');
+        	$boleta = set_type($boleta);
+            $banco  = set_type($banco);
+            $query  = "UPDATE boleta SET saldo = (saldo - $tot) WHERE id=$boleta AND banco=$banco";
+            data_model()->executeQuery($query);
+        }
 		
 		// esta siendo facturado al contado
 		$credito = '0';
@@ -873,7 +897,7 @@ class facturaModel extends object {
 				$ccdiah->set_attr('abonos',0.0); 
 				$ccdiah->set_attr('saldo',$this->get_attr('total')-$monto_vale); 
 				$ccdiah->set_attr('diascred',0); 
-				$ccdiah->set_attr('concepto', $this->get_attr('concepto')); 
+				$ccdiah->set_attr('concepto', "COMPRAS"); 
 				$ccdiah->set_attr('operadopor',0); 
 				$ccdiah->set_attr('feoperado',''); 
 				

@@ -897,6 +897,8 @@ class facturaController extends controller {
         $cache[1] = $this->model->get_child('linea')->get_list('','', array('nombre'));
         $cache[2] = $this->model->get_sibling('modulo')->obtener_actualizables();
         $cache[3] = $this->model->get_child('color')->get_list('','', array('nombre'));
+        $cache[4] = $this->model->get_child('casascredito')->get_list();
+        $cache[5] = $this->model->get_child('casascredito')->get_list();
         $numero_factura = $data['ultimo_pedido'] + 1;
         $informacionRemision = (isset($_POST['informacionRemision'])) ? $_POST['informacionRemision']: "";
         $this->view->formulario_facturacion($numero_factura, $cache, $data, $informacionRemision);
@@ -1135,7 +1137,10 @@ class facturaController extends controller {
         $serie = $_POST['serie'];
         $vale = $_POST['vale'];
         $cf = $_POST['CF'];
-        $this->model->contado($id_factura, $serie, $vale, $cf);
+        $tipo = $_POST['tipo'];
+        $boleta = $_POST['boleta'];
+        $banco = $_POST['banco'];
+        $this->model->contado($id_factura, $serie, $vale, $cf, $tipo, $boleta, $banco);
         echo json_encode(array("msg"=>""));
      }
 

@@ -44,9 +44,15 @@
         window.lbl       = 0;
         window.nt        = false;
         window.cerrar    = false;
+        window.FacTotal  = 0.0;
+        window._max      = 0.0;
         window.p_cambio_bodega = "{p_cambio_bodega}";
         window.bodega = "{bodega_por_defecto}";
-
+        
+        $('#btnClose').bind('click', function(){
+            $('#metodo_pago').css('display', 'none');
+        });
+        
         $("#bBodega option[value=" + bodega + "]").attr("selected", "selected");
         
         /* gestion de parametros en url */
@@ -643,6 +649,7 @@
             $('#DESCUENTO').val(d.descuento);
             $('#IVA').val(d.iva);
             $('#TOTAL').val(d.total);
+            window.FacTotal = d.total;
         }, "json");
     }
 
@@ -1030,7 +1037,7 @@
                                         Concepto 
                                     </td>
                                     <td>	
-                                        <input type="text" style="width:100%;" value="COMPRAS" readonly />
+                                        <input type="text" style="width:100%;" id="concepto" value="COMPRAS" readonly />
                                     </td>
                                 </tr>   
                             </table>
@@ -1288,7 +1295,7 @@
                                         htmls = [
                                             '<br/><br/><div style="text-align:center;">',
                                             '<button class="shortcut" onclick="facturar_credito();"><i class="icon-credit-card"></i>Crédito</button>',
-                                            '<button class="shortcut" onclick="facturar_contado();"><i class="icon-dollar"></i>Contado</button>',
+                                            '<button class="shortcut" onclick="mostrar_metodo_pago();"><i class="icon-dollar"></i>Contado</button>',
                                             '<button class="shortcut" onclick="consignar();"><i class="icon-briefcase"></i>Consignar mercadería</button>'
                                         ];
                                         if (window.nt) htmls.pop();
@@ -1387,6 +1394,24 @@
                 var es_cf = 0;
                 var serie = {serie_factura};
                 
+                var tipo  = -1;
+                        
+                if(parseFloat($('#inptEfec').val()) > 0 ){
+                    tipo = 1;
+                }
+                        
+                if(parseFloat($('#inptChec').val()) > 0 ){
+                    tipo = 2;
+                }
+                        
+                if(parseFloat($('#inptTarj').val()) > 0 ){
+                    tipo = 3;
+                }
+                        
+                if(parseFloat($('#inptDepo').val()) > 0 ){
+                    tipo = 4;
+                }
+                
                 if ($('#ES_CF').is(':checked')){
                     es_cf = 1;
                     serie = {serie_credito_fiscal};
@@ -1400,32 +1425,36 @@
                 }
                
                 var resource = [ uri, factura ].join("/");
-				$.post(resource, { "serie": serie, "vale": vale, "CF":es_cf }, function(data){
-
-					  // punto de respuesta de la peticion
-					window.editable = false;
-					imp();
-					window.codPedido = 0;
-					obtenerDatosCliente(0);
-					  
-					var grid = Sigma.$grid("factura_grid");
-					grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-					grid.reload();
-					$('#n_pedido').val("0");
-					$('#codigo_cliente').val("0");
-					$('#codigo_cliente').removeAttr("disabled");
-					$('#fecha').removeAttr("disabled");
-					$('#n_pedido').focus();
-					desHabilitar();
-					
-					if (window.cerrar)
-						window.close();
-					
-					$.Dialog.close();
-					$('#DESCUENTO').val("");
-					$('#TOTAL').val("");
-					$('#SUBTOTAL').val("");
-                   }, "json");
+                if(tipo > 0){
+                    $.post(resource, { "serie": serie, "vale": vale, "CF":es_cf, "tipo":tipo,"boleta": $('#S_boleta').val().trim(),"banco": $('#S_casacredito').val().trim() }, function(data){
+    
+                    // punto de respuesta de la peticion
+                        window.editable = false;
+                        imp();
+                        window.codPedido = 0;
+                        obtenerDatosCliente(0);
+                        
+                        var grid = Sigma.$grid("factura_grid");
+                        grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
+                        grid.reload();
+                        $('#n_pedido').val("0");
+                        $('#codigo_cliente').val("0");
+                        $('#codigo_cliente').removeAttr("disabled");
+                        $('#fecha').removeAttr("disabled");
+                        $('#n_pedido').focus();
+                        desHabilitar();
+                        
+                        if (window.cerrar)
+                            window.close();
+                        
+                        $.Dialog.close();
+                        $('#DESCUENTO').val("");
+                        $('#TOTAL').val("");
+                        $('#SUBTOTAL').val("");
+                    }, "json");
+                }else{
+                    alert("No se ha ingresado ningún monto");
+                }
             }
 
 
@@ -1804,8 +1833,406 @@
             <br/>
             <button onclick="closePane('freservas')" class="primary">Cerrar panel</button>
         </div>
+<div style="clear: both;"></div>
+<div id="metodo_pago" style="display: none;padding: 30px;height:100%; z-index:1000000; background: #fff; width:100%; position: absolute; top: 0px; left: 0px;">
+    <h2>Forma de pago Factura</h2>
+    <p>
+        <br/><br/><br/>
+    </p>
+    <div class="grid">
+        <div class="row">
+            <div class="span5">
+                <table>
+                    <tr>
+                        <td><p><strong>Monto</strong> </p></td>
+                        <td>
+                            <div class="input-control text" >
+                                <input type="text" value="0.0" onkeyup="validarCantidad(event);" id="inptCbr" style="text-align: right;" readonly/>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><p>Efectivo </p></td>
+                        <td>
+                            <div class="input-control text">
+                                <input type="text" value="0.0" onchange="cEfectivo(event);" onkeyup="validarCantidad(event);" id="inptEfec" style="text-align: right;"/>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><p>Cheque </p></td>
+                        <td>
+                            <div class="input-control text">
+                                <input type="text" value="0.0" onchange="cCheque(event);" onkeyup="validarCantidad(event);" id="inptChec" style="text-align: right;"/>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><p>Tarjeta </p></td>
+                        <td>
+                            <div class="input-control text">
+                                <input type="text" value="0.0" onchange="cTarjeta(event);" onkeyup="validarCantidad(event);" id="inptTarj" style="text-align: right;"/>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td><button id="btnDep" onclick="$('#utilizar_boleta').css('display','block');">Depósito</button></td>
+                        <td>
+                            <div class="input-control text">
+                                <input type="text" value="0.0" id="inptDepo" onchange="cDeposito(event);" onkeyup="validarCantidad(event);" style="text-align: right;" readonly/>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="span6">
+                <table>
+                    <tr>
+                        <td><p>Número</p></td>
+                        <td><p>Fecha/Vence</p></td>
+                        <td><p>Banco/Autorización</p></td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="input-control text">
+                                <input type="text" class="chk" id="c_numero" disabled/>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-control text">
+                                <input type="text" class="chk" id="c_fecha" maxlength="10" onkeyup="mascara(this, '-', patron_fecha, true)" placeholder=" - - " disabled/>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-control text">
+                                <input type="text" class="chk" id="c_banco" disabled/>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class="input-control text">
+                                <input type="text" class="tar" maxlength="19" onkeyup="mascara(this, '-', patron_tarjeta, true)" placeholder=" - - - " disabled/>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-control text">
+                                <input type="text" class="tar" onkeyup="mascara(this, '/', patron_fecha_tarjeta, true)" maxlength="5" placeholder=" / " disabled/>
+                            </div>
+                        </td>
+                        <td>
+                            
+                        </td>
+                    </tr>
+                </table>
+                <p><br/></p>
+                <table>
+                    <tr>
+                        <td>
+                            <p>
+                                Concepto 
+                                &nbsp;&nbsp;&nbsp;&nbsp;
+                                &nbsp;&nbsp;&nbsp;&nbsp;
+                                &nbsp;&nbsp;&nbsp;&nbsp;
+                                &nbsp;&nbsp;&nbsp;&nbsp;
+                            </p>
+                        </td>
+                        <td colspan="2">
+                            <div class="input-control text span4">
+                                <input type="text" id="nCon" readonly/>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+     <p>
+        <br/>
+        <br/>
+            <strong style="color: red;"> 
+                Cambio 
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                &nbsp;&nbsp;&nbsp;&nbsp;
+                &nbsp;&nbsp;&nbsp;&nbsp;
+            </strong> 
+            $<span id="cambioCobro">0.0</span>  
+        <br/>
+        <br/>
+    </p>
+    <button class="large" onclick="facturar_contado();$('#metodo_pago').css('display','none');""><i class="icon-printer"></i> Imprimir</button>
+    <button class="large" id="btnClose"><i class="icon-cancel" style="color: red;"></i> Cancelar</button>
+</div>
+<div id="utilizar_boleta" style="display: none;padding: 30px;height:100%; z-index:10000000; background: #fff; width:100%; position: absolute; top: 0px; left: 0px;">
+    <h2>Utilizar boleta</h2>
+    <p>Código cliente-> <strong id="lblCliente"></strong><br/></p>
+    <div class="grid">
+        <div class="row">
+            <div class="span6">
+                <table style="text-align: center;">
+                    <tr>
+                        <td>
+                            <div class="input-control select span3">
+                                <select id="S_casacredito">
+                                    <!-- START bancos2 -->
+                                        <option value="{id}">{casa}</option>
+                                    <!-- END bancos2 -->
+                                </select>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-control text">
+                                <input type="text" onchange="cargarBoleta();" id="S_boleta"/>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="input-control text">
+                                <input type="text" id="S_utilizar" value="0.0" onkeyup="validarSaldo();"/>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Banco</td>
+                        <td>Boleta #</td>
+                        <td>Utilizar</td>
+                     </tr>
+                </table>
+            </div>
+            <div class="span4">
+                <button onclick="establecerDeposito();$('#utilizar_boleta').css('display','none');"> <i class="icon-floppy"></i> Guardar </button>
+                <button> Borrar</button>
+                <button onclick="$('#utilizar_boleta').css('display','none');"> <i class="icon-cancel"></i> Cancelar</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="span3">
+                Banco
+                <div class="input-control select">
+                    <select id="M_banco" disabled>
+                        <!-- START bancos -->
+                            <option value="{id}">{casa}</option>
+                        <!-- END bancos -->
+                    </select>
+                </div>
+                # Boleta
+                <div class="input-control text">
+                    <input type="text" id="M_boleta" disabled/>
+                </div>
+                Cliente
+                <div class="input-control text">
+                    <input type="text" id="m_codigo_cliente" disabled/>
+                </div>
+                Fecha boleta
+                <div id="fecha" class="input-control text">
+                    <input type="text" id="M_fecha" disabled/>
+                    <button type="button" class="btn-date"></button>
+                </div>
+                Monto original
+                <div class="input-control text">
+                    <input type="text" value="0.0" id="M_monto" disabled/>
+                </div>
+                Saldo
+                <div class="input-control text">
+                    <input type="text" value="0.0" id="M_saldo" disabled/>
+                </div>
+            </div>
+            <div class="span3">
+                Solicitado por
+                <div class="input-control select" >
+                    <select id="M_solicitado_por" disabled>
+                    </select>
+                </div>
+                Fecha solicitud
+                <div class="input-control text">
+                    <input type="text" id="M_fecha_solicitud" value="" disabled/>
+                </div>
+                Autorizado por
+                <div class="input-control select">
+                    <select id="M_autorizado_por" disabled>
+                    </select>
+                </div>
+                Fecha autorización
+                <div class="input-control text">
+                    <input type="text" id="M_fecha_autorizacion" disabled/>
+                </div>
+                Estatus
+                <div class="input-control select">
+                    <select id="M_estatus" disabled>
+                        <option value="1">
+                            Pendiente
+                        </option>
+                        <option value="2">
+                            Aprobado
+                        </option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>        
+<script type="text/javascript">
+    function mostrar_metodo_pago(){
+        if ($('#concepto').val().trim() != "" && window.FacTotal > 0) {
+            $('#inptCbr').val(window.FacTotal);
+            $('#nCon').val($('#concepto').val().trim());
+            $('#metodo_pago').css('display', 'block');
+        }else{
+            alert("No se puede facturar");
+        }
+    }
+    
+    function validarSaldo(){
+        var value = $('#S_utilizar').val();
+        if(isNaN(value)){
+            $('#S_utilizar').val("0.0");
+        }else{
+            if(parseFloat(value) > parseFloat(window._max)){
+                $('#S_utilizar').val(window._max);
+            }
+        }
+    }
+    
+    function establecerDeposito(){
+        if(parseFloat($('#S_utilizar').val())< parseFloat(window.FacTotal)){
+            alert("El depósito no cumple con el monto solicitado");
+        }else{
+            
+            if(parseFloat($('#S_utilizar').val())>window.FacTotal){
+                $('#S_utilizar').val(window.FacTotal);
+            }
+            
+            $('#inptDepo').val($('#S_utilizar').val());
+            $('#inptDepo').change();
+        }
+    }
+    
+    function cargarBoleta(){
+        var v_casacredito = $('#S_casacredito').val();
+        var v_boleta = $('#S_boleta').val();
+        
+        var data = {
+            casacredito : v_casacredito,
+            boleta : v_boleta    
+        };
+        
+        var uri = "/cobros/credito/cargar_boleta";
+        
+        $.post(uri, data, function(response){
+            if(response.exists){
+                if(response.estado == 2){
+                    if(response.saldo > 0){
+                        $('#M_banco').val(response.banco);
+                        $('#M_boleta').val(response.id);
+                        $('#m_codigo_cliente').val(response.cliente);
+                        $('#M_fecha').val(response.fecha);
+                        $('#M_monto').val(response.monto);
+                        $('#M_saldo').val(response.saldo);
+                        $('#M_solicitado_por').append('<option>'+response.solicitado_por+'</option>');
+                        $('#M_fecha_solicitud').val(response.fecha_solicitud);
+                        $('#M_autorizado_por').append('<option>'+response.autorizado_por+'</option>');
+                        $('#M_fecha_autorizacion').val(response.fecha_autorizacion);
+                        $('#M_estatus').val(response.estado);
+                        window._max = response.saldo;
+                        $('#S_utilizar').val(response.saldo);
+                    }else{
+                        alert("El saldo de esta boleta es insuficiente, se ha agotado completamente");
+                    }
+                }else{
+                    alert("Error: Esta boleta aún no ha sido autorizada y por lo tanto no se puede utilizar");
+                }
+            }else{
+                alert("Error:\n\nLa boleta indicada no se ha registrado en el sistema! ");
+            }
+        },"json");
+        
+    }
+    
+    function cEfectivo(event){
+        var valor = $('#inptEfec').val();
+        
+        if(valor > 0){
+            $('#cambioCobro').html( (valor - $('#inptCbr').val()).toFixed(2) );
+            $('#inptChec').attr('readonly', true);
+            $('#btnDep').attr('disabled', true);
+            $('#inptTarj').attr('readonly', true);
+            $('#inptChec').val("0.0");
+            $('#inptDepo').val("0.0");
+            $('#inptTarj').val("0.0");
+        }else{
+            $('#cambioCobro').html("0.0");
+            $('#inptChec').removeAttr('readonly');
+            $('#btnDep').removeAttr('disabled');
+            $('#inptTarj').removeAttr('readonly');
+        }
+    }
+    
+    function cCheque(event){
+        var valor = $('#inptChec').val();
+        
+        if(valor > 0){
+            $('#cambioCobro').html((valor - $('#inptCbr').val()).toFixed(2));
+            $('#inptEfec').attr('readonly', true);
+            $('#btnDep').attr('disabled', true);
+            $('#inptTarj').attr('readonly', true);
+            $('#inptEfec').val("0.0");
+            $('#inptDepo').val("0.0");
+            $('#inptTarj').val("0.0");
+            $('.chk').removeAttr("disabled");
+        }else{
+            $('#cambioCobro').html("0.0");
+            $('#inptEfec').removeAttr('readonly');
+            $('#btnDep').removeAttr('disabled');
+            $('#inptTarj').removeAttr('readonly');
+            $('.chk').attr("disabled", true);
+        }
+    }
+    
+    function cTarjeta(event){
+        var valor = $('#inptTarj').val();
+        
+        if(valor > 0){
+            $('#cambioCobro').html((valor - $('#inptCbr').val()).toFixed(2));
+            $('#inptEfec').attr('readonly', true);
+            $('#btnDep').attr('disabled', true);
+            $('#inptChec').attr('readonly', true);
+            $('#inptEfec').val("0.0");
+            $('#inptDepo').val("0.0");
+            $('#inptChec').val("0.0");
+            $('.tar').removeAttr("disabled");
+        }else{
+            $('#cambioCobro').html("0.0");
+            $('#inptEfec').removeAttr('readonly');
+            $('#btnDep').removeAttr('disabled');
+            $('#inptChec').removeAttr('readonly');
+            $('.tar').attr("disabled", true);
+        }
+    }
+    
+    function cDeposito(event){
+        var valor = $('#inptDepo').val();
+        
+        if(valor > 0){
+            $('#cambioCobro').html((valor - $('#inptCbr').val()).toFixed(2));
+            $('#inptEfec').attr('readonly', true);
+            $('#inptTarj').attr('readonly', true);
+            $('#inptChec').attr('readonly', true);
+            $('#inptEfec').val("0.0");
+            $('#inptTarj').val("0.0");
+            $('#inptChec').val("0.0");
+        }else{
+            $('#cambioCobro').html("0.0");
+            $('#inptEfec').removeAttr('readonly');
+            $('#inptTarj').removeAttr('readonly');
+            $('#inptChec').removeAttr('readonly');
+        }
+    }
+</script>
 
 <script type="text/javascript" >
+
+
 
     var pendientes_grid = "pendientes_grid";
 

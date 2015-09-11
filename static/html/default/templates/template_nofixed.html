@@ -67,6 +67,13 @@
                 $('#blsMScreen').css('display', 'none');  
             }
 
+            function validarCantidad(e){
+                var val = $(e.target).val().trim();
+                if(isNaN(val)){
+                    $(e.target).val("0.00");
+                }
+            }
+
             $(document).ready(function() {
                 //var noti = setInterval( notificaciones , 1000 );
                 //var bloq = setInterval( bloqueo , 500 );

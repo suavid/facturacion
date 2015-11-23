@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title></title>
+		<style type="text/css">
+			body{
+				font-family: Verdana, Geneva, Tahoma, sans-serif;
+				font-size: 12px;
+				padding: 20px;
+			}
+			
+			table {
+				border-collapse: ccollapse;
+			}
+			
+			.hd{
+				border: dashed 1px #000;
+				border-radius: 	5px;
+			}
+		</style>
+	</head>
+	<body>
+		<div style="display: table;border: dashed 1px #000;padding: 10px; border-radius:15px 15px 0px 0px;">
+			<div style="float: left; width: 520px;">
+				<h4 style="font-size: 16px; margin-left:10px;"><i>Reporte de ventas por fechas</i></h4>
+			</div>
+			<div style="float: left; width: 200px;">
+				<p style="text-align: right;">
+					Impreso por: {usuario}
+				</p>
+				<p style="text-align: right;">
+					{fecha} {hora}
+				</p>
+			</div>
+		</div>
+		<table class="hd">
+			<tr>
+				<td style="width:80px;">
+					Documento
+				</td>
+				<td style="width:80px;">
+					Fecha
+				</td>
+				<td style="width:60px;">
+					Monto Original
+				</td>
+				<td style="width:60px;">
+					Saldo Actual
+				</td>
+				<td style="width:80px;">
+					Sin Vencer
+				</td>
+				<td style="width:50px;">
+					22-42
+				</td>
+				<td style="width:50px;">
+					43-63
+				</td>
+				<td style="width:50px;">
+					64-84
+				</td>
+				<td style="width:60px;">
+					85 - 105
+				</td>
+				<td style="width:50px;">
+					+106
+				</td>
+				<td style="width:73px;">
+					Dias Trans.
+				</td>
+			</tr>
+		</table>
+<!-- START fechas -->
+	<p><strong>Fecha: {fefac}</strong></p>
+	<hr/>
+	<!-- START f_{fefac} -->
+		<table>
+					<tr>
+						<td style="width:80px;">
+							{caja}
+						</td>
+						<td style="width:80px;">
+							{serie}
+						</td>
+						<td style="width:60px;">
+							{nofac}
+						</td>
+						<td style="width:60px;">
+							{fefac}
+						</td>
+						<td style="width:80px;">
+							{monto}
+						</td>
+						<td style="width:50px;">
+							{iva}
+						</td>
+						<td style="width:50px;">
+							{costo}
+						</td>
+						<td style="width:50px;">
+							{margen}
+						</td>
+						<td style="width:60px;">
+							{c4}
+						</td>
+						<td style="width:50px;">
+							{c5}
+						</td>
+						<td style="width:73px;">
+							{dias_transcurridos}
+						</td>
+					</tr>	
+				</table>
+	<!-- END f_{fefac} -->
+<!-- END fechas -->

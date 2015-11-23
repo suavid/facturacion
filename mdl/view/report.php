@@ -37,5 +37,51 @@
         	$html2pdf->WriteHTML(page()->getContent());
         	$html2pdf->Output('ticket.pdf');
 		}
-	}
+	
+        public function ReporteDeVentas()
+        {
+            template()->buildFromTemplates('template_nofixed.html');
+			template()->addTemplateBit('content', 'report/ReporteDeVentas.html');
+			page()->setTitle('Reporte -  Ventas');
+			page()->addEstigma('TITULO', 'Reporte - Ventas');
+			page()->addEstigma('back_url', '/facturacion/factura/principal');
+			page()->addEstigma('username', Session::singleton()->getUser());
+			template()->parseExtras();
+			template()->parseOutput();
+			print page()->getContent();
+        }
+		
+		public function reporte_Ventas($ag, $cache, $seleccion_arr)
+		{
+			if($ag==1){
+				template()->buildFromTemplates('report/ventas_fecha.html');
+				page()->addEstigma('fechas', array('SQL', $cache['fechas']));
+				foreach($seleccion_arr as $fecha){
+					page()->addEstigma('f_'.$fecha, array('SQL', $cache['res']['fecha_'.$fecha]));
+				}
+			}
+			
+			page()->addEstigma('usuario', Session::singleton()->getUser());
+			page()->addEstigma('fecha', date("Y-m-d"));
+			page()->addEstigma('hora', date("h:i:s A"));
+			
+			template()->parseOutput();
+			
+			$fp = fopen(APP_PATH."/temp/".Session::singleton()->getUser()."_saldos.html", "w");
+			fputs($fp, page()->getContent());
+			fclose($fp);
+			$str = APP_PATH.'common\plugins\phantomjs\bin\phantomjs '.APP_PATH.'static\js\html2pdfv.js file:///'.APP_PATH.'temp\\'.Session::singleton()->getUser().'_saldos.html '.APP_PATH.'temp\\'.Session::singleton()->getUser().'_saldos.pdf';
+			system($str); 
+			$file = APP_PATH.'temp\\'.Session::singleton()->getUser().'_saldos.pdf';
+			$filename = Session::singleton()->getUser().'_saldos.pdf';
+	
+			header('Content-type: application/pdf');
+			header('Content-Disposition: inline; filename="' . $filename . '"');
+			header('Content-Transfer-Encoding: binary');
+			header('Content-Length: ' . filesize($file));
+			header('Accept-Ranges: bytes');
+	
+			@readfile($file);
+		}
+    }
 ?>

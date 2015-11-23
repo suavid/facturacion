@@ -1,0 +1,260 @@
+<script>
+	var reportApp = angular.module('reportApp', []);
+	
+	reportApp.controller('ReporteDeVentasController', function($scope){
+
+		$scope.fecha = new Date();
+		$scope.anio = $scope.fecha.getFullYear();
+		$scope.mes  = $scope.fecha.getMonth()+1;
+		$scope.agrupar = 1;
+		$scope.contado = true;
+        $scope.credito = true;
+		
+        var FechaMin = 1 +'/'+ $scope.mes +'/'+ $scope.anio;
+        var FechaMax = DaysInMonth($scope.mes -1, $scope.anio)+'/'+$scope.mes +'/'+ $scope.anio;
+        
+		$scope.filtros = 
+		{	
+            fecha : {min:FechaMin,max:FechaMax},
+			agente : {min:0,max:999},
+            caja : {min:0,max:99},
+            bodega : {min:0,max:99},
+            linea : {min:0,max:999},
+            proveedor : {min:0,max:999},
+            color : {min:0,max:999},
+            estilo : {min:'',max:'ZZZZZZZZZZZZZ'},
+			cliente : {min:0,max:999999}
+		};
+		
+        function DaysInMonth(m, y) { // m is 0 indexed: 0-11
+            switch (m) {
+                case 1 :
+                    return (y % 4 == 0 && y % 100) || y % 400 == 0 ? 29 : 28;
+                case 8 : case 3 : case 5 : case 10 :
+                    return 30;
+                default :
+                    return 31
+            }
+        }
+        
+		$scope.GenerarReporte = function(){
+			var valid = true;
+			
+			
+			valid = valid && $scope.EsValido($scope.filtros.cliente.min);
+			valid = valid && $scope.EsValido($scope.filtros.cliente.max);
+            valid = valid && $scope.EsValido($scope.filtros.agente.min);
+			valid = valid && $scope.EsValido($scope.filtros.agente.max);
+            valid = valid && $scope.EsValido($scope.filtros.caja.min);
+			valid = valid && $scope.EsValido($scope.filtros.caja.max);
+            valid = valid && $scope.EsValido($scope.filtros.bodega.min);
+			valid = valid && $scope.EsValido($scope.filtros.bodega.max);
+            valid = valid && $scope.EsValido($scope.filtros.linea.min);
+			valid = valid && $scope.EsValido($scope.filtros.linea.max);
+            valid = valid && $scope.EsValido($scope.filtros.proveedor.min);
+			valid = valid && $scope.EsValido($scope.filtros.proveedor.max);
+            valid = valid && $scope.EsValido($scope.filtros.color.min);
+			valid = valid && $scope.EsValido($scope.filtros.color.max);
+            
+			
+			if(valid){
+				
+				// Logic here
+				var uri = "/facturacion/report/reporte_Ventas";
+				var fil = JSON.stringify($scope.filtros);
+				var fur = uri + '?filtros='+fil+"&ag="+$scope.agrupar+'&credito='+$scope.credito+'&contado='+$scope.contado;
+				
+				window.open(fur,'_blank');
+				
+			}else{
+				
+				alert("Los valores ingresados no son válidos");
+			}
+		}
+		
+		$scope.EsValido =  function(campo){
+			if(isNaN(campo) || String(campo).trim() == "") return false;
+			return true;
+		}
+	});
+	
+	
+</script>
+<div ng-app="reportApp" ng-controller="ReporteDeVentasController">
+	<div class="grid">
+		<div class="row">
+			<div class="span4">
+				<table>
+					<tr>
+						<td>
+							<p>Fechas</p>
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.fecha.min"/>
+							</div>	
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text"  ng-model="filtros.fecha.max"/>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<p>Caja</p>
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.caja.min"/>
+							</div>	
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.caja.max"/>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<p>Bodega</p>
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.bodega.min"/>
+							</div>	
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.bodega.max"/>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<p>Linea</p>
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.linea.min"/>
+							</div>	
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.linea.max"/>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td>
+							<p>Proveedor</p>
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.proveedor.min"/>
+							</div>	
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.proveedor.max"/>
+							</div>
+						</td>
+					</tr>
+                    <tr>
+						<td>
+							<p>Agente</p>
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.agente.min"/>
+							</div>	
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.agente.max"/>
+							</div>
+						</td>
+					</tr>
+                    <tr>
+						<td>
+							<p>Cliente</p>
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.cliente.min"/>
+							</div>	
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.cliente.max"/>
+							</div>
+						</td>
+					</tr>
+                    <tr>
+						<td>
+							<p>Estilo</p>
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.estilo.min"/>
+							</div>	
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.estilo.max"/>
+							</div>
+						</td>
+					</tr>
+                    <tr>
+						<td>
+							<p>Color</p>
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.color.min"/>
+							</div>	
+						</td>
+						<td>
+							<div class="input-control text">
+								<input type="text" ng-model="filtros.color.max"/>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+			<div class="span4">
+				<div style="background: #e3e3e3; padding: 20px;">
+					<h4>Agrupar por</h4>
+					<input type="radio" value="1" ng-model="agrupar"/> Fechas
+					<br/>
+					<input type="radio" value="2" ng-model="agrupar"/> Cajas
+					<br/>
+					<input type="radio" value="3" ng-model="agrupar"/> Bodegas
+					<br/>
+					<input type="radio" value="4" ng-model="agrupar"/> Lineas
+                    <br/>
+					<input type="radio" value="5" ng-model="agrupar"/> Proveedores
+                    <br/>
+					<input type="radio" value="6" ng-model="agrupar"/> Territorios
+                    <br/>
+					<input type="radio" value="7" ng-model="agrupar"/> Productos
+                    <br/>
+					<input type="radio" value="8" ng-model="agrupar"/> Catálogos
+                    <br/>
+					<input type="radio" value="9" ng-model="agrupar"/> Todos
+				</div>
+			</div>
+			<div class="span4">
+				<div style="background: #e3e3e3; padding: 20px;">
+					<h4>Forma pago</h4>
+					<input type="checkbox" ng-model="contado"/> Contado
+					<br/>
+					<input type="checkbox" ng-model="credito"/> Credito
+				</div>
+                <br/>
+                <br/>
+                <button ng-click="GenerarReporte();" class="primary">Imprimir</button>
+			</div>
+		</div>
+	</div>
+</div>

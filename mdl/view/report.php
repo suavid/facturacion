@@ -51,14 +51,54 @@
 			print page()->getContent();
         }
 		
-		public function reporte_Ventas($ag, $cache, $seleccion_arr)
+		public function reporte_Ventas($ag, $cache)
 		{
 			if($ag==1){
 				template()->buildFromTemplates('report/ventas_fecha.html');
 				page()->addEstigma('fechas', array('SQL', $cache['fechas']));
-				foreach($seleccion_arr as $fecha){
-					page()->addEstigma('f_'.$fecha, array('SQL', $cache['res']['fecha_'.$fecha]));
-				}
+				page()->addEstigma('totales', array('SQL', $cache['totales']));
+			}
+
+			if($ag==2){
+				template()->buildFromTemplates('report/ventas_caja.html');
+				page()->addEstigma('cajas', array('SQL', $cache['cajas']));
+				page()->addEstigma('totales', array('SQL', $cache['totales']));
+			}
+
+			if($ag==3){
+				template()->buildFromTemplates('report/ventas_bodega.html');
+				page()->addEstigma('bodegas', array('SQL', $cache['bodegas']));
+				page()->addEstigma('totales', array('SQL', $cache['totales']));
+			}
+
+			if($ag==4){
+				template()->buildFromTemplates('report/ventas_linea.html');
+				page()->addEstigma('lineas', array('SQL', $cache['lineas']));
+				page()->addEstigma('totales', array('SQL', $cache['totales']));
+			}
+
+			if($ag==5){
+				template()->buildFromTemplates('report/ventas_proveedor.html');
+				page()->addEstigma('proveedores', array('SQL', $cache['proveedores']));
+				page()->addEstigma('totales', array('SQL', $cache['totales']));
+			}
+
+			if($ag==6){
+				template()->buildFromTemplates('report/ventas_territorio.html');
+				page()->addEstigma('territorios', array('SQL', $cache['territorios']));
+				page()->addEstigma('totales', array('SQL', $cache['totales']));
+			}
+
+			if($ag==7){
+				template()->buildFromTemplates('report/ventas_producto.html');
+				page()->addEstigma('productos', array('SQL', $cache['productos']));
+				page()->addEstigma('totales', array('SQL', $cache['totales']));
+			}
+
+			if($ag==8){
+				template()->buildFromTemplates('report/ventas_catalogo.html');
+				page()->addEstigma('catalogos', array('SQL', $cache['catalogos']));
+				page()->addEstigma('totales', array('SQL', $cache['totales']));
 			}
 			
 			page()->addEstigma('usuario', Session::singleton()->getUser());
@@ -66,6 +106,8 @@
 			page()->addEstigma('hora', date("h:i:s A"));
 			
 			template()->parseOutput();
+			
+			//print page()->getContent();
 			
 			$fp = fopen(APP_PATH."/temp/".Session::singleton()->getUser()."_saldos.html", "w");
 			fputs($fp, page()->getContent());

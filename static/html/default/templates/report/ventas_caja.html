@@ -22,21 +22,21 @@
 	<body>
 		<div style="display: table;border: dashed 1px #000;padding: 10px; border-radius:15px 15px 0px 0px;">
 			<div style="float: left; width: 520px;">
-				<h4 style="font-size: 16px; margin-left:10px;"><i>Reporte de ventas por catalogos</i></h4>
+				<h4 style="font-size: 16px; margin-left:10px;"><i>Reporte de ventas por cajas</i></h4>
 			</div>
 			<div style="float: left; width: 200px;">
 				<p style="text-align: right;">
-					Impreso por: admin
+					Impreso por: {usuario}
 				</p>
 				<p style="text-align: right;">
-					2015-11-29 09:21:46 PM
+					{fecha} {hora}
 				</p>
 			</div>
 		</div>
 		<table class="hd">
 			<tr>
 				<td style="width:245px;">
-					<strong>CATALOGO</strong>
+					<strong>CAJA</strong>
 				</td>
 				<td style="width:90px;">
 					<strong>PARES</strong>
@@ -55,51 +55,52 @@
 				</td>
 			</tr>
 		</table>
-
+<!-- START cajas -->
 		<table>
 			<tr>
 				<td style="width:245px;">
-					[13] CATALOGO CAMPAÑA X JUL-AGOS 2011
+					[{caja}] {nombre_caja}
 				</td>
 				<td style="width:90px;">
-					6
+					{pares}
 				</td>
 				<td style="width:100px;">
-					$135.60
+					${total}
 				</td>
 				<td style="width:100px;">
-					$120.00
+					${monto}
 				</td>
 				<td style="width:90px;">
-					$60.00
+					${costo}
 				</td>
 				<td style="width:90px;">
-					%100.00
+					%{margen}
 				</td>
 			</tr>	
 		</table>
-
+<!-- END cajas -->
 <hr/>
-
+<!-- START totales -->
 		<table>
 			<tr>
 				<td style="width:245px;">
 					<strong>TOTAL VENTAS:</strong>
 				</td>
 				<td style="width:90px;">
-					<strong>6</strong>
+					<strong>{pares}</strong>
 				</td>
 				<td style="width:100px;">
-					<strong>$135.60</strong>
+					<strong>${total}</strong>
 				</td>
 				<td style="width:100px;">
-					<strong>$120.00</strong>
+					<strong>${monto}</strong>
 				</td>
 				<td style="width:90px;">
-					<strong>$60.00</strong>
+					<strong>${costo}</strong>
 				</td>
 				<td style="width:90px;">
-					<strong>%100.00</strong>
+					<strong>%{margen}</strong>
 				</td>
 			</tr>	
 		</table>
+<!-- END totales -->

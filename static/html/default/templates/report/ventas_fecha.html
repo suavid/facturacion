@@ -5,7 +5,7 @@
 		<style type="text/css">
 			body{
 				font-family: Verdana, Geneva, Tahoma, sans-serif;
-				font-size: 12px;
+				font-size: 10px;
 				padding: 20px;
 			}
 			
@@ -35,81 +35,72 @@
 		</div>
 		<table class="hd">
 			<tr>
-				<td style="width:80px;">
-					Documento
+				<td style="width:245px;">
+					<strong>FECHA</strong>
 				</td>
-				<td style="width:80px;">
-					Fecha
+				<td style="width:90px;">
+					<strong>PARES</strong>
 				</td>
-				<td style="width:60px;">
-					Monto Original
+				<td style="width:100px;">
+					<strong>VENTA C/IVA</strong>
 				</td>
-				<td style="width:60px;">
-					Saldo Actual
+				<td style="width:100px;">
+					<strong>VENTA S/IVA</strong>
 				</td>
-				<td style="width:80px;">
-					Sin Vencer
+				<td style="width:90px;">
+					<strong>COSTO</strong>
 				</td>
-				<td style="width:50px;">
-					22-42
-				</td>
-				<td style="width:50px;">
-					43-63
-				</td>
-				<td style="width:50px;">
-					64-84
-				</td>
-				<td style="width:60px;">
-					85 - 105
-				</td>
-				<td style="width:50px;">
-					+106
-				</td>
-				<td style="width:73px;">
-					Dias Trans.
+				<td style="width:90px;">
+					<strong>MARGEN</strong>
 				</td>
 			</tr>
 		</table>
 <!-- START fechas -->
-	<p><strong>Fecha: {fefac}</strong></p>
-	<hr/>
-	<!-- START f_{fefac} -->
 		<table>
-					<tr>
-						<td style="width:80px;">
-							{caja}
-						</td>
-						<td style="width:80px;">
-							{serie}
-						</td>
-						<td style="width:60px;">
-							{nofac}
-						</td>
-						<td style="width:60px;">
-							{fefac}
-						</td>
-						<td style="width:80px;">
-							{monto}
-						</td>
-						<td style="width:50px;">
-							{iva}
-						</td>
-						<td style="width:50px;">
-							{costo}
-						</td>
-						<td style="width:50px;">
-							{margen}
-						</td>
-						<td style="width:60px;">
-							{c4}
-						</td>
-						<td style="width:50px;">
-							{c5}
-						</td>
-						<td style="width:73px;">
-							{dias_transcurridos}
-						</td>
-					</tr>	
-				</table>
-	<!-- END f_{fefac} -->
+			<tr>
+				<td style="width:245px;">
+					{fefac}
+				</td>
+				<td style="width:90px;">
+					{pares}
+				</td>
+				<td style="width:100px;">
+					${total}
+				</td>
+				<td style="width:100px;">
+					${monto}
+				</td>
+				<td style="width:90px;">
+					${costo}
+				</td>
+				<td style="width:90px;">
+					%{margen}
+				</td>
+			</tr>	
+		</table>
 <!-- END fechas -->
+<hr/>
+<!-- START totales -->
+		<table>
+			<tr>
+				<td style="width:245px;">
+					<strong>TOTAL VENTAS:</strong>
+				</td>
+				<td style="width:90px;">
+					<strong>{pares}</strong>
+				</td>
+				<td style="width:100px;">
+					<strong>${total}</strong>
+				</td>
+				<td style="width:100px;">
+					<strong>${monto}</strong>
+				</td>
+				<td style="width:90px;">
+					<strong>${costo}</strong>
+				</td>
+				<td style="width:90px;">
+					<strong>%{margen}</strong>
+				</td>
+			</tr>	
+		</table>
+<!-- END totales -->

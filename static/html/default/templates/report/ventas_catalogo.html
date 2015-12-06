@@ -26,10 +26,10 @@
 			</div>
 			<div style="float: left; width: 200px;">
 				<p style="text-align: right;">
-					Impreso por: admin
+					Impreso por: {usuario}
 				</p>
 				<p style="text-align: right;">
-					2015-11-29 09:21:46 PM
+					{fecha} {hora}
 				</p>
 			</div>
 		</div>
@@ -55,51 +55,52 @@
 				</td>
 			</tr>
 		</table>
-
+<!-- START catalogos -->
 		<table>
 			<tr>
 				<td style="width:245px;">
-					[13] CATALOGO CAMPAÑA X JUL-AGOS 2011
+					[{catalogo}] {nombre_catalogo}
 				</td>
 				<td style="width:90px;">
-					6
+					{pares}
 				</td>
 				<td style="width:100px;">
-					$135.60
+					${total}
 				</td>
 				<td style="width:100px;">
-					$120.00
+					${monto}
 				</td>
 				<td style="width:90px;">
-					$60.00
+					${costo}
 				</td>
 				<td style="width:90px;">
-					%100.00
+					%{margen}
 				</td>
 			</tr>	
 		</table>
-
+<!-- END catalogos -->
 <hr/>
-
+<!-- START totales -->
 		<table>
 			<tr>
 				<td style="width:245px;">
 					<strong>TOTAL VENTAS:</strong>
 				</td>
 				<td style="width:90px;">
-					<strong>6</strong>
+					<strong>{pares}</strong>
 				</td>
 				<td style="width:100px;">
-					<strong>$135.60</strong>
+					<strong>${total}</strong>
 				</td>
 				<td style="width:100px;">
-					<strong>$120.00</strong>
+					<strong>${monto}</strong>
 				</td>
 				<td style="width:90px;">
-					<strong>$60.00</strong>
+					<strong>${costo}</strong>
 				</td>
 				<td style="width:90px;">
-					<strong>%100.00</strong>
+					<strong>%{margen}</strong>
 				</td>
 			</tr>	
 		</table>
+<!-- END totales -->

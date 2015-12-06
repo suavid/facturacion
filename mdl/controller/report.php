@@ -51,6 +51,7 @@ class reportController extends controller{
     
     public function reporte_Ventas()
     {
+        data_model()->executeQuery("SET lc_time_names = 'es_ES'");
         $filtros = json_decode($_GET['filtros']);
         if($filtros!=NULL){
             
@@ -132,138 +133,55 @@ class reportController extends controller{
             
             
             // fechas
-            $fechas_query = "SELECT fefac FROM facmesh fh WHERE anulado=0 $query_formapago GROUP BY fefac";
-            data_model()->executeQuery($fechas_query);
-            $fechas_arr = array();
-            while($row = data_model()->getResult()->fetch_assoc()){
-                $fechas_arr[] = $row['fefac'];
-            }
+            $fechas_query = "SELECT fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0 GROUP BY fh.fefac";
             $cache['fechas'] = data_model()->cacheQuery($fechas_query);
+            $totales_query = "SELECT fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0";
+            $cache['totales'] = data_model()->cacheQuery($totales_query);
             
             // cajas
-            $cajas_query = "SELECT caja FROM facmesh fh WHERE anulado=0 $query_formapago GROUP BY caja";
-            $cajas_arr = array();
-            while($row = data_model()->getResult()->fetch_assoc()){
-                $cajas_arr[] = $row['caja'];
-            }
+            $cajas_query = "SELECT fh.caja as caja, caja.nombre as nombre_caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN caja on caja.id = fh.caja INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0 GROUP BY fh.caja";
             $cache['cajas'] = data_model()->cacheQuery($cajas_query);
-            
+            $totales_query = "SELECT fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0";
+            $cache['totales'] = data_model()->cacheQuery($totales_query);
+
             // bodegas
-            $bodegas_query = "SELECT fd.bodega as bodega FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac WHERE anulado=0 $query_formapago GROUP BY fd.bodega";
-            $bodegas_arr = array();
-            while($row = data_model()->getResult()->fetch_assoc()){
-                $bodegas_arr[] = $row['bodega'];
-            }
+            $bodegas_query = "SELECT fd.bodega as bodega, bodega.nombre as nombre_bodega, fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN bodega on fd.bodega = bodega.id INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0 GROUP BY fd.bodega";
             $cache['bodegas'] = data_model()->cacheQuery($bodegas_query);
+            $totales_query = "SELECT fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0";
+            $cache['totales'] = data_model()->cacheQuery($totales_query);
             
             // lineas
-            $lineas_query = "SELECT fd.linea as linea FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac WHERE anulado=0 $query_formapago GROUP BY fd.linea";
-            $lineas_arr = array();
-            while($row = data_model()->getResult()->fetch_assoc()){
-                $lineas_arr[] = $row['linea'];
-            }
+            $lineas_query = "SELECT fd.linea as linea, linea.nombre as nombre_linea, fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN linea on fd.linea = linea.id INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0 GROUP BY fd.linea";
             $cache['lineas'] = data_model()->cacheQuery($lineas_query);
+            $totales_query = "SELECT fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0";
+            $cache['totales'] = data_model()->cacheQuery($totales_query);
             
             // proveedores
-            $proveedores_query = "SELECT p.proveedor as proveedor FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac  INNER JOIN producto p ON fd.cestilo = p.estilo AND fd.linea = p.linea WHERE anulado=0 $query_formapago GROUP BY p.proveedor";
-            $proveedores_arr = array();  
-            while($row = data_model()->getResult()->fetch_assoc()){
-                $proveedores_arr[] = $row['proveedor'];
-            }
+            $proveedores_query = "SELECT pr.id as proveedor, pr.nombre as nombre_proveedor, fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0 GROUP BY pr.id";
             $cache['proveedores'] = data_model()->cacheQuery($proveedores_query);
+            $totales_query = "SELECT fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0";
+            $cache['totales'] = data_model()->cacheQuery($totales_query);
             
             // territorios
-            $territorios_query = "SELECT r.codru as territorio FROM facmesh fh INNER JOIN cliente ON fh.rd_cod = cliente.codigo_afiliado INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN ruta r ON r.agente = agente.cage WHERE anulado=0 $query_formapago GROUP BY r.codru";
-            $territorios_arr = array();  
-            while($row = data_model()->getResult()->fetch_assoc()){
-                $territorios_arr[] = $row['territorio'];
-            }
+            $territorios_query = "SELECT ruta.id as territorio, ruta.nombre as nombre_territorio, fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN linea on fd.linea = linea.id INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN municipio ON cliente.municipio = municipio.id INNER JOIN ruta ON municipio.zona = ruta.id INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0 GROUP BY ruta.id";
             $cache['territorios'] = data_model()->cacheQuery($territorios_query);
+            $totales_query = "SELECT fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0";
+            $cache['totales'] = data_model()->cacheQuery($totales_query);
             
             // productos
-            $productos_query = "SELECT fd.cestilo as estilo FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac WHERE anulado=0 $query_formapago GROUP BY fd.cestilo";
-            $productos_arr = array();
-            while($row = data_model()->getResult()->fetch_assoc()){
-                $productos_arr[] = $row['estilo'];
-            }
+            $productos_query = "SELECT p.descripcion as nombre_producto, fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN linea on fd.linea = linea.id INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN municipio ON cliente.municipio = municipio.id INNER JOIN ruta ON municipio.zona = ruta.id INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0 GROUP BY p.estilo, p.linea";
             $cache['productos'] = data_model()->cacheQuery($productos_query);
+            $totales_query = "SELECT fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0";
+            $cache['totales'] = data_model()->cacheQuery($totales_query);
             
             // catalogos
-            $catalogos_query = "SELECT p.catalogo as catalogo FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac  INNER JOIN producto p ON fd.cestilo=p.estilo AND p.linea=fd.linea WHERE anulado=0 $query_formapago GROUP BY p.catalogo";
-            $catalogos_arr = array();
-            while($row = data_model()->getResult()->fetch_assoc()){
-                $catalogos_arr[] = $row['catalogo'];
-            }
+            $catalogos_query = "SELECT catalogo.id as catalogo, catalogo.nombre as nombre_catalogo, fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN linea on fd.linea = linea.id INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN municipio ON cliente.municipio = municipio.id INNER JOIN ruta ON municipio.zona = ruta.id INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN catalogo ON p.catalogo = catalogo.id  INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0 GROUP BY catalogo.id";
             $cache['catalogos'] = data_model()->cacheQuery($catalogos_query);
+            $totales_query = "SELECT fh.caja as caja,fh.serie as serie,fh.nofac as nofac,DATE_FORMAT(fh.fefac, '%W %d %M %Y') as fefac,SUM(fd.cantidad) as pares, fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,ROUND((((SUM(fh.monto) - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100),2) as margen FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod INNER JOIN agente ON cliente.agente = agente.cage INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea INNER JOIN proveedor pr ON p.proveedor = pr.id WHERE fh.anulado = 0";
+            $cache['totales'] = data_model()->cacheQuery($totales_query);
             
-            /* Aca se obtienen los detalles a manera de arreglo (para consulta) */
-            $detalles_query = "SELECT fh.caja as caja,fh.serie as serie,fh.nofac as nofac,fh.fefac as fefac,fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,(((fh.monto - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100) as margen 
-                            FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac 
-                            INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod
-                            INNER JOIN agente ON cliente.agente = agente.cage
-                            INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea
-                            INNER JOIN proveedor pr ON p.proveedor = pr.id
-                            WHERE fh.anulado = 0 
-                            $query_formapago 
-                            $cliente_str $estilo_str $color_str $linea_str $fecha_str $caja_str $bodega_str $agente_str $proveedor_str
-                            GROUP BY nofac";
-            
-            data_model()->executeQuery($detalles_query);
-            
-            $detalles_arr = array();
-            
-            //while($row = data_model()->getResult()->fetch_assoc()){
-            //    $detalles_arr[]['cliente'] = $row['codcli'];
-            //    $detalles_arr[count($detalles_arr)-1]['agente'] = $row['cage'];
-             //   $detalles_arr[count($detalles_arr)-1]['departamento'] = $row['id'];
-            //}
-            
-            /* Aca se usa la misma consulta para obtener los detalles en forma de cache */
-            $cache['detalles'] = data_model()->cacheQuery($detalles_query);
-            
-            $seleccion_arr = array();
-            
-            if($ag==1){
-                foreach($fechas_arr as $fecha){
-                    $query = "SELECT fh.caja as caja,fh.serie as serie,fh.nofac as nofac,fh.fefac as fefac,fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,(((fh.monto - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100) as margen 
-                            FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac 
-                            INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod
-                            INNER JOIN agente ON cliente.agente = agente.cage
-                            INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea
-                            INNER JOIN proveedor pr ON p.proveedor = pr.id
-                            WHERE fh.anulado = 0 AND
-                            fh.fefac = '$fecha'
-                            $query_formapago 
-                            $cliente_str $estilo_str $color_str $linea_str $fecha_str $caja_str $bodega_str $agente_str $proveedor_str
-                            GROUP BY fh.fefac"; 
-                    
-                    $cache['res']['fecha_'.$fecha] = data_model()->cacheQuery($query);
-                }   
-                
-                $seleccion_arr = $fechas_arr;
-            }
-            
-            if($ag==2){
-                foreach($cajas_arr as $caja){
-                    $query = "SELECT fh.caja as caja,fh.serie as serie,fh.nofac as nofac,fh.fefac as fefac,fh.rd_cod as rd_cod,fh.formapago as formapago,fh.credito as credito,fh.anulado as anulado,fh.nomcli as nomcli,fh.dircli as dircli,fh.nitcli as nitcli,SUM(fh.monto) as monto,SUM(fh.iva) as iva,SUM(fh.total) as total,SUM(fd.costo * fd.cantidad) as costo,(((fh.monto - SUM(fd.costo * fd.cantidad)) / SUM(fd.costo * fd.cantidad))*100) as margen 
-                            FROM facmesh fh INNER JOIN facmesd fd ON fd.nofac = fh.nofac 
-                            INNER JOIN cliente ON cliente.codigo_afiliado = fh.rd_cod
-                            INNER JOIN agente ON cliente.agente = agente.cage
-                            INNER JOIN producto p ON p.estilo = fd.cestilo AND p.linea = fd.linea
-                            INNER JOIN proveedor pr ON p.proveedor = pr.id
-                            WHERE fh.anulado = 0
-                            fh.caja = '$caja'
-                            $query_formapago 
-                            $cliente_str $estilo_str $color_str $linea_str $fecha_str $caja_str $bodega_str $agente_str $proveedor_str
-                            GROUP BY fh.caja"; 
-                    
-                    $cache['res']['caja_'.$caja] = data_model()->cacheQuery($query);
-                }   
-                
-                $seleccion_arr = $cajas_arr;
-            }
-                        
-            $this->view->reporte_Ventas($ag, $cache, $seleccion_arr);
+                  
+            $this->view->reporte_Ventas($ag, $cache);
             
         }else{
            HttpHandler::redirect('/cobros/error/not_found');

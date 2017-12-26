@@ -1,35 +1,53 @@
 <?php
 
-class facturaView {
+class facturaView 
+{
 
-    private function load_settings() {
-        import('scripts.periodos');
-        $pf = "";
-        $pa = "";
-        list($pf, $pa) = cargar_periodos();
-        page()->addEstigma("periodo_fiscal", $pf);
-        page()->addEstigma("periodo_actual", $pa);
-        page()->addEstigma("fecha_sistema", date('d/m/Y'));
-    }
-
-    public function principal($usuario) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
+    public function principal($usuario) 
+    {
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
         page()->setTitle('Factura');
         page()->addEstigma("username", $usuario);
-        page()->addEstigma('back_url', '/'.MODULE.'/factura/principal');
+        page()->addEstigma('back_url', '/facturacion/factura/principal');
         page()->addEstigma("TITULO", 'Página principal');
         template()->addTemplateBit('content', 'factura/principal.html');
         template()->parseOutput();
         template()->parseExtras();
         print page()->getContent();
     }
+
+    public function series($usuario) 
+    {
+        template()->buildFromTemplates(DEFAULT_LAYOUT);     
+        page()->setTitle('Mantenimiento de Series');
+        page()->addEstigma("username", $usuario);
+        page()->addEstigma('back_url', '/facturacion/factura/principal');
+        page()->addEstigma("TITULO", 'Series de documentos');
+        template()->addTemplateBit('content', 'facturacion/series.html');
+        template()->parseOutput();
+        template()->parseExtras();
+        print page()->getContent();
+    }
+
+    public function cajas($usuario) 
+    {
+        template()->buildFromTemplates(DEFAULT_LAYOUT);     
+        page()->setTitle('Mantenimiento de Cajas');
+        page()->addEstigma("username", $usuario);
+        page()->addEstigma('back_url', '/facturacion/factura/principal');
+        page()->addEstigma("TITULO", 'Cajas');
+        template()->addTemplateBit('content', 'facturacion/cajas.html');
+        template()->parseOutput();
+        template()->parseExtras();
+        print page()->getContent();
+    }
     
+    // no validado
     public function productoEntrante(){
-        template()->buildFromTemplates('template_nofixed.html');
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
         page()->setTitle('Producto en tránsito');
         page()->addEstigma("username", Session::singleton()->getUser());
-        page()->addEstigma("back_url", '/'.MODULE.'/factura/principal');
+        page()->addEstigma("back_url", '/facturacion/factura/principal');
         page()->addEstigma("TITULO", 'Producto en tránsito');
         template()->addTemplateBit('content', 'facturacion/transito.html');
         template()->parseOutput();
@@ -38,10 +56,10 @@ class facturaView {
     }
     
     public function consultaCambio(){
-        template()->buildFromTemplates('template_nofixed.html');
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
         page()->setTitle('Consulta rápida de cambios');
         page()->addEstigma("username", Session::singleton()->getUser());
-        page()->addEstigma("back_url", '/'.MODULE.'/factura/principal');
+        page()->addEstigma("back_url", '/facturacion/factura/principal');
         template()->addTemplateBit('content', 'facturacion/consulta_cambio.html');
         page()->addEstigma("TITULO", 'Consultar cambios');
         template()->parseOutput();
@@ -50,8 +68,8 @@ class facturaView {
     }
 
     public function descuentos($usuario) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
+        
         page()->setTitle('Descuentos');
         page()->addEstigma("username", $usuario);
         page()->addEstigma('back_url', '/facturacion/factura/principal');
@@ -70,8 +88,8 @@ class facturaView {
     }
 
     public function notas_remision($usuario) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
+        
         page()->setTitle('Notas de remision');
         page()->addEstigma("username", $usuario);
         page()->addEstigma('back_url', '/facturacion/factura/principal');
@@ -83,8 +101,8 @@ class facturaView {
     }
 
     public function resumen($usuario) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
+        
         page()->setTitle('Resumen');
         page()->addEstigma("username", $usuario);
         page()->addEstigma('back_url', '/facturacion/factura/nuevo');
@@ -96,8 +114,8 @@ class facturaView {
     }
 
     public function ver_fiscales($usuario) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
+        
         page()->setTitle('Creditos fiscales');
         page()->addEstigma("username", $usuario);
         page()->addEstigma('back_url', '/facturacion/factura/nuevo');
@@ -130,8 +148,8 @@ class facturaView {
     }
 
     public function ver_pendientes($usuario) {
-		template()->buildFromTemplates('template_nofixed.html');
-		$this->load_settings();
+		template()->buildFromTemplates(DEFAULT_LAYOUT);
+		
 		page()->setTitle('Pendientes');
 		page()->addEstigma("username", $usuario);
 		page()->addEstigma('back_url', '/facturacion/factura/nuevo');
@@ -143,8 +161,8 @@ class facturaView {
     }
 
     public function salidas($usuario) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
+        
         page()->setTitle('Salida de mercaderia');
         page()->addEstigma("username", $usuario);
         page()->addEstigma('back_url', '/facturacion/factura/principal');
@@ -156,8 +174,8 @@ class facturaView {
     }
 
     public function reparaciones($usuario) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
+        
         page()->setTitle('Reparaciones');
         page()->addEstigma("username", $usuario);
         page()->addEstigma('back_url', '/facturacion/factura/principal');
@@ -170,8 +188,8 @@ class facturaView {
     }
 
     public function anular($usuario) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
+        
         page()->setTitle('Anular facturas');
         page()->addEstigma("username", $usuario);
         page()->addEstigma("time_stamp", date("Y-m-d H:i:s "));
@@ -184,8 +202,8 @@ class facturaView {
     }
 
     public function cambios($usuario) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
+        
         page()->setTitle('Cambios');
         page()->addEstigma("username", $usuario);
         page()->addEstigma("time_stamp", date("Y-m-d H:i:s "));
@@ -199,8 +217,8 @@ class facturaView {
     }
 
     public function cambios_detalle($usuario, $cache, $id_cambio, $nombre_cliente, $activo, $editable, $paginacion_str) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
+        
         page()->setTitle('Cambios');
         page()->addEstigma("username", $usuario);
         page()->addEstigma("activo", $activo);
@@ -219,8 +237,8 @@ class facturaView {
     }
 
     public function reparacion_detalle($usuario, $cache, $id_reparacion, $nombre_cliente, $activo) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
+        
         page()->setTitle('Reparacion');
         page()->addEstigma("username", $usuario);
         page()->addEstigma("activo", $activo);
@@ -236,46 +254,12 @@ class facturaView {
         print page()->getContent();
     }
 
-    public function series($usuario) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
-        page()->setTitle('Mantenimiento de Series');
-        page()->addEstigma("username", $usuario);
-        page()->addEstigma('back_url', '/facturacion/factura/principal');
-        page()->addEstigma("TITULO", 'Mantenimiento a series');
-        template()->addTemplateBit('content', 'facturacion/series.html');
-        template()->parseOutput();
-        template()->parseExtras();
-        print page()->getContent();
-    }
-
-    public function cajas($usuario, $cache) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
-        page()->setTitle('Mantenimiento de Cajas');
-        page()->addEstigma("username", $usuario);
-        page()->addEstigma("s_factura", array('SQL', $cache[0]));
-        page()->addEstigma("s_credito", array('SQL', $cache[1]));
-        page()->addEstigma("s_recibo", array('SQL', $cache[2]));
-        page()->addEstigma("s_ticket", array('SQL', $cache[3]));
-        page()->addEstigma("bodega", array('SQL', $cache[4]));
-        page()->addEstigma("usuario", array('SQL', $cache[5]));
-        page()->addEstigma("s_cf", array('SQL', $cache[6]));
-        page()->addEstigma("s_nr", array('SQL', $cache[7]));
-        page()->addEstigma("s_debito", array('SQL', $cache[8]));
-        page()->addEstigma('back_url', '/facturacion/factura/principal');
-        page()->addEstigma("TITULO", 'Mantenimiento a cajas');
-        template()->addTemplateBit('content', 'facturacion/cajas.html');
-        template()->parseOutput();
-        template()->parseExtras();
-        print page()->getContent();
-    }
 
     public function remision($numero_remision) {
         template()->buildFromTemplates('template_table.html');
-        $this->load_settings();
+        
         page()->setTitle('Caja');
-        $this->load_settings();
+        
         page()->addEstigma('back_url', '/facturacion/factura/principal');
         page()->addEstigma("TITULO", 'Notas de remisión');
         page()->addEstigma("numero_factura", $numero_remision);
@@ -287,8 +271,8 @@ class facturaView {
     }
 
     public function formulario_facturacion($numero_factura, $cache, $data, $informacionRemision) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
+        
         $campos_str = "";
         page()->setTitle('Caja');
         page()->addEstigma('back_url', '/facturacion/factura/principal');
@@ -330,8 +314,8 @@ class facturaView {
     }
 
     public function formulario_remision($numero_factura, $cache, $data) {
-        template()->buildFromTemplates('template_nofixed.html');
-        $this->load_settings();
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
+        
         $campos_str = "";
         page()->setTitle('Caja');
         page()->addEstigma('back_url', '/facturacion/factura/notas_remision');

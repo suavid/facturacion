@@ -3,749 +3,228 @@
 import('mdl.view.factura');
 import('mdl.model.factura');
 
-class facturaController extends controller {
+class facturaController extends controller
+{
 
-    public function test() {
-        echo "This resource works!!";
-    }
+    private static $SOAP_OPTIONS = array("trace" => 1, "exception" => true, "soap_version"=>SOAP_1_1);
 
-    private function validar() {
+    private function ValidateSession()
+    {
         if (!Session::ValidateSession())
             HttpHandler::redirect(DEFAULT_DIR);
-        //if (!isset($_SESSION['factura']))
-        //    HttpHandler::redirect('/facturacion/modulo/listar');
     }
 
-    public function valesCliente(){
-        $response = array();
-        
-        $response['msg'] = "";
-        $response['descuentos'] = array();
-        
-        $cliente = (isset($_POST['cliente']) &&!empty($_POST['cliente'])) ? $_POST['cliente'] : 0;
-        
-        $query = "SELECT id, monto, concepto, saldo FROM descuento WHERE saldo > 0 and cliente=".$cliente;
-        
-        data_model()->executeQuery($query);
-        
-        while($row = data_model()->getResult()->fetch_assoc()){
-            $response['descuentos'][] = $row;
-        }
-        
-        echo json_encode($response);
-    }
-
-    public function principal() {
-        $this->validar();
+    public function principal()     
+    {
+        $this->ValidateSession();
         $this->view->principal(Session::singleton()->getUser());
     }
 
-    public function anular() {
-        $this->validar();
-        $this->view->anular(Session::singleton()->getUser());
-    }
-
-    public function resumen() {
-        $this->validar();
-        $this->view->resumen(Session::singleton()->getUser());
-    }
-
-    public function ver_fiscales() {
-        $this->validar();
-        $this->view->ver_fiscales(Session::singleton()->getUser());
-    }
-
-    public function ver_pendientes() {
-        $this->validar();
-        $this->view->ver_pendientes(Session::singleton()->getUser());
-    }
-
-    public function salidas() {
-        $this->validar();
-        $this->view->salidas(Session::singleton()->getUser());
-    }
-
-    public function reparaciones() {
-        $this->validar();
-        $this->view->reparaciones(Session::singleton()->getUser());
-    }
-
-    public function descuentos() {
-        $this->validar();
-        $this->view->descuentos(Session::singleton()->getUser());
-    }
-
-    public function notas_remision() {
-        $this->validar();
-        $this->view->notas_remision(Session::singleton()->getUser());
-    }
-
-    public function detalle_pedido() {
-        $id_pedido = $_POST['id_pedido'];
-        $this->model->detalle_pedido($id_pedido);
-    }
-
-    public function detalle_fac(){
-
-        $response = array();
-        $dataFac  = $this->model->detalle_fac($_POST['nofac'], $_POST['cambio']);
-        $response['html'] = $this->view->detalle_fac($dataFac);
-        echo json_encode($response);
-    }
-
-    public function set_entrada() {
-        $dt = $this->model->get_child('detalle_factura');
-        $dt->get($_POST['id']);
-        $dt->set_attr('entran', $_POST['cantidad']);
-        $dt->save();
-    }
-
-    public function reset_proceso() {
-        $id = $_POST['id'];
-        $this->model->get($id);
-        $estado = $this->model->get_attr('estado');
-        if ($estado == "PENDIENTE") {
-            $query = "UPDATE detalle_factura SET entran = 0 WHERE id_factura=$id";
-            data_model()->executeQuery($query);
-        }
-
-        echo json_encode(array("msg"=>""));
-    }
-
-    public function anular_nota_remision() {
-        // estandar para toda comunicacion asincrona dentro el sistema
-        // cada transaccion debe poseer al menos los siguientes elementos
-        $res = array();
-        $res['transaction'] = "anulacion nota de remision"; // operacion que se esta realizando
-        $res['message'] = "";               // mensaje de la operacion (puede ser mensaje de error u otro)
-        $res['success'] = false;            // estado de la operacion (true si tuvo exito o false si ocurre algun error)
-        
-        $tot_pares = 0;
-        $tot_costo = 0;
-		$bodega_s  = 0;
-
-        /* informacion asociada al registro de la operacion */
-        $registro = array();
-        $registro['tipo'] = "ANULACION";                          # tipo de la operacion
-        $registro['fecha'] = date("Y-m-d");                        # fecha de la operacion
-        $registro['usuario'] = Session::singleton()->getUser();    # usuario que lleva a cabo la operacion
-        $registro['n_pedido'] = $_POST['pedido'];                     # referencia a pedido
-        
-        // id de referencia al registro de la factura en la base de datos
-        $id = $_POST['id'];
-        
-        // datos de caja del usuario
-        list($tieneCaja, $data) = $this->model->tieneCaja(Session::singleton()->getUser());
-
-        $this->model->get($id);
-        
-        // actualizamos el estado del pedido y de la nota de remisión
-        $caja          = $this->model->caja;
-        $nota_remision = $this->model->get_child('nota_remision');
-        $id_nota       = $nota_remision->obtenerId($_POST['pedido'], $caja);
-        
-        $this->model->facturado = 3;
-        $this->model->save();
-        $nota_remision->get($id_nota);
-        $nota_remision->anulado = "1";
-        $nota_remision->save();
-        // Se han actualizaado los documentos para indicar que han sido anulados
-        
-        // se obtiene el nombre del cliente
-        $cliente = $this->model->get_sibling('cliente');   
-		$cliente->get($this->model->id_cliente);
-        
-        $nomcli = '';
-		$nomcli .= $cliente->get_attr('primer_nombre').' ';
-		$nomcli .= $cliente->get_attr('segundo_nombre').' ';
-		$nomcli .= $cliente->get_attr('primer_apellido').' ';
-		$nomcli .= $cliente->get_attr('segundo_apellido');
-        
-        // obtencion de los detalles de las facturas
-		$query = "SELECT * FROM detalle_factura WHERE id_factura=$id";
-		data_model()->executeQuery($query);
-		$buffer_detail = array();
-		while($result = data_model()->getResult()->fetch_assoc()){		
-			$buffer_detail[] = $result;
-		}
-        
-        
-        // proceso del detalle de la factura
-		foreach($buffer_detail as $item){
-            $tot_pares += $item['cantidad'];
-        	$tot_costo += $item['costo'] * $item['cantidad'];
-			$bodega_s   = $item['bodega'];
-        }
-        
-        // creando la cabecera del traslado 
-		$transaccion = $this->model->get_child('transacciones');
-        $transaccion->setVirtualId('cod');
-        $transaccion->get("1C"); // Ingreso por traslado
-        $codigo = $transaccion->get_attr('ultimo') + 1;
-        $transaccion->set_attr('ultimo', $codigo);
-        $transaccion->save();
-
-        $traslado = $this->model->get_child('traslado');
-        $traslado->get(0);
-
-        $traslado->fecha = date("Y-m-d");
-        $traslado->proveedor_origen = 0;
-        $traslado->proveedor_nacional = 0;
-        $traslado->bodega_origen  = 0;
-        $traslado->bodega_destino = BODEGA_CONSIGNACIONES; 
-        $traslado->concepto = "Anulación de nota de remisión a nombre de ".$nomcli;
-        $traslado->transaccion = "1C";   // Ingreso por traslado
-        $traslado->total_pares = $tot_pares;
-        $traslado->total_costo = $tot_costo;
-        $traslado->total_costo_p = $tot_pares;
-        $traslado->total_pares_p = $tot_costo;
-        $traslado->editable = "0";
-        $traslado->consigna = "0";
-        $traslado->usuario = Session::singleton()->getUser();
-        $traslado->concepto_alternativo = "";
-        $traslado->cliente = "0";
-        $traslado->cod = $codigo;
-        $traslado->referencia_retaceo = "0";
-		
-        $traslado->save();
-
-        $idref = $traslado->last_insert_id();
-        
-        unset($item);
-        
-        // obtencion de los detalles de las facturas
-		$query = "SELECT * FROM detalle_factura WHERE id_factura=$id";
-		data_model()->executeQuery($query);
-		$buffer_detail = array();
-		while($result = data_model()->getResult()->fetch_assoc()){
-			
-			$buffer_detail[] = $result;
-		}
-		
-       	foreach($buffer_detail as $itemprod){
-			$estilo = $itemprod["estilo"];
-			$linea = $itemprod["linea"];
-			$color = $itemprod["color"];
-			$talla = $itemprod["talla"];
-			$cantidad = $itemprod["cantidad"];
-
-			$costo = (isset($itemprod['costo']))? $itemprod["costo"]:0; 
-			$bodega = (isset($itemprod['bodega']))? $itemprod["bodega"]:0;
-			$proveedor = (isset($itemprod['proveedor']))? $item["proveedor"]:0;
-			
-			if($cantidad > 0){
-				$det = $this->model->get_child('detalle_traslado');
-				$det->get(0);
-				$det->id_ref = $idref;
-				$det->linea = $linea;
-				$det->estilo = $estilo;
-				$det->color = $color;
-				$det->talla = $talla;
-				$det->costo = $costo;
-				$det->cantidad = $cantidad;
-				$det->total = $costo * $cantidad;
-				$det->bodega = BODEGA_CONSIGNACIONES;
-				$det->save();
-			}
-		}
-		
-		$inventario = connectTo("inventario", "mdl.model.inventario", "inventario");	
-        $inventario->transaccionLibre($idref, BODEGA_CONSIGNACIONES,$bodega_s, "2C");
-        $res['success'] = true;
-        echo json_encode($res);
-    }
-
-    public function anl($id) {
-        $this->model->get_child('detalle_factura')->total_facturable($id);
-    }
-
-    public function reportediarioventas(){
-        $hoy = date("Y-m-d");
-        $query = "SELECT *,CONCAT(primer_nombre,' ',primer_apellido) as nombrecliente,(monto + iva) as efectivos FROM factura INNER JOIN cliente ON id_cliente=codigo_afiliado  WHERE fecha = '$hoy' AND facturado = 1";
-        $facturas = data_model()->cacheQuery($query);
-        $nums = array();
-        data_model()->executeQuery($query);
-        while ($res = data_model()->getResult()->fetch_assoc()) {
-            $nums[] = $res['id_factura'];
-        }
-        $query = "SELECT SUM(monto) as monto, SUM(iva) as iva, SUM(total) as total FROM factura INNER JOIN cliente ON id_cliente=codigo_afiliado  WHERE fecha = '$hoy' AND facturado = 1";
-        $sumatoria = data_model()->cacheQuery($query);
-        $query = "SELECT SUM(efectivo) as efectivo, SUM(cheque) as cheque, SUM(tarjeta) as tarjeta, SUM(deposito) as deposito, SUM(nota) as nota, SUM(financiado) as credito FROM factura INNER JOIN cliente ON id_cliente=codigo_afiliado  WHERE fecha = '$hoy' AND facturado = 1";
-        $datos = data_model()->cacheQuery($query);
-        list($tieneCaja, $data) = $this->model->tieneCaja(Session::singleton()->getUser());       
-        $this->view->reportediarioventas($facturas, $nums, $sumatoria, $datos, $data['id']);
-    }
-
-    public function procesar_nota_remision() {
-        // estandar para toda comunicacion asincrona dentro el sistema
-        // cada transaccion debe poseer al menos los siguientes elementos
-        $res                = array();
-        $res['transaction'] = "procesar nota de remision";  // operacion que se esta realizando
-        $res['message']     = "";                           // mensaje de la operacion (puede ser mensaje de error u otro)
-        $res['success']     = false;                        // estado de la operacion (true si tuvo exito o false si ocurre algun error)
-        $res['data']        = array();                      // se agrega esta variable solo si se quiere retornar informacion
-		
-		try{
-			$id = $_POST['id'];       # id de referencia al pedido
-
-			$this->model->get($id);   # cargar datos del pedido
-
-			$cliente = $this->model->get_attr('id_cliente');   # cliente que ha realizado el pedido
-			$estado = $this->model->get_attr('estado');       # estado de la nota de remision
-
-			/* informacion asociada al registro de la operacion */
-			$registro             = array();
-			$registro['tipo']     = "PROCESAR";                         # tipo de la operacion
-			$registro['fecha']    = date("Y-m-d");                      # fecha de la operacion
-			$registro['usuario']  = Session::singleton()->getUser();  # usuario que lleva a cabo la operacion
-			$registro['n_pedido'] = $_POST['pedido'];                   # referencia a pedido
-
-			import('scripts.periodos');
-			list(, $pactual) = cargar_periodos();                         # se carga el perido actual
-
-			/* la nota solo se procesa en caso que este pendiente */
-			if ($estado == "PENDIENTE") {
-				$this->model->set_attr('estado', 'PROCESADO');
-				//$this->model->save();   # automaticamente su estado cambia a procesado para bloquear la nota
-				// cargamos los datos de caja del usuario
-				// un usuario sin caja no puede procesar notas de remision
-				list($tieneCaja, $data) = $this->model->tieneCaja(Session::singleton()->getUser());
-
-				// si no tiene caja se advierte de la falta de permisos para facturar
-				if (!$tieneCaja) {
-					$ret['message'] = "Lo sentimos, no posee permiso de facturacion";
-					$res['success'] = false;
-				} else {
-                    
-                    $nota_remision = $this->model->get_child('nota_remision');
-                    $id_nota       = $nota_remision->obtenerId($_POST['pedido'], $this->model->get_attr('caja'));
-                    
-                    $nota_remision->get($id_nota);
-                    $nota_remision->facturado = "1";
-                    $nota_remision->save();
-                    
-					// se terminan de almacenar los datos asociados al registro
-					$registro['caja']  = $this->model->get_attr('caja');
-					$cj                = $this->model->get_child('caja');
-                    $cj->get($this->model->get_attr('caja'));
-					$registro['serie'] = $cj->get_attr('codigo_factura');
-					
-					// se ha registrado ademas del pedido la caja de facturacion y la serie que estaba activa
-
-					$nt = $this->model->get_child('detalle_factura');   # carga de objeto para proceso de rollback
-					// anulacion parcial del pedido, todos aquellos productos marcados como 'entran' son
-					// regresados al inventario y descontados de la cuenta del usuario (se abona), con el fin
-					// de reducir la carga al credito que habia provocado la adquisicion del producto
-                    // NOTA: ya no se tiene carga crediticia
-					
-                    //$nt->anular_pedido_parcial($id);
-                    $clienteObj = $this->model->get_sibling('cliente');   
-            		$clienteObj->get($this->model->id_cliente);
-                    
-                    $tot_pares = 0;
-                    $tot_costo = 0;
-            	    $bodega_s  = 0;
-                    
-                    $nomcli = '';
-            		$nomcli .= $clienteObj->get_attr('primer_nombre').' ';
-            		$nomcli .= $clienteObj->get_attr('segundo_nombre').' ';
-            		$nomcli .= $clienteObj->get_attr('primer_apellido').' ';
-            		$nomcli .= $clienteObj->get_attr('segundo_apellido');
-                    
-                    // obtencion de los detalles de las facturas
-            		$query = "SELECT * FROM detalle_factura WHERE id_factura=$id";
-            		data_model()->executeQuery($query);
-            		$buffer_detail = array();
-            		while($result = data_model()->getResult()->fetch_assoc()){		
-            			$buffer_detail[] = $result;
-            		}
-                    
-                    
-                    // proceso del detalle de la factura
-            		foreach($buffer_detail as $item){
-                        $tot_pares += $item['entran'];
-                    	$tot_costo += $item['costo'] * $item['entran'];
-            			$bodega_s   = $item['bodega'];
-                    }
-                    
-                    // creando la cabecera del traslado 
-            		$transaccion = $this->model->get_child('transacciones');
-                    $transaccion->setVirtualId('cod');
-                    $transaccion->get("1C"); // Ingreso por traslado
-                    $codigo = $transaccion->get_attr('ultimo') + 1;
-                    $transaccion->set_attr('ultimo', $codigo);
-                    $transaccion->save();
-            
-                    $traslado = $this->model->get_child('traslado');
-                    $traslado->get(0);
-            
-                    $traslado->fecha = date("Y-m-d");
-                    $traslado->proveedor_origen = 0;
-                    $traslado->proveedor_nacional = 0;
-                    $traslado->bodega_origen  = 0;
-                    $traslado->bodega_destino = BODEGA_CONSIGNACIONES; 
-                    $traslado->concepto = "Devolución por consignación a nombre de ".$nomcli;
-                    $traslado->transaccion = "1C";   // Ingreso por traslado
-                    $traslado->total_pares = $tot_pares;
-                    $traslado->total_costo = $tot_costo;
-                    $traslado->total_costo_p = $tot_pares;
-                    $traslado->total_pares_p = $tot_costo;
-                    $traslado->editable = "0";
-                    $traslado->consigna = "0";
-                    $traslado->usuario = Session::singleton()->getUser();
-                    $traslado->concepto_alternativo = "";
-                    $traslado->cliente = "0";
-                    $traslado->cod = $codigo;
-                    $traslado->referencia_retaceo = "0";
-            		
-                    $traslado->save();
-            
-                    $idref = $traslado->last_insert_id();
-                    
-                    unset($item);
-                    
-                    // obtencion de los detalles de las facturas
-            		$query = "SELECT * FROM detalle_factura WHERE id_factura=$id";
-            		data_model()->executeQuery($query);
-            		$buffer_detail = array();
-            		while($result = data_model()->getResult()->fetch_assoc()){
-            			
-            			$buffer_detail[] = $result;
-            		}
-            		
-                   	foreach($buffer_detail as $itemprod){
-            			$estilo = $itemprod["estilo"];
-            			$linea = $itemprod["linea"];
-            			$color = $itemprod["color"];
-            			$talla = $itemprod["talla"];
-            			$cantidad = $itemprod["entran"];
-            
-            			$costo = (isset($itemprod['costo']))? $itemprod["costo"]:0; 
-            			$bodega = (isset($itemprod['bodega']))? $itemprod["bodega"]:0;
-            			$proveedor = (isset($itemprod['proveedor']))? $item["proveedor"]:0;
-            			
-            			if($cantidad > 0){
-            				$det = $this->model->get_child('detalle_traslado');
-            				$det->get(0);
-            				$det->id_ref = $idref;
-            				$det->linea = $linea;
-            				$det->estilo = $estilo;
-            				$det->color = $color;
-            				$det->talla = $talla;
-            				$det->costo = $costo;
-            				$det->cantidad = $cantidad;
-            				$det->total = $costo * $cantidad;
-            				$det->bodega = BODEGA_CONSIGNACIONES;
-            				$det->save();
-            			}
-            		}
-            		
-            		$inventario = connectTo("inventario", "mdl.model.inventario", "inventario");	
-                    $inventario->transaccionLibre($idref, BODEGA_CONSIGNACIONES,$bodega_s, "2C");                
-
-					// se calculan los obtienen faltantes, es decir aquellos productos que salieron y no regresaron
-					// a nivel de registro se manejan como cantidad_que_salio - productos_que_entran = productos faltantes
-					$pendiente = $nt->total_facturable($id);
-					
-                    $res['data']['pendientes'] = $pendiente;
-                    $res['data']['cliente'] = $cliente;
-				    $res['success'] = true;
-                    
-					$op = $this->model->get_child('pnota_remision');
-					$op->get(0);
-					$op->change_status($registro);
-					//$op->save();  // simplemente guarda el registro del suceso
-				}
-			} else {
-				/* si la nota ya estaba en proceso se le comunica al respecto al usuario */
-				$res['success'] = false;
-				$res['message'] = "Error!, El pedido ya habia sido procesado";
-			}
-		}catch(Exception $e){
-			$res['message'] = $e->getMessage();
-		}
-        echo json_encode($res);
-    }
-
-    public function devolver() {
-        $ret = array();
-        $oCambio = $this->model->get_child('cambio');
-        $oCambio->get($_POST['cambio']);
-        if ($oCambio->get_attr('editable') == 1) {
-            $mv = $this->model->get_child('devolucion');
-            $gf = $mv->existe($_POST['linea'], $_POST['estilo'], $_POST['color'], $_POST['talla'], $_POST['bodega'], $_POST['factura'], $_POST['cambio']);
-            if ($gf) {
-                if ($_POST['cantidad'] > 0) {
-                    $mv->actualizar($_POST['linea'], $_POST['estilo'], $_POST['color'], $_POST['talla'], $_POST['bodega'], $_POST['factura'], $_POST['cambio'], $_POST['cantidad']);
-                } else {
-                    $mv->borrar($_POST['linea'], $_POST['estilo'], $_POST['color'], $_POST['talla'], $_POST['bodega'], $_POST['factura'], $_POST['cambio']);
-                }
-            } else {
-                if ($_POST['cantidad'] > 0) {
-                    
-                    $linea  = $_POST['linea'];
-                    $estilo = $_POST['estilo'];
-                    $color  = $_POST['color'];
-                    $talla  = $_POST['talla'];
-                    $nofac  = $_POST['factura'];
-                    $dsv_num = $_POST['cambio'];
-                    
-                    $query = "UPDATE facmesd SET dsv_num = $dsv_num WHERE linea=$linea AND cestilo='{$estilo}' AND ccolor = $color AND talla=$talla AND nofac=$nofac";
-                    data_model()->executeQuery($query);
-
-                    $mv->get(0);
-                    $mv->change_status($_POST);
-                    $mv->save();
-                }
-            }
-        } else {
-            $ret['message'] = "No se puede editar";
-        }
-        echo json_encode($ret);
-    }
-
-    public function consultar_serie() {
-        $id = $_POST['id'];
-        $caja = $this->model->get_child('caja');
-        $caja->get($id);
-        $response = array();
-        $response['serie_factura'] = $caja->get_attr('serie_factura');
-        $response['codigo_factura'] = $caja->get_attr('codigo_factura');
-        echo json_encode($response);
-    }
-
-    public function cambios() {
-        $this->validar();
-        $this->view->cambios(Session::singleton()->getUser());
-    }
-
-    public function salvar_cambio($id_cambio, $cliente, $fecha) {
-        $cambio = $this->model->get_child('cambio');
-        $id_cambio = intval($id_cambio);
-        $cambio->get($id_cambio);
-        $data = array();
-        $data['cliente'] = $cliente;
-        $data['fecha'] = $fecha;
-        $data['username'] = Session::singleton()->getUser();
-        if ($id_cambio == 0) {
-            $data['activo'] = 1;
-            $data['editable'] = 1;
-        }
-        $cambio->change_status($data);
-        $cambio->save();
-        if ($id_cambio == 0) {
-            $id = $cambio->last_insert_id();
-        } else {
-            $id = $id_cambio;
-        }
-        HttpHandler::redirect('/facturacion/factura/cambios_detalle?id=' . $id);
-    }
-
-    public function salvar_reparacion($id_reparacion, $cliente, $fecha) {
-        $reparacion = $this->model->get_child('reparacion');
-        $id_reparacion = intval($id_reparacion);
-        $reparacion->get($id_reparacion);
-        $data = array();
-        $data['cliente'] = $cliente;
-        $data['fecha'] = $fecha;
-        $data['username'] = Session::singleton()->getUser();
-        $reparacion->change_status($data);
-        $reparacion->save();
-        if ($id_reparacion == 0) {
-            $id = $reparacion->last_insert_id();
-        } else {
-            $id = $id_reparacion;
-        }
-        HttpHandler::redirect('/facturacion/factura/reparacion_detalle?id=' . $id);
-    }
-
-    public function cancelar_cambio() {
-        $ret = array();
-        $ret['exito'] = false;
-        $oCambio = $this->model->get_child('cambio');
-        $oCambio->get($_POST['cambio']);
-        if ($oCambio->get_attr('editable') == 1) {
-            $this->model->get_child('devolucion')->eliminar($_POST['cambio']);
-            $oCambio->delete($_POST['cambio']);
-            $ret['exito'] = true;
-        }
-
-        echo json_encode($ret);
-    }
-
-    public function aplicar_devolucion($cambio) {
-        $oCambio = $this->model->get_child('cambio');
-        $oCambio->get($cambio);
-        if ($oCambio->get_attr('editable') == 1) {
-            $this->model->get_child('devolucion')->aplicar_devolucion($cambio);
-        }
-        HttpHandler::redirect('/facturacion/factura/cambios');
-    }
-
-    public function cambios_detalle() {
-        $this->validar();
-        $id_cambio      = $_GET['id'];
-        $oCambio        = $this->model->get_child('cambio');
-
-        $oCambio->get($id_cambio);
-        
-        $activo         = $oCambio->get_attr('activo');
-        $editable       = $oCambio->get_attr('editable');
-        $cliente        = $oCambio->cliente($id_cambio);
-        $oCliente       = $this->model->get_sibling('cliente');
-        
-        $oCliente->get($cliente);
-        
-        $nombre_cliente = $oCliente->get_attr('primer_nombre') . ' ' . $oCliente->get_attr('primer_apellido');
-        $cache          = array();
-
-
-
-        import('scripts.paginacion');
-        $numeroRegistros = $this->model->cantidadFacturas($cliente);
-        $url_filtro = "/facturacion/factura/cambios_detalle?id=".$id_cambio."&";
-        list($paginacion_str, $limitInf, $tamPag) = paginar($numeroRegistros, $url_filtro);
-        $cache[0] = $this->model->facturas_cliente($cliente, $limitInf, $tamPag);
-        
-        if ($activo == 0){
-            $activo = "NO";
-        }
-
-        $this->view->cambios_detalle(Session::singleton()->getUser(), $cache, $id_cambio, $nombre_cliente, $activo, $editable, $paginacion_str);
-    }
-
-    public function reparacion_detalle() {
-        $this->validar();
-        $id_reparacion = $_GET['id'];
-        $oReparacion = $this->model->get_child('reparacion');
-
-        $oReparacion->get($id_reparacion);
-
-        $activo = $oReparacion->get_attr('activo');
-        $cliente = $oReparacion->cliente($id_reparacion);
-        $oCliente = $this->model->get_sibling('cliente');
-
-        $oCliente->get($cliente);
-
-        $nombre_cliente = $oCliente->get_attr('primer_nombre') . ' ' . $oCliente->get_attr('primer_apellido');
-        $cache = array();
-        $cache[0] = $this->model->get_child('linea')->get_list('', '', array('nombre'));
-        if ($activo == 0)
-            $activo = "NO";
-        $this->view->reparacion_detalle(Session::singleton()->getUser(), $cache, $id_reparacion, $nombre_cliente, $activo);
-    }
-
-    public function elemento_reparacion() {
-        $ret = array();
-        $ret['existe'] = false;
-        $ret['existe'] = $this->model->get_child('estado_bodega')->existe($_POST['linea'], $_POST['estilo'], $_POST['color'], $_POST['talla']);
-
-        $data = $_POST;
-
-        if ($ret['existe']) {
-            if (empty($_POST['cantidad']))
-                $data['cantidad'] = 1;
-            $oReparacionD = $this->model->get_child('detalle_reparacion');
-            $oReparacionD->get(0);
-            $oReparacionD->change_status($data);
-            $oReparacionD->save();
-        }
-
-        echo json_encode($ret);
-    }
-
-    public function facturas_cliente() {
-        $this->model->facturas_cliente($_POST['id_cliente']);
-    }
-
-    public function cargar_impresion() {
-        $system = $this->model->get_child('system');
-        $system->get(1);
-        $pedido = $_POST['pedido'];
-        $oDetalle = $this->model->get_child('detalle_factura');
-        $info = array();
-        $info['descripcion'] = "Re-Impresion de factura";
-        $info['precio'] = $system->get_attr('impresion');
-        $info['cantidad'] = 1;
-        $info['importe'] = $info['cantidad'] * $info['precio'];
-        $info['id_factura'] = $pedido;
-        $info['bodega'] = 1;
-        $info['linea '] = 0;
-        $info['estilo '] = 0;
-        $info['color '] = 0;
-        $info['talla '] = 0;
-        $oDetalle->get(0);
-        $oDetalle->change_status($info);
-        $oDetalle->save();
-        $this->model->get($pedido);
-        $this->model->set_attr('total', $system->get_attr('impresion'));
-        $this->model->set_attr('subtotal', $system->get_attr('impresion'));
-        $this->model->save();
-    }
-
-    function cargar_cambio() {
-        $id_cambio = $_POST['cambio'];
-        $cambio = $this->model->get_child('cambio');
-        $response = array();
-
-        $cambio->get($id_cambio);
-        $response['codigo_cliente'] = $cambio->get_attr('cliente');
-        $response['fecha'] = $cambio->get_attr('fecha');
-
-        echo json_encode($response);
-    }
-
-    function cargar_reparacion() {
-        $id_reparacion = $_POST['reparacion'];
-        $reparacion = $this->model->get_child('reparacion');
-        $response = array();
-
-        $reparacion->get($id_reparacion);
-        $response['codigo_cliente'] = $reparacion->get_attr('cliente');
-        $response['fecha'] = $reparacion->get_attr('fecha');
-
-        echo json_encode($response);
-    }
-
-    public function cajas() {
-        $this->validar();
-        $usuario = Session::singleton()->getUser();
-        $cache = array();
-        $cache[0] = $this->model->get_child('serie')->get_by_type('FC');
-        $cache[1] = $this->model->get_child('serie')->get_by_type('NC');
-        $cache[2] = $this->model->get_child('serie')->get_by_type('RC');
-        $cache[3] = $this->model->get_child('serie')->get_by_type('TI');
-        $cache[4] = $this->model->get_child('bodega')->get_list('','', array('nombre'));
-        $cache[5] = $this->model->get_child('empleado')->filter('modulo','facturacion');
-        $cache[6] = $this->model->get_child('serie')->get_by_type('CF');
-        $cache[7] = $this->model->get_child('serie')->get_by_type('NR');
-        $cache[8] = $this->model->get_child('serie')->get_by_type('ND');
-        $this->view->cajas($usuario, $cache);
-    }
-
-    public function traer_cambio() {
-        $this->model->traer_cambio($_POST);
-    }
-
-    public function productoEntrante(){
-        if(isInstalled("compras")){
-            $this->view->productoEntrante();
-        }else{
-            HttpHandler::redirect('/inventario/error/e403');
+    public function ObtenerBanner()
+    {
+        $this->ValidateSession();
+        if(isset($_POST) && !empty($_POST))
+        {
+            $id = $_POST['id'];
+            $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+            $result = $client->VerMensajesBienvenida(array("id"=>$id));
+
+            echo  $result->{"VerMensajesBienvenidaResult"};
         }
     }
-    
-    public function consultaCambio(){
-        
-        $this->view->consultaCambio();
-    }
 
-    public function series() {
-        $this->validar();
+    public function series() 
+    {
+        $this->ValidateSession();
         $usuario = Session::singleton()->getUser();
         $this->view->series($usuario);
     }
 
+    public function cajas() 
+    {
+        $this->ValidateSession();
+        $usuario = Session::singleton()->getUser();
+        $this->view->cajas($usuario);
+    }
+
+    public function CategoriasDeSeries()
+    {
+        $this->ValidateSession();
+        $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+        $result = $client->CategoriasDeSeries();
+
+        echo  $result->{"CategoriasDeSeriesResult"};
+    }
+
+    public function InsertarSerie()
+    {
+        if(isset($_POST) && !empty($_POST))
+        {
+            $this->ValidateSession();
+            $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+            
+            $fechaResolucion = $_POST['fechaResolucion'];
+            $del = $_POST['autorizadoDel'];
+            $al = $_POST['autorizadoAl'];
+            $serie = $_POST['serie'];
+            $descripcion = $_POST['descripcion'];
+            $resolucion = $_POST['numeroResolucion'];
+            $tipo = $_POST['tipo'];
+
+            $result = $client->InsertarSerie(
+                array(
+                    "fechaResolucion" => $fechaResolucion
+                    , "tipo" => $tipo
+                    , "serie" => $serie
+                    , "descripcion" => $descripcion
+                    , "resolucion" => $resolucion
+                    , "del" => $del
+                    , "al" => $al
+                )
+            );
+
+            echo  $result->{"InsertarSerieResult"};
+        }
+    }
+
+    public function ObtenerSeries()
+    {
+        $this->ValidateSession();
+
+        $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+        $result = $client->ObtenerSeries();
+        echo  $result->{"ObtenerSeriesResult"};
+    }
+
+    public function ObtenerListaDeSeries()
+    {
+        $this->ValidateSession();
+
+        $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+        $result = $client->ObtenerSeries();
+        $data = json_decode($result->{"ObtenerSeriesResult"});
+
+        $ret = "{data:" . $result->{"ObtenerSeriesResult"} . ",\n";
+        $ret .= "pageInfo:{totalRowNum:" . count($data) . "},\n";
+        $ret .= "recordType : 'object'}";
+
+        echo  $ret;
+    }
+
+     public function ObtenerListaDeCajas()
+    {
+        $this->ValidateSession();
+
+        $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+        $result = $client->ObtenerCajas();
+        $data = json_decode($result->{"ObtenerCajasResult"});
+
+        $ret = "{data:" . $result->{"ObtenerCajasResult"} . ",\n";
+        $ret .= "pageInfo:{totalRowNum:" . count($data) . "},\n";
+        $ret .= "recordType : 'object'}";
+
+        echo  $ret;
+    }
+
+    public function ListaBodegas()
+    {
+        $this->ValidateSession();
+
+        $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+        $result = $client->ObtenerBodegas(array("tipo_vista"=>0));
+        echo $result->{"ObtenerBodegasResult"};
+    }
+
+    public function ObtenerEmpleados()
+    {
+        $this->ValidateSession();
+        $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+        $result = $client->ObtenerEmpleados(array());
+
+        echo  $result->{"ObtenerEmpleadosResult"};
+    }
+
+    public function RegistrarCaja()
+    {
+        if(isset($_POST) && !empty($_POST))
+        {
+            $this->ValidateSession();
+            $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+            
+            $nombre = $_POST['nombre'];
+            $encargado = $_POST['encargado'];
+            $bodega_por_defecto = $_POST['bodegaPorDefecto'];
+            $serie_factura = $_POST['serieFactura'];
+            $serie_nota_credito = $_POST['serieNotaCredito'];
+            $serie_recibo = $_POST['serieRecibo'];
+            $serie_ticket = $_POST['serieTicket'];
+            $p_cambio_bodega = $_POST['pCambioBodega'];
+            $serie_credito_fiscal = $_POST['serieCreditofiscal'];
+            $serie_nota_debito = $_POST['serieNotaDebito'];
+            $serie_nota_remision = $_POST['serieNotaRemision'];
+
+            $result = $client->InsertarCaja(
+                array(
+                    "nombre"=> $nombre
+                    , "encargado"=> $encargado
+                    , "bodega_por_defecto"=> $bodega_por_defecto
+                    , "serie_factura"=> $serie_factura
+                    , "serie_nota_credito"=> $serie_nota_credito
+                    , "serie_recibo"=> $serie_recibo
+                    , "serie_ticket"=> $serie_ticket
+                    , "p_cambio_bodega"=> $p_cambio_bodega
+                    , "serie_credito_fiscal"=> $serie_credito_fiscal 
+                    , "serie_nota_debito"=> $serie_nota_debito
+                    , "serie_nota_remision"=> $serie_nota_remision
+                )
+            );
+
+            echo  $result->{"InsertarCajaResult"};
+        }
+    }
+
+    // SIN VALIDAR
+
+    public function anular() {
+        $this->ValidateSession();
+        $this->view->anular(Session::singleton()->getUser());
+    }
+
+    public function resumen() {
+        $this->ValidateSession();
+        $this->view->resumen(Session::singleton()->getUser());
+    }
+
+    public function ver_fiscales() {
+        $this->ValidateSession();
+        $this->view->ver_fiscales(Session::singleton()->getUser());
+    }
+
+    public function ver_pendientes() {
+        $this->ValidateSession();
+        $this->view->ver_pendientes(Session::singleton()->getUser());
+    }
+
+    public function salidas() {
+        $this->ValidateSession();
+        $this->view->salidas(Session::singleton()->getUser());
+    }
+
+    public function reparaciones() {
+        $this->ValidateSession();
+        $this->view->reparaciones(Session::singleton()->getUser());
+    }
+
+    public function descuentos() {
+        $this->ValidateSession();
+        $this->view->descuentos(Session::singleton()->getUser());
+    }
+
+    public function notas_remision() {
+        $this->ValidateSession();
+        $this->view->notas_remision(Session::singleton()->getUser());
+    }
+    
     public function existe_serie() {
         $tipo = $_POST['tipo'];
         $serie = $_POST['serie'];
@@ -814,14 +293,14 @@ class facturaController extends controller {
     }
 
     public function nueva_factura() {
-        $pedido  = (empty($_POST['pedido'])) ? 0 : $_POST['pedido']; // obtiene el numero del pedido 
+        $pedido  = (empty($_POST['pedido'])) ? 0 : $_POST['pedido']; // obtiene el numero del pedido
         $cliente = $_POST['cliente'];							// obtiene el numero del cliente
         $fecha   = $_POST['fecha'];								// obtiene la fecha del pedido
         $caja = $_POST['caja'];									// obtiene la caja en la que se realiza el pedido
         $periodo_actual = $_POST['periodo_actual'];				// periodo en que se factura
         $ret = array();										// prepara la respuesta para el cliente
 
-        $ret['NOTFOUND'] = false;                                    // bandera que indica si se ha encontrado el pedido solicitado								
+        $ret['NOTFOUND'] = false;                                    // bandera que indica si se ha encontrado el pedido solicitado
         $ret['No']       = 0;									// indica la referencia al pedido (id auto incremento)
         $ret['cliente']  = 0;									// cliente que solicita el pedido
         $ret['fecha']    = "";									// fecha de solicitud del pedido
@@ -842,7 +321,7 @@ class facturaController extends controller {
 				$ret['No'] 		= $referencia; // indica el numero de referencia para futuras operaciones
 				$ret['cliente'] 	= $this->model->get_attr('id_cliente'); 	// obtiene l codigo del cliente para el cual se hizo el pedido
 				$ret['fecha'] 	= $this->model->get_attr('fecha');		// obtiene la fecha en la cual se hizo el pedido
-				$ret['estado'] 	= $this->model->get_attr('facturado');	// obtiene el estado del pedido, 1 = facturado, 0 = pendiente 
+				$ret['estado'] 	= $this->model->get_attr('facturado');	// obtiene el estado del pedido, 1 = facturado, 0 = pendiente
 				$ret['flete'] 	= $this->model->get_attr('flete');		// tiene flete
 				$ret['tipo'] 		= $this->model->get_attr('formapago');	// tipo
 				$ret['ref'] 		= $pedido;							// referencia
@@ -855,33 +334,33 @@ class facturaController extends controller {
 			$f_data['caja'] 			= $caja;
 			$f_data['estado'] 		= "PENDIENTE";
 			$f_data['periodo_actual'] 	= $periodo_actual;
-			
+
 			$this->model->get(0);
 			$this->model->change_status($f_data);	// se guarda el nuevo pedido
 			$this->model->save();
-			
+
 			$ret['No'] 		= $this->model->last_insert_id();
 			$p 				= array();
 			$p['caja'] 		= $caja;
 			$p['pedido'] 		= $this->model->crear_pedido($caja);
 			$p['referencia'] 	= $ret['No'];
-			
+
 			$oj = $this->model->get_child('caja_pedido_referencia');	// se crea la nueva referencia
-			
+
 			$oj->get(0);
 			$oj->change_status($p);
 			$oj->save();
-			
+
 			$ret['ref'] 		= $p['pedido'];
 			$ret['cliente'] 	= $cliente;
 			$ret['fecha'] 	    = $fecha;
 		}
-		
+
 		echo json_encode($ret);
     }
 
     public function nuevo() {
-        $this->validar();
+        $this->ValidateSession();
         $cache = array();
 
         /* Obener datos de cajero */
@@ -905,7 +384,7 @@ class facturaController extends controller {
     }
 
     public function nueva_nota_remision() {
-        $this->validar();
+        $this->ValidateSession();
         $cache = array();
 
         /* Obener datos de cajero */
@@ -928,23 +407,23 @@ class facturaController extends controller {
         $id_factura = $NoFactura;
 		$no_factura = 0;
 		$no_pedido  = 0;
-		
+
         $subtotal  = 0.0;
         $descuento = 0.0;
         $total     = 0.0;
 		$monto 	   = 0.0;
 		$iva 	   = 0.0;
-		
+
 		$caja 	   = 0;
 		$serie     = '';
 		$cpref     = null;
-		
+
 		$this->model->get($id_factura);
 		$caja  = $this->model->get_attr('caja');
 		$cpref = $this->model->get_child('caja_pedido_referencia');
-		
-		$no_pedido = $cpref->obtener_pedido($caja, $id_factura); 
-		
+
+		$no_pedido = $cpref->obtener_pedido($caja, $id_factura);
+
         if($this->model->formapago==1 || $this->model->formapago==2){
 
             list( $monto, $iva, $subtotal, $descuento, $total, $no_factura, $serie ) = $this->model->datos_facturacion($no_pedido, $caja);
@@ -956,8 +435,8 @@ class facturaController extends controller {
             $cache     = array();
             $cache[0]  = $this->model->DetalleRemision($no_factura, $serie);
         }
-		
-		
+
+
         $flete_c   = 0.0;
         $total = $total + 0.0;
         $total = $total + $flete_c;
@@ -1085,13 +564,13 @@ class facturaController extends controller {
             if(count($response) > 0){
                 $info['porcentaje'] = $response[0] * 100;
             }else{
-                $info['porcentaje'] = 0;    
+                $info['porcentaje'] = 0;
             }
-            
+
             $info['descuento']  = $info['importe'] * ($info['porcentaje'] / 100) ;
             $info['importe']    = $info['importe'] - $info['descuento'];
 
-            
+
 			$query = "SELECT stock FROM estado_bodega WHERE bodega=$bodega AND estilo='$estilo' AND linea=$linea AND talla=$talla AND color=$color";
 			data_model()->executeQuery($query);
 			$s = data_model()->getResult()->fetch_assoc();
@@ -1109,7 +588,7 @@ class facturaController extends controller {
 					$detalle->change_status($info);
 					$detalle->save();
 				}
-				
+
 				$system = $this->model->get_child('system');
 				$system->get(1);
 				$iva    = $system->get_attr('iva');
@@ -1119,7 +598,7 @@ class facturaController extends controller {
                 $total  = $monto + $mntiva;
 				$descuento = $info['descuento'];
                 $org = $monto + $descuento;
-				
+
 				// Nota: en este punto no interese incluir el iva en los detalles, solamente se incluye el iva en el total
 				// se actualizan los totales de la cabecera de factura
 				$query = "UPDATE factura SET iva = (iva + $mntiva), monto=( monto + $monto) , descuento=( descuento + $descuento), total=(total + $total), subtotal=(subtotal + $org)  WHERE id_factura=$factura";
@@ -1188,7 +667,7 @@ class facturaController extends controller {
         $an->change_status($data);
         $an->save();*/
     }
-	
+
     public function totales($codPedido) {
         $this->model->totales($codPedido);
     }
@@ -1213,7 +692,7 @@ class facturaController extends controller {
 			$color    = $_POST['color'];
 
 			$d = array();
-			
+
 			$d['descripcion'] = $_POST['descripcion'];
 			$d['precio'] 		= $_POST['precio'];
             $d['costo']        = $_POST['costo'];
@@ -1227,7 +706,7 @@ class facturaController extends controller {
 
 			$response 		  = array();
 			$response['STATUS'] = "ERROR";
-			
+
 			unset($d['cliente']);
 
 			$d['linea']  = $linea;
@@ -1235,23 +714,23 @@ class facturaController extends controller {
 			$d['color']  = $color;
 			$d['talla']  = $talla;
 
-			// inserta o actualiza el numero del cliente para el pedido 
+			// inserta o actualiza el numero del cliente para el pedido
 			$query = "UPDATE factura SET id_cliente = $cliente WHERE id_factura = $factura";
 			data_model()->executeQuery($query);
-			
+
 			// consulta el stock actual del producto solicitado
 			$query = "SELECT stock FROM estado_bodega WHERE bodega=$bodega AND estilo=$estilo AND linea=$linea AND talla=$talla AND color=$color";
 			data_model()->executeQuery($query);
 			$s     = data_model()->getResult()->fetch_assoc();
 			$stock = $s['stock'];
-			
+
 			// si hay suficiente stock para solventar el pedido
 			if ($stock >= $cantidad):
 				// disminuye el stock de bodega (aparta el producto)
 				// salida no se registra en kardex porque en este punto el producto no se ha facturado (no ha salido de inventario, solo se reserva)
 				$query = "UPDATE estado_bodega SET stock=(stock-$cantidad) WHERE bodega=$bodega AND estilo=$estilo AND linea=$linea AND talla=$talla AND color=$color";
 				data_model()->executeQuery($query);
-				
+
 				// si el producto ya ha sido agregado a la factura se actualiza la cantidad, donde cantidad = cantidad + nueva_cantidad
 				if ($this->model->existe($linea, $estilo, $color, $talla, $factura)) {
 					$this->model->actualizar($linea, $estilo, $color, $talla, $factura, $cantidad, $d['importe'], $d['descuento']);
@@ -1262,22 +741,22 @@ class facturaController extends controller {
 					$detalle->change_status($d);
 					$detalle->save();
 				}
-				
+
 				$system = $this->model->get_child('system');
 				$system->get(1);
 				$iva    = $system->get_attr('iva');
 				$poriva = $iva / 100;
                 $monto  = $d['importe']; // Ya se ha aplicado el descuento
-                $mntiva = $monto * $poriva; 
+                $mntiva = $monto * $poriva;
 				$total  = $monto + $mntiva;
 				$descuento = $d['descuento'];
                 $org = $monto + $d['descuento'];
-				
+
 				// Nota: en este punto no interese incluir el iva en los detalles, solamente se incluye el iva en el total
 				// se actualizan los totales de la cabecera de factura
 				$query = "UPDATE factura SET iva = (iva + $mntiva), monto=( monto + $monto) , descuento=( descuento + $descuento), total=(total + $total), subtotal=(subtotal + $org)  WHERE id_factura=$factura";
 				data_model()->executeQuery($query);
-			
+
 				$response['STATUS'] = "OK";	// informa del exito del proceso al cliente
 			else:
 				// si no hay suficiente producto en bodega se envía un mensaje al cliente
@@ -1290,12 +769,12 @@ class facturaController extends controller {
     }
 
     function verLineas() {
-        $this->validar();
+        $this->ValidateSession();
         $this->view->verLineas();
     }
 
     function cargar_remision($factura) {
-        $this->validar();
+        $this->ValidateSession();
         header('Content-type:text/javascript;charset=UTF-8');
         $json = json_decode(stripslashes($_POST["_gt_json"]));
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
@@ -1325,9 +804,9 @@ class facturaController extends controller {
             echo $ret;
         endif;
     }
-	
+
 	function cargar_factura($serie, $nofac) {
-        $this->validar();
+        $this->ValidateSession();
         header('Content-type:text/javascript;charset=UTF-8');
         $json = json_decode(stripslashes($_POST["_gt_json"]));
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
@@ -1359,7 +838,7 @@ class facturaController extends controller {
     }
 
     function cargar_detalle($factura) {
-        $this->validar();
+        $this->ValidateSession();
         header('Content-type:text/javascript;charset=UTF-8');
         $json = json_decode(stripslashes($_POST["_gt_json"]));
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
@@ -1389,17 +868,17 @@ class facturaController extends controller {
             echo $ret;
         endif;
     }
-    
+
     public function despachar(){
         $id = $_POST['id'];
         $query = "UPDATE facmesd SET despachado = 1 WHERE id=$id";
         data_model()->executeQuery($query);
-        
+
         echo json_encode(array("msg"=>""));
     }
-    
+
     function cargar_detalle_fac() {
-        //$this->validar();
+        //$this->ValidateSession();
         header('Content-type:text/javascript;charset=UTF-8');
         $json = json_decode(stripslashes($_POST["_gt_json"]));
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
@@ -1433,7 +912,7 @@ class facturaController extends controller {
     }
 
     public function resumenFacturas() {
-        $this->validar();
+        $this->ValidateSession();
         header('Content-type:text/javascript;charset=UTF-8');
         $json = json_decode(stripslashes($_POST["_gt_json"]));
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
@@ -1465,7 +944,7 @@ class facturaController extends controller {
     }
 
     public function resumenFiscal() {
-        $this->validar();
+        $this->ValidateSession();
         header('Content-type:text/javascript;charset=UTF-8');
         $json = json_decode(stripslashes($_POST["_gt_json"]));
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
@@ -1497,7 +976,7 @@ class facturaController extends controller {
     }
 
     public function cargarPendientes() {
-        $this->validar();
+        $this->ValidateSession();
         header('Content-type:text/javascript;charset=UTF-8');
         $json = json_decode(stripslashes($_POST["_gt_json"]));
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
@@ -1527,9 +1006,9 @@ class facturaController extends controller {
             echo $ret;
         endif;
     }
-    
+
     public function cargarReservas() {
-        $this->validar();
+        $this->ValidateSession();
         header('Content-type:text/javascript;charset=UTF-8');
         $json = json_decode(stripslashes($_POST["_gt_json"]));
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
@@ -1561,7 +1040,7 @@ class facturaController extends controller {
     }
 
     public function cargarRemisionPendiente() {
-        $this->validar();
+        $this->ValidateSession();
         header('Content-type:text/javascript;charset=UTF-8');
         $json = json_decode(stripslashes($_POST["_gt_json"]));
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
@@ -1595,7 +1074,7 @@ class facturaController extends controller {
     }
 
     public function cargarRemisionAnulada() {
-        $this->validar();
+        $this->ValidateSession();
         header('Content-type:text/javascript;charset=UTF-8');
         $json = json_decode(stripslashes($_POST["_gt_json"]));
         $pageNo = $json->{'pageInfo'}->{'pageNum'};
@@ -1629,7 +1108,7 @@ class facturaController extends controller {
     }
 
     public function cargarRemisionProcesada() {
-        $this->validar();
+        $this->ValidateSession();
         header('Content-type:text/javascript;charset=UTF-8');
         $json = json_decode(stripslashes($_POST["_gt_json"]));
         $pageNo = $json->{'pageInfo'}->{'pageNum'};

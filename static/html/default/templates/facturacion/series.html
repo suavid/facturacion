@@ -1,108 +1,86 @@
-<div class="panel span12">
-    <div class="panel-header">
-        Nueva serie
-    </div>
-    <div class="panel-content">
-        <form method="post" action="/facturacion/factura/guardar_serie">
-            <div style="display:table;">
-                <span id="msg"></span>
-                <div style="width:200px;float:left;margin:10px;">
-                    Tipo: 
-                    <div class="input-control select">
-                    <select style="font-family:monospace;width:100%;" id="tipo" name="tipo">
-                        <option value="FC">FC | Factura</option>
-                        <option value="NC">NC | N.Credito</option>
-                        <option value="ND">ND | N.Debito</option>
-                        <option value="NR">NR | N.Remision</option>
-                        <option value="RC">RC | Recibo</option>
-                        <option value="RI">RI | Retencion iva</option>
-                        <option value="TI">TI | Ti</option>
-                        <option value="CF">CF | Credito Fiscal</option>
-                    </select>
+<section ng-controller="SeriesController as vm">
+    <div class="panel span12" style="margin:0 auto;">
+        <div class="panel-header">
+            Ingresar una nueva serie
+        </div>
+        <div class="panel-content">
+            <form method="post" action="">
+                <div class="grid">
+                    <div class="row">
+                        <div class="span3">
+                            <p>Fecha de resolución:</p>
+                            <div id="datepicker" class="input-control text" data-role="datepicker"
+                                 data-date="2013-01-01"
+                                 data-format="yyyy-mm-dd">
+
+                                <input type="text" id="datePicker" />
+                                <button type="button" class="btn-date"></button>
+                            </div>
+                            <br />
+                            <p>Autorizado del:</p>
+                            <div class="input-control text">
+                                <input type="text" ng-model="vm.Serie.autorizadoDel" />
+                            </div>
+                            <br />
+                            <p>Al:</p>
+                            <div class="input-control text">
+                                <input type="text" ng-model="vm.Serie.autorizadoAl" />
+                            </div>
+                            <br />
+                            <p>Serie:</p>
+                            <div class="input-control text">
+                                <input type="text" ng-model="vm.Serie.serie" required="required" />
+                            </div>
+                            <br />
+                            <br />
+                            &nbsp;<button type="button" id="btnGuardar" class="primary" ng-click="vm.InsertarSerie();">Guardar</button>
+                        </div>
+                        <div class="span4">
+                            <p>Último utilizado:</p>
+                            <div class="input-control text">
+                                <input type="text" disabled="disabled" ng-model="vm.Serie.ultimoUtilizado" />
+                            </div>
+                            <br />
+                            <p>Descripción:</p>
+                            <div class="input-control text">
+                                <input type="text" ng-model="vm.Serie.descripcion" requirrequireded="" />
+                            </div>
+                            <br />
+                            <p># Resolución:</p>
+                            <div class="input-control text">
+                                <input type="text" ng-model="vm.Serie.numeroResolucion" />
+                            </div>
+                            <br />
+                            <p>Tipo:</p>
+                            <div class="input-control select">
+                                <select style="font-family:monospace;width:100%;" id="tipo" ng-model="vm.Serie.tipo">
+                                    <option ng-repeat="tipo in vm.listaTipoSeries" value="{{tipo.id}}">{{tipo.nombre}}</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
-                    <br/>
-                    Serie: <div class="input-control text"><input type="text" name="serie" id="serie" onchange="check_serie();" required="required" /></div>
-                    <br/>
-                    Descripción: <div class="input-control text"><input type="text" name="descripcion" required="required" /></div>
                 </div>
-        
-                <div style="width:300px;float:left;margin:10px;">
-                    # Resolución: <div class="input-control text"><input type="text" name="resolucion" /></div>
-                    <br/>
-                    Fecha resolución: <div class="input-control text"><input type="text" name="fecha_resolucion" /></div>
-                    <br/>
-                    Autorizado del: <div class="input-control text"><input type="text" value="0" name="del" /></div>
-                    <br/>
-                    Al: <div class="input-control text"><input type="text" value="99999999" name="al" /></div>
-                </div>
-        
-                <div style="width:300px;float:left;margin:10px;">
-                    Último utilizado: <div class="input-control text"><input type="text" disabled="disabled" /></div>
-                    <br/>
-                    <br/>
-                    <br/>
-                    <button type="submit" id="btnGuardar" class="primary">Guardar</button>
-                </div>
-            </div>
-        </form>
-        <p>
-            <a href="javascript: void(0);" onclick="$('#windowSeries').css('display','block'); $('#blsBScreen').css('display', 'blocK');"><i class="icon-database"></i> Ver series registradas</a>
-        </p>
+            </form>
+        </div>
     </div>
-</div>
+</section>
 <br/>
-<div class="panel span12">
+<div class="panel span12" style="margin:0 auto;">
     <div class="panel-header">
-        <i class="icon-warning"></i> Advertencia
+        Series registradas
     </div>
     <div class="panel-content">
-        <p>Las series no admiten edición o eliminación, verifique los datos antes de guardarlos.</p>
-    </div>
-</div>
-<br/><br/>
-    <div id="windowSeries" class="window flat shadow span11" style="position: fixed; top: 100px; left:50%; margin-left: -400px; display: none; z-index: 1000000;">
-        <div class="caption">
-            <span class="icon icon-database"></span> 
-            <div class="title">Series registradas</div> 
-            <button class="btn-close" onclick=" $('#blsBScreen').css('display', 'none');$('#windowSeries').css('display','none');"></button>
-        </div>
-        <div class="content">
-             <div id="bigbox" style="margin:15px;display:!none;">
-                <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
-            
-                </div>
+        <div id="bigbox" style="margin:15px;display:!none;">
+            <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;">
+
             </div>
         </div>
     </div>
+</div>
 
 <script type="text/javascript" >
 
-    function check_serie()
-    {
-        sSerie = $('#serie').val();
-        sTipo = $('#tipo').val();
-
-        uri = "/facturacion/factura/existe_serie";
-
-        data = {
-            "tipo": sTipo,
-            "serie": sSerie
-        };
-
-        xac = $.post(uri, data, function(d) {
-            if (d.existe) {
-                $('#msg').html("Ya existe!");
-                $('#btnGuardar').attr("disabled", "disabled");
-            } else {
-                $('#btnGuardar').removeAttr("disabled");
-                $('#msg').html("");
-            }
-        }, "json");
-
-    }
-
-    var grid_demo_id = "bodega_grid";
-
+    var grid_series = "grid_series";
 
     var dsOption = {
         fields: [
@@ -115,7 +93,7 @@
 
     var colsOption = [
         {id: 'tipo', header: "Tipo", width: 100},
-        {id: 'serie', header: "Serie", width: 100},
+        {id: 'serie1', header: "Serie", width: 100},
         {id: 'del', header: "Del", width: 75},
         {id: 'al', header: "Al", width: 75},
         {id: 'ultimo_utilizado', header: "Ultimo utilizado", width: 100},
@@ -123,16 +101,15 @@
 
     ];
 
-
     var gridOption = {
-        id: grid_demo_id,
-        loadURL: '/facturacion/inventario/cargar?tblname=serie',
-        saveURL: '/facturacion/inventario/actualizar?tblname=serie',
-        width: "800", //"100%", // 700,
-        height: "360", //"100%", // 330,
+        id: grid_series,
+        loadURL: '/facturacion/factura/ObtenerListaDeSeries',
+        saveURL: '',
+        width: "800", 
+        height: "360",
         container: 'gridbox',
         replaceContainer: true,
-        encoding: 'UTF-8', // Sigma.$encoding(), 
+        encoding: 'UTF-8',  
         dataset: dsOption,
         columns: colsOption,
         clickStartEdit: true,
@@ -142,7 +119,6 @@
         skin: 'mac',
         toolbarContent: 'reload | filter | nav state'
     };
-
 
     var mygrid = new Sigma.Grid(gridOption);
     Sigma.Util.onLoad(function() {

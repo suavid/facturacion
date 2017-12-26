@@ -1,4 +1,4 @@
 RewriteEngine On
-RewriteRule !(^static|favicon|sigma) engine.php
+RewriteRule !(^static|favicon|sigma|ModuloFacturacion.ini) engine.php
 AddType image/x-icon .ico
 RewriteRule ^favicon favicon.ico [NC,L]

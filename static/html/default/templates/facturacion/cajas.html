@@ -1,295 +1,190 @@
-<div class="panel">
-    <div class="panel-header">
-        Crear una nueva caja
+<section ng-controller="CajasController as vm">
+    <div class="panel span12" style="margin:0 auto;">
+        <div class="panel-header">
+            Ingresar una nueva caja
+        </div>
+        <div class="panel-content">
+            <form method="post" action="">
+                <div class="grid">
+                    <div class="row">
+                        <div class="span3">
+                            <p>ID caja: (0 = Nuevo)</p>
+                            <div class="input-control text">
+                                <input type="text" ng-model="vm.Caja.id" />
+                            </div>
+                            <br />
+                            <div class="input-control checkbox">
+                                <label>
+                                    <input type="checkbox" ng-model="vm.Caja.pCambioBodega" />
+                                    <span class="check"></span>
+                                    Permiso para cambiar bodega
+                                </label>
+                            </div>
+                            <br/>
+                            <p>Nombre:</p>
+                            <div class="input-control text">
+                                <input type="text" ng-model="vm.Caja.nombre" />
+                            </div>
+                            <br />
+                            <p>Encargado:</p>
+                            <div class="input-control select">
+                                <select ng-model="vm.Caja.encargado">
+                                    <option ng-repeat="usuario in vm.listaDeEmpleados" value="{{usuario.usuario}}">
+                                        {{usuario.usuario}}
+                                    </option>
+                                </select>
+                            </div>
+                            <br />
+                            <p>Bodega por defecto:</p>
+                            <div class="input-control select">
+                                <select ng-model="vm.Caja.bodegaPorDefecto">
+                                    <option ng-repeat="bodega in vm.listaDeBodegas" value="{{bodega.id}}">
+                                        {{bodega.nombre}}
+                                    </option>
+                                </select>
+                            </div>
+                            <br />
+                            <p>Serie factura:</p>
+                            <div class="input-control select">
+                                <select ng-model="vm.Caja.serieFactura">
+                                    <option ng-repeat="serie in vm.listaDeSeries | filter: {tipo : 'FC'}" value="{{serie.id}}">
+                                        {{serie.serie1}}
+                                    </option>
+                                </select>
+                            </div>
+                            <br />
+                            <p>Serie nota de crédito:</p>
+                            <div class="input-control select">
+                                <select ng-model="vm.Caja.serieNotaCredito">
+                                    <option ng-repeat="serie in vm.listaDeSeries | filter: {tipo : 'NC'}" value="{{serie.id}}">
+                                        {{serie.serie1}}
+                                    </option>
+                                </select>
+                            </div>
+                            <br />
+                            <p>Serie nota de débito:</p>
+                            <div class="input-control select">
+                                <select ng-model="vm.Caja.serieNotaDebito">
+                                    <option ng-repeat="serie in vm.listaDeSeries | filter: {tipo : 'ND'}" value="{{serie.id}}">
+                                        {{serie.serie1}}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="span4">
+                            <p>Serie recibo:</p>
+                            <div class="input-control select">
+                                <select ng-model="vm.Caja.serieRecibo">
+                                    <option ng-repeat="serie in vm.listaDeSeries | filter: {tipo : 'RC'}" value="{{serie.id}}">
+                                        {{serie.serie1}}
+                                    </option>
+                                </select>
+                            </div>
+                            <br />
+                            <p>Serie ticket:</p>
+                            <div class="input-control select">
+                                <select ng-model="vm.Caja.SerieTicket">
+                                    <option ng-repeat="serie in vm.listaDeSeries | filter: {tipo : 'TI'}" value="{{serie.id}}">
+                                        {{serie.serie1}}
+                                    </option>
+                                </select>
+                            </div>
+                            <br />
+                            <p>Serie crédito fiscal:</p>
+                            <div class="input-control select">
+                                <select ng-model="vm.Caja.serieCreditoFiscal">
+                                    <option ng-repeat="serie in vm.listaDeSeries | filter: {tipo : 'CF'}" value="{{serie.id}}">
+                                        {{serie.serie1}}
+                                    </option>
+                                </select>
+                            </div>
+                            <br />
+                            <p>Serie nota de remisión:</p>
+                            <div class="input-control select">
+                                <select ng-model="vm.Caja.serieNotaRemision">
+                                    <option ng-repeat="serie in vm.listaDeSeries | filter: {tipo : 'NR'}" value="{{serie.id}}">
+                                        {{serie.serie1}}
+                                    </option>
+                                </select>
+                            </div>
+                            <br />
+                            <p>Ultimo pedido:</p>
+                            <div class="input-control text">
+                                <input type="text" ng-model="vm.Caja.ultimoPedido" disabled />
+                            </div>
+                            <br />
+                            <p>Ultimo cambio;</p>
+                            <div class="input-control text">
+                                <input type="text" ng-model="vm.Caja.ultimoCambio" disabled />
+                            </div>
+                            <br /><br /><br />
+                            <div style="text-align: center;">
+                                <button type="button" id="btnGuardar" class="primary" ng-click="vm.InsertarCaja();">Guardar</button>
+                            </div>                      
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
     </div>
-    <div class="pane-content">
-        <form method="post" action="/facturacion/factura/guardar_caja">
-            <div style="display:table;">
-                <div style="float:left;width:300px;margin:15px;text-align:right;">
-                    
-                    <div class="input-control text">
-                        <input type="text" name="id" id="id_" placeholder="No. Caja (0 = nuevo)" onchange="cargar_datos();" />
-                    </div>
-                    <br/>
-                    <div class="input-control text">
-                        <input type="text" name="nombre" placeholder="Nombre" id="nombre" required/>
-                    </div>
-                    <br/>
-                    <div class="input-control text">
-                        <input type="text" placeholder="Formato facturas" name="f_factura" id="f_factura"/>
-                    </div>
-                    <br/>
-                    <div class="input-control text">
-                        <input type="text" placeholder="Formato F. de Exp" name="f_exp" id="f_exp" />
-                    </div>
-                    <br/>
-                    <div class="input-control text">
-                        <input type="text" placeholder="Formato despachos" name="f_despacho" id="f_despacho" />
-                    </div>
-                    <br/>
-                    <div class="input-control text"> 
-                        <input type="text" placeholder="Formato notas de crédito" name="f_nota_credito" id="f_nota_credito" />
-                    </div>
-                    <br/>
-                    <div class="input-control text">
-                        <input type="text" placeholder="Formato notas de débito" name="f_nota_debito" id="f_nota_debito"  />
-                    </div>
-                    <br/>
-                    <div class="input-control text">
-                        <input type="text" placeholder="Formato recibos" name="f_recibo" id="f_recibo" />
-                    </div>
-                    <br/>
-                    
-                </div>
-                <div style="float:left;width:300px;margin:15px;text-align:right;">
-                    <div class="input-control select">
-                        Encargado
-                        <select style="width:150px;" name="encargado" id="encargado" >
-                            <!-- START usuario -->
-                            <option value="{usuario}">
-                                {usuario}
-                            </option>
-                            <!-- END usuario -->
-                        </select>
-                    </div>
-                    <br/>
-                    <div class="input-control text">
-                        Ultimo pedido
-                        <input type="text" style="width:150px;" id="ultimo_pedido" readonly="readonly" />
-                    </div>
-                    <br/>
-                    <div class="input-control text">
-                        Ultimo Cambio
-                        <input type="text" style="width:150px;" id="ultimo_cambio" readonly="readonly"/>
-                    </div>
-                    <br/>
-                    <div class="input-control select">
-                        Bodega que utiliza
-                        <select style="width:150px;" name="bodega_por_defecto" id="bodega_por_defecto" >
-                            <!-- START bodega -->
-                            <option value="{id}">
-                                {nombre}
-                            </option>
-                            <!-- END bodega -->
-                        </select>
-                    </div>
-                    <br/>
-                </div>
-                <div style="float:left;width:300px;margin:15px;text-align:right;">
-                    <div class="input-control select">
-                    Serie factura
-                    <select style="width:150px;" name="serie_factura" id="serie_factura" onchange="set_serie(event);" >
-                        <!-- START s_factura -->
-                        <option value="{id}">
-                            {serie} | {descripcion}
-                        </option>
-                        <!-- END s_factura -->
-                    </select>
-                    </div>
-                    <br/>
-                    <div class="input-control select">
-                    Serie notas crédito
-                    <select style="width:150px;" name="serie_nota_credito" id="serie_nota_credito" onchange="set_serie(event);" >
-                        <!-- START s_credito -->
-                        <option value="{id}">
-                            {serie} | {descripcion}
-                        </option>
-                        <!-- END s_credito -->
-                    </select>
-                    </div>
-                    <br/>
-                    <div class="input-control select">
-                    Serie notas débito
-                    <select style="width:150px;" name="serie_nota_debito" id="serie_nota_debito" onchange="set_serie(event);" >
-                        <!-- START s_debito -->
-                        <option value="{id}">
-                            {serie} | {descripcion}
-                        </option>
-                        <!-- END s_debito -->
-                    </select>
-                    </div>
-                    <br/>
-                    <div class="input-control select">
-                    Serie recibo
-                    <select style="width:150px;" name="serie_recibo" id="serie_recibo" onchange="set_serie(event);" >
-                        <!-- START s_recibo -->
-                        <option value="{id}">
-                            {serie} | {descripcion}
-                        </option>
-                        <!-- END s_recibo -->
-                    </select>
-                    </div>
-                    <br/>
-                    <div class="input-control select">
-                    Serie ticket
-                    <select style="width:150px;" name="serie_ticket" id="serie_ticket" onchange="set_serie(event);" >
-                        <!-- START s_ticket -->
-                        <option value="{id}">
-                            {serie} | {descripcion}
-                        </option>
-                        <!-- END s_ticket -->
-                    </select>
-                    </div>
-                    <br/>
-                    <div class="input-control select">
-                    Serie credito fiscal
-                    <select style="width:150px;" name="serie_credito_fiscal" id="serie_credito_fiscal" onchange="set_serie(event);" >
-                        <!-- START s_cf -->
-                        <option value="{id}">
-                            {serie} | {descripcion}
-                        </option>
-                        <!-- END s_cf -->
-                    </select>
-                    </div>
-                    <br/>
-                    <div class="input-control select">
-                    Serie nota de remisión
-                    <select style="width:150px;" name="serie_nota_remision" id="serie_nota_remision" onchange="set_serie(event);" >
-                        <!-- START s_nr -->
-                        <option value="{id}">
-                            {serie} | {descripcion}
-                        </option>
-                        <!-- END s_nr -->
-                    </select>
-                    </div>
-                    <br/>
-                    <input type="hidden" name="codigo_factura" id="codigo_factura" />
-                    <input type="hidden" name="codigo_nota_credito" id="codigo_nota_credito" />
-                    <input type="hidden" name="codigo_recibo" id="codigo_recibo" />
-                    <input type="hidden" name="codigo_nota_remision" id="codigo_nota_remision" />
-                    <input type="hidden" name="codigo_ticket" id="codigo_ticket" />
-                    <input type="hidden" name="codigo_credito_fiscal" id="codigo_credito_fiscal" />
-                    <br/>
-                    <div class="input-control checkbox" style="text-align: left;">
-                        <label>
-                            <input type="checkbox" name="p_cambio_bodega" id="p_cambio_bodega" />
-                            <span class="check"></span>
-                            Permiso para cambiar bodega
-                        </label>
-                    </div>
-                    <br/>
-                    <br/>
-                    <p>
-                        <a href="javascript: void(0);" onclick="$('#windowCajas').css('display','block'); $('#blsBScreen').css('display', 'blocK');"><i class="icon-database"></i> Ver cajas registradas</a>
-                    </p>
-                </div>
+</section>
+<br />
+<div class="panel span12" style="margin:0 auto;">
+    <div class="panel-header">
+        Cajas registradas
+    </div>
+    <div class="panel-content">
+        <div id="bigbox" style="margin:15px;display:!none;">
+            <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;">
+
             </div>
-            <div style="width: 600px; padding-left: 15px;"> 
-                <button class="primary large" type="submit">Guardar caja</button>
-            </div>
-            
-        </form>
+        </div>
     </div>
 </div>
-
 <script type="text/javascript">
-
-    $(function() {
-        $('#serie_factura').change();
-        $('#serie_nota_credito').change();
-        $('#serie_recibo').change();
-        $('#serie_ticket').change();
-        $('#serie_credito_fiscal').change();
-        $('#serie_nota_remision').change();
-    });
-
-    function set_serie(event)
-    {
-
-        name = $(event.target).attr("name");
-
-        destino = name;
-        destino = destino.replace("serie", "codigo");
-
-        codigo = $('#' + name + ' option:selected').text().trim();
-        codigo = codigo.split("|")[0].trim();
-
-        $('#' + destino).val(codigo);
-
-    }
-
-    function cargar_datos()
-    {
-        id = $('#id_').val().trim();
-
-        uri = "/facturacion/factura/cargar_datos_caja";
-
-        xrq = $.post(uri, {"id": id}, function(d) {
-
-            if (d != null)
-            {
-                //$('#msg').html("Existe!");
-                $('#nombre').val(d.nombre);
-                $('#f_factura').val(d.f_factura);
-                $('#f_exp').val(d.f_exp);
-                $('#f_despacho').val(d.f_despacho);
-                $('#f_nota_credito').val(d.f_nota_credito);
-                $('#f_nota_debito').val(d.f_nota_debito);
-                $('#f_recibo').val(d.f_recibo);
-                $("#encargado option[value=" + d.encargado + "]").attr("selected", "selected");
-                $('#ultimo_pedido').val(d.ultimo_pedido);
-                $('#ultimo_cambio').val(d.ultimo_cambio);
-                $("#bodega_por_defecto option[value=" + d.bodega_por_defecto + "]").attr("selected", "selected");
-                $("#serie_factura option[value=" + d.serie_factura + "]").attr("selected", "selected");
-                $("#serie_nota_credito option[value=" + d.serie_nota_credito + "]").attr("selected", "selected");
-                $("#serie_recibo option[value=" + d.serie_recibo + "]").attr("selected", "selected");
-                $("#serie_ticket option[value=" + d.serie_ticket + "]").attr("selected", "selected");
-                if (d.p_cambio_bodega == 1)
-                    $('#p_cambio_bodega').attr("checked", "checked");
-                else
-                    $('#p_cambio_bodega').removeAttr("checked");
-            }
-            else
-            {
-                $('#msg').html("");
-            }
-
-        }, "json");
-
-    }
 
     var grid_demo_id = "bodega_grid";
 
     var dsOption = {
         fields: [
-            {name: 'id'},
-            {name: 'nombre'},
-            {name: 'encargado'},
-            {name: 'codigo_factura'},
-            {name: 'codigo_nota_credito'},
-            {name: 'codigo_recibo'},
-            {name: 'codigo_ticket'},
-            {name: 'bodega_por_defecto'}
+            { name: 'id' },
+            { name: 'nombre' },
+            { name: 'encargado' },
+            { name: 'codigo_factura' },
+            { name: 'codigo_nota_credito' },
+            { name: 'codigo_recibo' },
+            { name: 'codigo_ticket' },
+            { name: 'bodega_por_defecto' }
         ],
         recordType: 'object'
     }
 
     var colsOption = [
-        {id: 'id', header: "Codigo", width: 70},
-        {id: 'nombre', header: "Nombre", width: 130},
-        {id: 'encargado', header: "Encargado", width: 75},
-        {id: 'codigo_factura', header: "Factura", width: 90},
-        {id: 'codigo_nota_credito', header: "Nota de credito", width: 90},
-        {id: 'codigo_credito_fiscal', header: "Credito Fiscal", width: 90},
-        {id: 'codigo_recibo', header: "Recibo", width: 90},
-        {id: 'codigo_ticket', header: "Descripcion", width: 90},
-        {id: 'bodega_por_defecto', header: "Bodega", width: 100}
+        { id: 'id', header: "Codigo", width: 70 },
+        { id: 'nombre', header: "Nombre", width: 130 },
+        { id: 'encargado', header: "Encargado", width: 75 },
+        { id: 'codigo_factura', header: "Factura", width: 90 },
+        { id: 'codigo_nota_credito', header: "Nota de credito", width: 90 },
+        { id: 'codigo_credito_fiscal', header: "Credito Fiscal", width: 90 },
+        { id: 'codigo_recibo', header: "Recibo", width: 90 },
+        { id: 'codigo_ticket', header: "Descripcion", width: 90 },
+        { id: 'bodega_por_defecto', header: "Bodega", width: 100 }
     ];
 
 
     var gridOption = {
         id: grid_demo_id,
-        loadURL: '/facturacion/inventario/cargar?tblname=caja',
-        saveURL: '/facturacion/inventario/actualizar?tblname=caja',
+        loadURL: '/facturacion/factura/ObtenerListaDeCajas',
+        saveURL: '',
         width: "830", //"100%", // 700,
         height: "360", //"100%", // 330,
         container: 'gridbox',
         replaceContainer: true,
-        encoding: 'UTF-8', // Sigma.$encoding(), 
+        encoding: 'UTF-8', // Sigma.$encoding(),
         dataset: dsOption,
         columns: colsOption,
         clickStartEdit: true,
-        defaultRecord: {'id': "00", 'nombre': ""},
+        defaultRecord: { 'id': "00", 'nombre': "" },
         pageSize: 10,
         allowCustomSkin: true,
         skin: 'mac',
@@ -298,23 +193,7 @@
 
 
     var mygrid = new Sigma.Grid(gridOption);
-    Sigma.Util.onLoad(function() {
+    Sigma.Util.onLoad(function () {
         mygrid.render();
     });
 </script>
-    <br/>
-    <br/>
-    <div id="windowCajas" class="window flat shadow span11" style="position: fixed; top: 100px; left:50%; margin-left: -400px; display: none; z-index: 1000000;">
-        <div class="caption">
-            <span class="icon icon-database"></span> 
-            <div class="title">Cajas registradas</div> 
-            <button class="btn-close" onclick=" $('#blsBScreen').css('display', 'none');$('#windowCajas').css('display','none');"></button>
-        </div>
-        <div class="content">
-             <div id="bigbox" style="margin:15px;display:!none;">
-                <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
-            
-                </div>
-            </div>
-        </div>
-    </div>

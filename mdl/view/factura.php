@@ -41,6 +41,20 @@ class facturaView
         template()->parseExtras();
         print page()->getContent();
     }
+
+    public function formulario_facturacion() 
+    {
+        template()->buildFromTemplates(DEFAULT_LAYOUT);
+        page()->setTitle('Caja');
+        page()->addEstigma('back_url', '/facturacion/factura/principal');
+        page()->addEstigma("TITULO", 'Pedidos y facturación');
+        page()->addEstigma("fecha", date("Y-m-d"));
+        page()->addEstigma('username', Session::singleton()->getUser());
+        template()->addTemplateBit('content', 'facturacion/formulario.html');
+        template()->parseOutput();
+        template()->parseExtras();
+        print page()->getContent();
+    }
     
     // no validado
     public function productoEntrante(){
@@ -265,49 +279,6 @@ class facturaView
         page()->addEstigma("numero_factura", $numero_remision);
         page()->addEstigma('username', Session::singleton()->getUser());
         template()->addTemplateBit('content', 'facturacion/remision.html');
-        template()->parseOutput();
-        template()->parseExtras();
-        print page()->getContent();
-    }
-
-    public function formulario_facturacion($numero_factura, $cache, $data, $informacionRemision) {
-        template()->buildFromTemplates(DEFAULT_LAYOUT);
-        
-        $campos_str = "";
-        page()->setTitle('Caja');
-        page()->addEstigma('back_url', '/facturacion/factura/principal');
-        page()->addEstigma("TITULO", 'Pedidos y facturación');
-        page()->addEstigma("n_caja", $data['id']);
-        page()->addEstigma("t_caja", $data['nombre']);
-        page()->addEstigma("infoRem", $informacionRemision);
-        page()->addEstigma("serie_factura", $data['serie_factura']);
-        page()->addEstigma("serie_remision", $data['serie_nota_remision']);
-        page()->addEstigma("bodega_por_defecto", $data['bodega_por_defecto']);
-        page()->addEstigma("p_cambio_bodega", $data['p_cambio_bodega']);
-        page()->addEstigma("serie_credito_fiscal", $data['serie_credito_fiscal']);
-        page()->addEstigma("codigo_serie_factura", $data['codigo_factura']);
-        page()->addEstigma("codigo_serie_remision", $data['codigo_nota_remision']);
-        page()->addEstigma("codigo_serie_credito_fiscal", $data['codigo_credito_fiscal']);
-        page()->addEstigma("numero_factura", $numero_factura);
-        page()->addEstigma("bodegas", array('SQL', $cache[0]));
-        page()->addEstigma("lineas", array('SQL', $cache[1]));
-        page()->addEstigma("nColors", array('SQL', $cache[3]));
-        page()->addEstigma('bancos', array('SQL', $cache[4]));
-        page()->addEstigma('bancos2', array('SQL', $cache[5]));
-        foreach ($cache[2] as $campos) {
-            $val = "";
-            if (strpos($campos['nombre_campo'], 'telef') > -1 || strpos($campos['nombre_campo'], 'celul') > -1)
-                $val = " onkeyup=\"mascara(this,'-',patron_telefono,true)\" maxlength=\"9\" ";
-            if (strpos($campos['nombre_campo'], 'dui') > -1)
-                $val = " onkeyup=\"mascara(this,'-',patron_dui,true)\" maxlength=\"9\" ";
-            if (strpos($campos['nombre_campo'], 'nit') > -1)
-                $val = " onkeyup=\"mascara(this,'-',patron_nit,true)\" maxlength=\"14\" ";
-            $campos_str.="{$campos['label']} <input type=\"text\" name=\"{$campos['nombre_campo']}\" id=\"{$campos['nombre_campo']}\" class=\"itemActUser\" $val /><br/>";
-        }
-        page()->addEstigma("campos_actualizables", $campos_str);
-        page()->addEstigma("fecha", date("Y-m-d"));
-        page()->addEstigma('username', Session::singleton()->getUser());
-        template()->addTemplateBit('content', 'facturacion/formulario.html');
         template()->parseOutput();
         template()->parseExtras();
         print page()->getContent();

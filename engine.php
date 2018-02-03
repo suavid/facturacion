@@ -83,9 +83,12 @@ BM::singleton()->getObject('temp')->getPage()->setJs('../UI-Core/js/jquery.min.j
 BM::singleton()->getObject('temp')->getPage()->setJs('../UI-Core/js/jquery-ui.min.js');
 BM::singleton()->getObject('temp')->getPage()->setJs('../UI-Core/js/angular.min.js');
 
-BM::singleton()->getObject('temp')->getPage()->setJs('static/js/init.js');
+BM::singleton()->getObject('temp')->getPage()->setJs('../UI-Core/js/app.js');
+BM::singleton()->getObject('temp')->getPage()->setJs('../UI-Core/js/constants.js');
+BM::singleton()->getObject('temp')->getPage()->setJs('../UI-Core/js/notificationService.js');
 BM::singleton()->getObject('temp')->getPage()->setJs('static/js/facturacion.js');
 BM::singleton()->getObject('temp')->getPage()->setJs('static/js/caja.js');
+BM::singleton()->getObject('temp')->getPage()->setJs('static/js/pedido.js');
 
 BM::singleton()->getObject('temp')->getPage()->setCss('../UI-Core/plugins/sigma/grid/gt_grid.css');
 BM::singleton()->getObject('temp')->getPage()->setCss('../UI-Core/plugins/sigma/grid/skin/mac/skinstyle.css');

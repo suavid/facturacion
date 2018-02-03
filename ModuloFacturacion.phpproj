@@ -307,6 +307,6 @@
     <Content Include="static\img\ver.png" />
     <Content Include="static\js\caja.js" />
     <Content Include="static\js\facturacion.js" />
-    <Content Include="static\js\init.js" />
+    <Content Include="static\js\pedido.js" />
   </ItemGroup>
 </Project>

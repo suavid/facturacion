@@ -1,9 +1,12 @@
-var AplicacionDeFacturacion = angular.module('Facturacion');
+(function () {
+    'use strict';
 
-AplicacionDeFacturacion.controller('PrincipalController', PrincipalController);
-AplicacionDeFacturacion.controller('SeriesController', SeriesController);
+var AplicacionDeFacturacion = angular.module('ERPapp');
 
-AplicacionDeFacturacion.directive('multiSelectChecker', function ($compile) {
+    AplicacionDeFacturacion.controller('PrincipalController', PrincipalController);
+    AplicacionDeFacturacion.controller('SeriesController', SeriesController);
+
+    AplicacionDeFacturacion.directive('multiSelectChecker', function ($compile) {
     return {
         restrict: 'A',
         replace: false,
@@ -26,7 +29,7 @@ AplicacionDeFacturacion.directive('multiSelectChecker', function ($compile) {
     };
 });
 
-function PrincipalController($http, $sce) {
+    function PrincipalController($http, $sce) {
     var vm = this;
 
     // Informacion de banners de la pantalla principal
@@ -66,7 +69,7 @@ function PrincipalController($http, $sce) {
     });
 }
 
-function SeriesController($http, $sce) {
+    function SeriesController($http, $sce) {
     var vm = this;
 
     vm.Serie = {
@@ -124,3 +127,5 @@ function SeriesController($http, $sce) {
 
     vm.CategoriasDeSeries();
 }
+
+})();

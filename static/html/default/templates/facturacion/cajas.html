@@ -1,4 +1,4 @@
-<section ng-controller="CajasController as vm">
+<section ng-controller="CajasController as vm" id="CajaCtrl">
     <div class="panel span12" style="margin:0 auto;">
         <div class="panel-header">
             Ingresar una nueva caja
@@ -10,7 +10,7 @@
                         <div class="span3">
                             <p>ID caja: (0 = Nuevo)</p>
                             <div class="input-control text">
-                                <input type="text" ng-model="vm.Caja.id" />
+                                <input type="text" ng-model="vm.Caja.id" id="IdCaja" />
                             </div>
                             <br />
                             <div class="input-control checkbox">
@@ -143,7 +143,7 @@
 </div>
 <script type="text/javascript">
 
-    var grid_demo_id = "bodega_grid";
+    var grid_caja_id = "caja_grid";
 
     var dsOption = {
         fields: [
@@ -160,37 +160,44 @@
     }
 
     var colsOption = [
-        { id: 'id', header: "Codigo", width: 70 },
-        { id: 'nombre', header: "Nombre", width: 130 },
-        { id: 'encargado', header: "Encargado", width: 75 },
-        { id: 'codigo_factura', header: "Factura", width: 90 },
-        { id: 'codigo_nota_credito', header: "Nota de credito", width: 90 },
-        { id: 'codigo_credito_fiscal', header: "Credito Fiscal", width: 90 },
-        { id: 'codigo_recibo', header: "Recibo", width: 90 },
-        { id: 'codigo_ticket', header: "Descripcion", width: 90 },
-        { id: 'bodega_por_defecto', header: "Bodega", width: 100 }
+        { id: 'id', header: "Código", width: 170 },
+        { id: 'nombre', header: "Nombre", width: 250 },
+        { id: 'encargado', header: "Encargado", width: 200 },
+        { id: 'acciones', header: "Acciones", width: 200, renderer: verDetalleRender }
     ];
 
 
     var gridOption = {
-        id: grid_demo_id,
+        id: grid_caja_id,
         loadURL: '/facturacion/factura/ObtenerListaDeCajas',
         saveURL: '',
-        width: "830", //"100%", // 700,
-        height: "360", //"100%", // 330,
+        width: "830", 
+        height: "360",
         container: 'gridbox',
         replaceContainer: true,
-        encoding: 'UTF-8', // Sigma.$encoding(),
+        encoding: 'UTF-8',
         dataset: dsOption,
         columns: colsOption,
         clickStartEdit: true,
-        defaultRecord: { 'id': "00", 'nombre': "" },
-        pageSize: 10,
+        defaultRecord: {},
+        pageSize: 100,
         allowCustomSkin: true,
         skin: 'mac',
-        toolbarContent: 'reload | del save | filter | nav state'
+        toolbarContent: 'reload | filter | nav state'
     };
 
+    function verDetalleRender(value, record, columnObj, grid, colNo, rowNo) {
+
+        var id = record['id'];
+
+        return '<a href="javascript: void(0);" onclick="SetIdCaja('+id+');">Ver detales</a>';
+    }
+
+    function SetIdCaja(id) {
+        angular.element("#IdCaja").val(id);
+        $('#IdCaja').trigger('change');
+        $('#IdCaja').trigger('input');
+    }
 
     var mygrid = new Sigma.Grid(gridOption);
     Sigma.Util.onLoad(function () {

@@ -96,6 +96,18 @@ class facturaController extends controller
         echo  $result->{"ObtenerSeriesResult"};
     }
 
+    public function ObtenerCaja()
+    {
+        $this->ValidateSession();
+        if(isset($_POST) && !empty($_POST))
+        {
+            $id = $_POST["id"]; 
+            $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+            $result = $client->ObtenerCaja(array("id"=>$id));
+            echo  $result->{"ObtenerCajaResult"};
+        }
+    }
+
     public function ObtenerListaDeSeries()
     {
         $this->ValidateSession();
@@ -151,6 +163,7 @@ class facturaController extends controller
             $this->ValidateSession();
             $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
             
+            $id = $_POST['id'];
             $nombre = $_POST['nombre'];
             $encargado = $_POST['encargado'];
             $bodega_por_defecto = $_POST['bodegaPorDefecto'];
@@ -165,7 +178,8 @@ class facturaController extends controller
 
             $result = $client->InsertarCaja(
                 array(
-                    "nombre"=> $nombre
+                      "id" => $id
+                    , "nombre"=> $nombre
                     , "encargado"=> $encargado
                     , "bodega_por_defecto"=> $bodega_por_defecto
                     , "serie_factura"=> $serie_factura
@@ -180,6 +194,109 @@ class facturaController extends controller
             );
 
             echo  $result->{"InsertarCajaResult"};
+        }
+    }
+
+    public function nuevo() 
+    {
+        $this->ValidateSession();
+
+        $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+
+        $result = $client->ValidarCaja(array("usuario" => Session::singleton()->getUser()));
+
+        $data = json_decode($result->{"ValidarCajaResult"});
+
+        if(count($data)==0)
+        {
+            HttpHandler::redirect("/facturacion/error/e403");
+        }
+
+        $this->view->formulario_facturacion();
+    }
+
+    public function ValidarCliente()
+    {
+        $this->ValidateSession();
+        if(isset($_POST) && !empty($_POST))
+        {
+            $idCliente = $_POST["idCliente"];
+            $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+            $result = $client->ObtenerInformacionDelCliente(
+                array(
+                      "id" => $idCliente
+                )
+            );
+
+            echo  $result->{"ObtenerInformacionDelClienteResult"};
+        }
+    }
+
+    public function ObtenerDatosDeCaja()
+    {
+        $this->ValidateSession();
+        
+        $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+
+        $result = $client->ValidarCaja(array("usuario" => Session::singleton()->getUser()));
+
+        echo  $result->{"ValidarCajaResult"};
+    }
+
+    public function GenerarNuevoPedido()
+    {
+        $this->ValidateSession();
+
+        if(isset($_POST) && !empty($_POST))
+        {
+            $id_cliente = $_POST["id_cliente"];
+            $concepto = $_POST["concepto"];
+            $id_caja = $_POST["id_caja"];
+
+            $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+
+            $result = $client->GenerarPedido(array("idCliente"=>$id_cliente, "concepto"=>$concepto, "idCaja"=>$id_caja));
+
+            echo  $result->{"GenerarPedidoResult"};
+        }
+    }
+
+    public function CargarPedidoExistente()
+    {
+        $this->ValidateSession();
+
+        if(isset($_POST) && !empty($_POST))
+        {
+            $id_pedido = $_POST["id_pedido"];
+
+            $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+
+            $result = $client->CargarPedido(array("idPedido"=>$id_pedido));
+
+            echo  $result->{"CargarPedidoResult"};
+        }
+    }
+
+    public function ListaLineas()
+    {
+        $this->ValidateSession();
+
+        $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+        $result = $client->VerDetalleCategoria(array("id"=>LINEA));
+
+        echo  $result->{"VerDetalleCategoriaResult"};
+    }
+
+    public function CargarStock()
+    {
+        header('Content-type:text/javascript;charset=UTF-8');
+        $json = json_decode(stripslashes($_POST["_gt_json"]));
+       
+        $temp = explode(',', $filtros);
+        $filtros = array();
+        foreach ($temp as $parts) {
+            $tt = explode(':', $parts);
+            $filtros[$tt[0]] = $tt[1];
         }
     }
 
@@ -357,30 +474,6 @@ class facturaController extends controller
 		}
 
 		echo json_encode($ret);
-    }
-
-    public function nuevo() {
-        $this->ValidateSession();
-        $cache = array();
-
-        /* Obener datos de cajero */
-
-        $tieneCaja = false;
-        $data = null;
-        list($tieneCaja, $data) = $this->model->tieneCaja(Session::singleton()->getUser());
-
-        if (!$tieneCaja)
-            HttpHandler::redirect('/facturacion/factura/principal?error=900');
-
-        $cache[0] = $this->model->get_child('bodega')->get_list('','', array('nombre'));
-        $cache[1] = $this->model->get_child('linea')->get_list('','', array('nombre'));
-        $cache[2] = $this->model->get_sibling('modulo')->obtener_actualizables();
-        $cache[3] = $this->model->get_child('color')->get_list('','', array('nombre'));
-        $cache[4] = $this->model->get_child('casascredito')->get_list();
-        $cache[5] = $this->model->get_child('casascredito')->get_list();
-        $numero_factura = $data['ultimo_pedido'] + 1;
-        $informacionRemision = (isset($_POST['informacionRemision'])) ? $_POST['informacionRemision']: "";
-        $this->view->formulario_facturacion($numero_factura, $cache, $data, $informacionRemision);
     }
 
     public function nueva_nota_remision() {

@@ -11,7 +11,6 @@
     #info-bar{
         margin-top: 10px;
         margin-right: 20px;
-        border: solid 1px #D3D3D3;
         padding-bottom: 5px;
         padding-top: 5px;
         padding-left: 15px;
@@ -29,2210 +28,588 @@
         margin-bottom: 0px;
     }
 </style>
+<section ng-controller="PedidoController as vm">
 
-<script>
-
-    /* Inicializacion de UI */
-    $(document).ready(function(){
- 
-        $('#n_pedido').focus();
-        
-        window.procesarRemision = false;
-        window.productos = [];
-        window.codPedido = 0;
-        window.editable  = false;
-        window.lbl       = 0;
-        window.nt        = false;
-        window.cerrar    = false;
-        window.FacTotal  = 0.0;
-        window._max      = 0.0;
-        window.p_cambio_bodega = "{p_cambio_bodega}";
-        window.bodega = "{bodega_por_defecto}";
-        
-        $('#btnClose').bind('click', function(){
-            $('#metodo_pago').css('display', 'none');
-        });
-        
-        $("#bBodega option[value=" + bodega + "]").attr("selected", "selected");
-        
-        /* gestion de parametros en url */
-        handler          = new url_handler();
-        handler.initialize();
-
-        /* gestion de otros procesos que pueden ser atendidos por esta UI */
-        if (handler.isKey('imp') && handler.isKey('cliente')){
-            /* facturar re impresion de factura */
-            $('#codigo_cliente').val(handler.getValue('cliente'));
-            $('#codigo_cliente').blur();
-            var miSetOut = setTimeout(crear_sffs, 4500);
-        } else if (handler.isKey('nt_r') && handler.isKey('cod')){
-            /* Procesar el remanente de la nota de remisión especificada (facturacion de producto saliente) */
-            window.cerrar = true;
-            var c_pedido = handler.getValue('cod');
-            $('#n_pedido').val(c_pedido);
-            $('#n_pedido').change();
-            $('#codigo_cliente').blur();
-            window.codPedido = c_pedido;
-            window.nt = true;
-            $('#fnota').css('display', 'none');
-
-            /* Se puede escoger si la nota de remision se factura al credito o al contado, lo cual debe ser previamente establecido en la nota */
-            if (handler.getValue('tipo') == 'credito'){
-                facturar_credito();
-            }else{
-                facturar_contado();
-            }
-        }
-        
-        var infoRem = '{infoRem}';
-        
-        if(infoRem.trim()!="")
-        {
-            var dataRem = JSON.parse(infoRem);
-            
-            $('#codigo_cliente').val(dataRem.cliente);
-            $('#codigo_cliente').focus();
-            window.procesarRemision = true;
-            window.productos = dataRem.productos;
-            $('#codigo_cliente').blur();
-        }
-        
-        
-    });
-    
-    
-    
-    /* impresion de factura */        
-    function crear_sffs(){
-        uri = "/facturacion/factura/cargar_impresion";
-        res = $.post(uri, {"pedido":window.codPedido}, function(d){
-            facturar_contado();
-        }, "json");
-    }
-
-    function nColor_render(value, record, columnObj, grid, colNo, rowNo){
-		var nColors = [];
-        <!-- START nColors -->
-            nColors[{id}] = "{nombre}";
-        <!-- END nColors -->
-        return nColors[record['color']];
-    }
-
-    /* renderizado para el grid, permite la eliminacion de elementos en las facturas */
-    function del_render(value, record, columnObj, grid, colNo, rowNo){
-		return '<a href="javascript:void(0);" onclick="delete_item(' + record['id'] + ', '+ record['precio'] +')">Eliminar</a>';
-    }
-
-    /* gestion de eliminacion de items o productos del detalle de las facturas */
-    function delete_item(id, precio)
-    {
-		if (window.editable){
-            if(precio > 0){
-    			uri = "/facturacion/factura/eliminar_detalle/" + id;
-    			data = {  };
-    			
-                $.post(uri, data, function(data){
-    				var grid = Sigma.$grid("factura_grid");
-    				grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-    				grid.reload();
-    				cargar_totales();
-    			}, "json");
-            }else{
-                alert("Aviso: No se puede eliminar este elemento!");
-            }
-
-		} else{
-			alert("Este pedido ya fue procesado, no se puede editar");
-		}
-    }
-
-    /* Formulario de autorizacion o reimpresion de factura */
-    function imprimirFactura()
-    {
-        n_pedido = window.codPedido
-        
-        if (parseInt(n_pedido) <= 0 || n_pedido == "")
-        {
-            alert("Nada que imprimir");
-        }
-        else
-        {
-            if (!window.editable){
-                $.Dialog({
-                    overlay: true,
-                    shadow: true,
-                    flat: true,
-                    title: 'Re-impresión de factura',
-                    content: '',
-                    width:500,
-                    onShow: function(_dialog){
-                        var content = _dialog.children('.content');
-                        html = ['<div style="padding:30px;">',
-                            '<br/>',
-                            '<h4>Autorizacion de re-impresión</h4>',
-                            '<input type="password" id="pass" /><button type="button" onclick="auth_imp();">Autorizar</button>',
-                            '<br/>',
-                            '<br/>',
-                            '<button type="button" onclick="facturar_impresion();">Factura por re-impresión</button>',
-                            '</div>'].join("");
-                        content.html(html);
-                    }
-                });
-            } else{
-                alert("No se ha procesado aun");
-            }
-        }
-    }
-
-    /* verifica si hay autorizacion para imprimir */
-    function auth_imp()
-    {
-        pass = $('#pass').val();
-        uri  = "/facturacion/modulo/autorizacion";
-        data = {"clave":pass};
-        res  = $.post(uri, data, function(d){
-            if (d.auth){
-                imp();
-            } else{
-                alert("No tiene autorizacion");
-            }
-        }, "json");
-        
-        $.Dialog.close();
-    }
-
-    function imp()
-    {
-        var NoFactura = window.codPedido;
-        var Subtotal  = parseFloat($('#SUBTOTAL').val().trim());
-        var Descuento = parseFloat($('#DESCUENTO').val());
-        var Total     = parseFloat($('#TOTAL').val().trim());
-        var Flete     = 'N';
-        
-        if ($('#FLETE').attr('checked')){
-            Flete = 'S';
-        }
-
-        var vestilos = window.open('/facturacion/factura/imprimir/' + NoFactura + '/' + Subtotal + '/' + Descuento + '/' + Total + '/' + Flete, '_blank');
-    }
-
-    function facturar_impresion(){
-        if (confirm("Esta seguro de querer facturar una re-impresion?")){
-            cliente = $('#codigo_cliente').val().trim();
-            var vurl = window.open('/facturacion/factura/nuevo?imp=ok&cliente=' + cliente, '_blank');
-        }
-
-        $.Dialog.close();
-    }
-
-    function reservar(){
-        n_pedido = window.codPedido
-        
-        if (parseInt(n_pedido) <= 0 || n_pedido == "")
-        {
-            alert("No se puede procesar");
-        }
-        else
-        {
-            if (window.editable){
-                /* proceso de facturacion al contado */
-
-                factura          = window.codPedido; // numero de factura a procesar
-                uri              = "/facturacion/factura/reservar"; // url de proceso de facturacion contado                
-                resource         = [ uri, factura ].join("/");
-                request          = $.post(resource, { }, function(data){
-                    
-                    window.editable  = false;
-                    window.codPedido = 0;
-                    
-                    obtenerDatosCliente(0);
-                
-                    var grid     = Sigma.$grid("factura_grid");
-                    grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-                    
-                    grid.reload();
-                    
-                    $('#n_pedido').val("0");
-                    $('#codigo_cliente').val("0");
-                    $('#codigo_cliente').removeAttr("disabled");
-                    $('#fecha').removeAttr("disabled");
-                    $('#n_pedido').focus();
-
-                    desHabilitar();
-
-                    $.Dialog.close();
-                    $('#DESCUENTO').val("");
-                    $('#TOTAL').val("");
-                    $('#SUBTOTAL').val("");
-
-                }, "json");
-
-            } else{
-                alert("Este pedido ya fue procesado");
-            }
-        }
-    }
-
-	/* creacion o carga de pedidos */
-    function nuevoPedido()
-    {
-		n_pedido   = parseInt($('#n_pedido').val().trim()); // obtiene el numero del pedido que ha sido ingresado
-		id_cliente = parseInt($('#codigo_cliente').val());  // obtiene le numero del cliente a quien va dirigido el pedido
-        
-		fecha = $('#fecha').val(); // fecha en la que se crea el pedido
-        
-		uri = '/facturacion/factura/nueva_factura'; // server url
-        
-		// paquete de datos para proceso de pedidos
-		data = {
-            "pedido": n_pedido,
-            "cliente": id_cliente,
-            "fecha": fecha,
-            "caja": {n_caja},
-            "periodo_actual": "{periodo_actual}"
-        };
-		
-		// peticion asincrona el servidor
-        vProc = $.post(uri, data, function(d){
-			// no se ha encontrado el pedido
-			if (d.NOTFOUND)
-			{
-				window.codPedido = 0;
-				obtenerDatosCliente(0);
-				alert("No existe el pedido");
-				var grid = Sigma.$grid("factura_grid");
-				grid.loadURL = '/facturacion/factura/cargar_detalle/' + 0;
-				grid.reload();
-				$('#n_pedido').val("0");
-				$('#codigo_cliente').val("0");
-				$('#codigo_cliente').removeAttr("disabled");
-				$('#fecha').removeAttr("disabled");
-				$('#n_pedido').focus();
-				desHabilitar();
-			}
-			else
-			{
-				$('#n_pedido').val(d.ref);
-				window.codPedido = parseInt(d.No);
-				window.lbl = parseInt(d.ref);
-				$('#codigo_cliente').val(d.cliente);
-				
-                cargar_cliente();
-				
-                $('#fecha').val(d.fecha);
-				$('#festado option').remove();
-				
-                if(d.estado==1){
-					$('#festado').append("<option>PROCESADO</option>");
-				}else if(d.estado==2){
-					$('#festado').append("<option>PENDIENTE</option>");
-				}else if(d.estado == 3){
-                    $('#festado').append("<option>ANULADO</option>");
-                }else{
-                    $('#festado').append("<option>PENDIENTE</option>");
-                }
-				
-                $('#ftipo option').remove();
-				
-                if(d.tipo == 1)
-					$('#ftipo').append("<option>CONTADO</option>");
-				if(d.tipo == 2)
-					$('#ftipo').append("<option>CREDITO</option>");
-				if(d.tipo == 0)
-					$('#ftipo').append("<option>PEDIDO</option>");
-                if(d.tipo == 3)
-                    $('#ftipo').append("<option>CONSIGNACION</option>");    		
-				
-                $('#codigo_cliente').attr("disable", "disabled");
-				$('#fecha').attr("disable", "disabled");
-				$('#NoFactura').html(parseInt(d.ref) + 1);
-				
-                obtenerDatosCliente(parseInt(d.cliente));
-				var grid = Sigma.$grid("factura_grid");
-				grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-				grid.reload();
-				cargar_totales();
-				
-                if (d.estado == 1)
-				{
-					desHabilitar();
-					if (d.flete == 1) $('#FLETE').attr('checked', 'checked');
-					else $('#FLETE').removeAttr('checked');
-					window.editable = false;
-				}
-				else 
-				{
-					habilitar();
-					window.editable = true;
-				}
-
-				if (window.nt) {
-					desHabilitar();
-					$('#buy').removeAttr("disabled");
-				}
-                
-                
-                if(window.procesarRemision){
-                    info = [ ]; // datos de los productos a ser insertados al mismo tiempo
-					
-				    for(var k = 0; k < window.productos.length; k++){
-						data_send = {
-							"linea":  	window.productos[k].linea,
-							"estilo": 	window.productos[k].estilo,
-							"color": 	window.productos[k].color,
-							"talla": 	window.productos[k].talla,
-							"costo":   	window.productos[k].costo,
-							"precio":   window.productos[k].precio,
-							"cantidad": window.productos[k].cantidad,
-							"total": 	window.productos[k].cantidad * window.productos[k].precio 
-						};
-							
-						PORCENTAJE  = window.productos[k].porcentaje;
-						BODEGA 	    = window.productos[k].bodega;
-						CLIENTE 	= $('#codigo_cliente').val();
-						DESCRIPCION = window.productos[k].descripcion;
-						chunck      = null;
-						chunck      = {};
-						chunck      = {
-                            bodega:BODEGA,
-                            estilo:data_send.estilo,
-							color:data_send.color,
-							linea:data_send.linea,
-							talla:data_send.talla,
-							cantidad:data_send.cantidad,
-							descripcion:DESCRIPCION,
-							cliente:CLIENTE,
-							factura:window.codPedido,
-							precio:data_send.precio,
-							porcentaje:PORCENTAJE,
-                            costo: data_send.costo
-						};
-							
-						info.push(chunck);
-				    }
-								
-				    send = { "productos": JSON.stringify(info) };
-                
-    				$.post('/facturacion/factura/insercionMultiple', send, function(dC){
-    					//alert(dC.sql);
-                        var grid = Sigma.$grid("factura_grid");
-    					grid.reload();
-    					cargar_totales();
-    					if (dC.error){ alert("No se agregaron algunos pedidos por falta de stock"); }
-    				}, "json");
-                } 
-			}
-		}, "json");
-	}
-
-    function verLineas(){
-        var vlineas = window.open('/facturacion/factura/verLineas', this.target, 'width=300,height=400');
-        vlineas.onload = function(){
-            for (var i = 0; i < window.CLINEA.length; i++){
-                vlineas.document.getElementById('tabla').innerHTML += ' - <a href="javascript:void(0);" onclick="window.opener.document.getElementById(\'bLinea\').value=\'' + window.CLINEA[i] + '\';window.opener.document.getElementById(\'bLinea\').onchange();window.close();" >' + window.CLINEA[i] + '</a>';
-            }
-        };
-    }
-
-    function verEstilos(){
-        var vestilos = window.open('/facturacion/factura/verLineas', this.target, 'width=300,height=400');
-        vestilos.onload = function(){
-            for (var i = 0; i < window.CESTILO.length; i++){
-                vestilos.document.getElementById('tabla').innerHTML += ' - <a href="javascript:void(0);" onclick="window.opener.document.getElementById(\'bEstilo\').value=\'' + window.CESTILO[i] + '\';window.opener.document.getElementById(\'bEstilo\').onchange();window.close();" >' + window.CESTILO[i] + '</a>';
-            }
-        };
-    }
-
-    function verColores(){
-        var vcolores = window.open('/facturacion/factura/verLineas', this.target, 'width=300,height=400');
-        vcolores.onload = function(){
-            for (var i = 0; i < window.CCOLOR.length; i++){
-                vcolores.document.getElementById('tabla').innerHTML += ' - <a href="javascript:void(0);" onclick="window.opener.document.getElementById(\'bColor\').value=\'' + window.CCOLOR[i] + '\';window.opener.document.getElementById(\'bColor\').onchange();window.close();" >' + window.CCOLOR[i] + '</a>';
-            }
-        };
-    }
-
-    function verTallas(){
-        var vtallas = window.open('/facturacion/factura/verLineas', this.target, 'width=300,height=400');
-        vtallas.onload = function(){
-            for (var i = 0; i < window.CTALLA.length; i++){
-                vtallas.document.getElementById('tabla').innerHTML += ' - <a href="javascript:void(0);" onclick="window.opener.document.getElementById(\'bTalla\').value=\'' + window.CTALLA[i] + '\';window.opener.document.getElementById(\'bTalla\').onchange();window.close();" >' + window.CTALLA[i] + '</a>';
-            }
-        };
-    }
-
-    function obtenerDatos(){
-		var uri = "/facturacion/cliente/datosCliente"; 	// cargar datos del cliente
-        var idCliente = $('#codigo_cliente').val(); // obtiene el codigo del cliente
-		/* consultar datos del cliente (si existe) */
-        var ajaxRequest = $.post(uri, {cliente:idCliente}, function(data){
-            if (data.STATUS == "OK"){
-				/* si el cliente existe */
-				nuevoPedido(); // crea un nuevo pedido
-				// rellena el cuadro de informacion basica
-                $('#nombre_cliente').val(data.primer_nombre + " " + data.segundo_nombre + " " + data.primer_apellido + " " + data.segundo_apellido);
-                $('#direccion_cliente').val(data.direccions);
-                $('#telefono_cliente').val(data.telefono);
-                $('#bPorcentaje').val(data.descuento);
-            } else{
-				/* si el cliente no existe limpia los datos */
-				$('#codigo_cliente').val("0");
-                $('#codigo_cliente').val("0");
-                $('#nombre_cliente').val("");
-                $('#direccion_cliente').val("");
-                $('#telefono_cliente').val("");
-                $('#bPorcentaje').val("");
-				// alerta el usuario
-                if (parseInt($('#n_pedido').val()) == 0 || $('#n_pedido').val().trim() == ""){
-					alert("Cliente no existe");
-                    $('#tipo_factura').focus();
-				}
-            }
-        }, "json");
-		
-        if ((parseInt($('#codigo_cliente').val()) == 0 || $('#codigo_cliente').val().trim() == "") && (parseInt($('#n_pedido').val()) != 0 && $('#n_pedido').val() != ""))
-		{
-			// crea un nuevo pedido
-			nuevoPedido();
-		}
-    }
-
-    function obtenerDatosCliente(cliente_id){
-        var uri = "/facturacion/cliente/datosCliente";
-        var idCliente = cliente_id;
-        var ajaxRequest = $.post(uri, {cliente:idCliente}, function(data){
-            if (data.STATUS == "OK"){
-                $('#nombre_cliente').val(data.primer_nombre + " " + data.segundo_nombre + " " + data.primer_apellido + " " + data.segundo_apellido);
-                $('#direccion').val(data.direccion);
-                $('#telefono_cliente').val(data.telefono);
-                $('#dias_credito').val(data.dias_credito);
-                $('#bPorcentaje').val(data.descuento);
-            } else{
-                $('#codigo_cliente').val("0");
-                $('#nombre_cliente').val("");
-                $('#direccion').val("");
-                $('#dias_credito').val("");
-                $('#telefono_cliente').val("");
-                $('#bPorcentaje').val("");
-            }
-        }, "json");
-    }
-
-    function setCero()
-    {
-        if (parseInt($('#n_pedido').val()) == 0)
-        {
-            $('#codigo_cliente').removeAttr("disabled");
-            $('#fecha').removeAttr("disabled");
-        }
-    }
-
-	/* agrega un item a la factura */
-    function agregarCompra(event){
-		event.preventDefault();
-		
-		var BODEGA = $('#bBodega').val().trim(); // bodega seleccionada
-		var ESTILO = $('#bEstilo').val().trim(); // estilo seleccionado
-		var COLOR  = $('#bColor').val().trim();  // color seleccionado
-		var LINEA  = $('#bLinea').val().trim();  // linea seleccionada
-		var TALLA  = $('#bTalla').val().trim();	// talla selecionada
-		
-		var CANTIDAD = parseInt($('#bCantidad').val().trim()); // cantidad que desea comprase
-		var PRECIO   = parseFloat($('#bPrecio').val().trim()); // precio del producto
-        var COSTO    = parseFloat($('#bCosto').val().trim()); // precio del producto
-		
-		var PORCENTAJE = parseFloat($('#bPorcentaje').val().trim());
-		
-		var DESCRIPCION = LINEA + "-" + ESTILO + "-" + COLOR + "-" + TALLA; // descripcion de la compra
-		
-		var CLIENTE = $('#codigo_cliente').val().trim(); // cliente que realiza el pedido		
-		
-		$('#codigo_cliente').attr("disabled", "disabled"); 
-		
-		var uri = '/facturacion/factura/insertar'; // uri para agregar el item al pedido
-		
-		/* calculo del sobtotal y el descuento */
-		var SUBTOTAL = 0;
-		var DESC     = 0;
-
-		if ($('#SUBTOTAL').val().trim() != "") SUBTOTAL = parseFloat($('#SUBTOTAL').val().trim());
-		if ($('#DESCUENTO').val().trim() != "") DESC    = parseFloat($('#DESCUENTO').val().trim());
-		
-		$('#bBodega').val("");
-		$('#bLinea').val("");
-		$('#bEstilo').val("");
-		$('#bColor').val("");
-		$('#bTalla').val("");
-		$('#bPrecio').val("");
-		$('#bCantidad').val("");
-		$('#bDescuento').val("");
-		$('#bImporte').val("");
-		
-		/* datos a enviar al servidor */
-		var data = {
-			"bodega":BODEGA,
-			"estilo":ESTILO,
-			"color":COLOR,
-			"linea":LINEA,
-			"talla":TALLA,
-			"cantidad":CANTIDAD,
-			"descripcion":DESCRIPCION,
-			"cliente":CLIENTE,
-			"factura":window.codPedido,
-			"precio":PRECIO,
-            "costo":COSTO,
-			"porcentaje":PORCENTAJE
-		};
-		
-
-		
-		// petcion asincrona
-		var ajaxRequest = $.post(uri, data, function(response){
-			if (response.STATUS == "OK"){
-				// la peticion se ha completado satisfactoriamente 
-				var grid = Sigma.$grid("factura_grid");
-				cargar_totales(); // atualizacion de totales de la factura
-				grid.reload();	// actualiza el grid de detalle
-			} else if (response.STATUS == "OUT_OF_STOCK"){
-					// no hay suficiente stock del producto
-					// no se agrega a la factura
-				alert("PRODUCTO AGOTADO");
-			} else{
-				alert("HA OCURRIDO UN ERROR");
-			}
-		}, "json");
-
-		$('#bBodega').removeAttr("disabled");
-		$('#bBodega').focus();
-    }
-
-
-    function seleccionarTalla(){
-        if ($('#bTalla').val().trim() == ""){
-            $('#bCantidad').attr("disabled", "disabled");
-        } else{
-            var uri    = '/facturacion/inventario/facTalla';
-            var BODEGA = $('#bBodega').val().trim();
-            var LINEA  = $('#bLinea').val().trim();
-            var ESTILO = $('#bEstilo').val().trim();
-            var COLOR  = $('#bColor').val().trim();
-            var TALLA  = $('#bTalla').val().trim();
-            $.post(uri, {bodega:BODEGA, linea:LINEA, estilo:ESTILO, color:COLOR, talla:TALLA}, function(data){
-                if (data.STATUS == "OK"){
-                    $('#bCantidad').removeAttr("disabled");
-                    $('#bCantidad').focus();
-                    $('#bPrecio').val(data.PRECIO.precio);
-                    $('#bCosto').val(data.PRECIO.costo);
-                    $('#bTalla').css('border-color', '#D3D3D3');
-                    $('#bPorcentaje').val(data.PORCENTAJE);
-                } else{
-                    $('#bCantidad').attr("disabled", "disabled");
-                }
-            }, "json");
-
-            // BUSQUEDA DE OFERTAS
-            o_uri = "/facturacion/factura/consultar_oferta";
-            $.post(o_uri,{linea:LINEA,estilo:ESTILO,color:COLOR,talla:TALLA},function(d){
-                if(d != null){
-                    $('#bPorcentaje').val(  100 * d[0].descuento )
-                }
-             }, "json");
-        }
-    }
-
-    function cargar_totales()
-    {
-        uri  = "/facturacion/factura/totales/" + window.codPedido;
-        data = { };
-        fq = $.post(uri, data, function(d){
-            $('#SUBTOTAL').val(d.subtotal);
-            $('#DESCUENTO').val(d.descuento);
-            $('#IVA').val(d.iva);
-            $('#TOTAL').val(d.total);
-            window.FacTotal = d.total;
-        }, "json");
-    }
-
-
-
-    function seleccionarCantidad(){
-        var cantidad   = $('#bCantidad').val().trim();
-        var porcentaje = $('#bPorcentaje').val().trim();
-        var precio     = $('#bPrecio').val().trim();
-        var importe    = precio * cantidad;
-        var descuento  = (importe * (porcentaje / 100)).toFixed(2) ;
-
-        $('#bImporte').val(importe - descuento);
-        $('#bDescuento').val(descuento);
-    }
-
-    var grid_demo_id = "factura_grid";
-            
-    var dsOption = {
-        fields :[
-            {name : 'descripcion'  },
-            {name : 'precio'  },
-            {name : 'cantidad'  },
-            {name : 'porcentaje'  },
-            {name : 'descuento'  },
-            {name : 'importe'  },
-            {name : 'id_factura'  },
-            {name : 'id'  }
-        ],
-        recordType : 'object'
-    }
-
-    var colsOption = [
-        {id: 'descripcion', header: "Descripcion", width :250 },
-        {id: 'precio', header: "Precio", width :80 },
-        {id: 'cantidad', header: "Cantidad", width :80 },
-        {id: 'porcentaje', header: "%", width :80 },
-        {id: 'descuento', header: "Descuento", width :80 },
-        {id: 'importe', header: "Importe", width :80 },
-        {id: 'opt', header: "Opciones", width :80, renderer:del_render }
-    ];
-            
-    var gridOption = {
-        id : grid_demo_id,
-        loadURL : '',
-        saveURL : '',
-        width: "732", //"100%", // 700,
-        height: "250", //"100%", // 330,
-        container : 'gridbox',
-        replaceContainer : true,
-        encoding : 'UTF-8', // Sigma.$encoding(), 
-        dataset : dsOption,
-        columns : colsOption,
-        allowCustomSkin: true,
-        skin: 'mac',
-        clickStartEdit : true,
-        defaultRecord : {'id':"00", 'nombre':""},
-        remotePaging: true,
-        autoLoad: true,
-        pageSize:10,
-        toolbarContent : 'nav state'
-    };
-
-    var mygrid = new Sigma.Grid(gridOption);
-    Sigma.Util.onLoad(function(){
-        mygrid.render();
-    });
-            
-    function habilitar()
-    {
-        if(window.p_cambio_bodega == "1")
-            $('#bBodega').removeAttr("disabled");
-
-        $('#bLinea').removeAttr("disabled");
-        $('#bEstilo').removeAttr("disabled");
-        $('#bColor').removeAttr("disabled");
-        $('#bTalla').removeAttr("disabled");
-        $('#Enter').removeAttr("disabled");
-        $('#buy').removeAttr("disabled");
-        $('#FLETE').removeAttr("disabled");
-        $('#bBodega').focus();
-        window.editable = true;
-    }
-
-    function desHabilitar()
-    {
-        $('#bBodega').attr("disabled", "disabled");
-        $('#bLinea').attr("disabled", "disabled");
-        $('#bEstilo').attr("disabled", "disabled");
-        $('#bColor').attr("disabled", "disabled");
-        $('#bTalla').attr("disabled", "disabled");
-        $('#Enter').attr("disabled", "disabled");
-        $('#buy').attr("disabled", "disabled");
-        $('#FLETE').attr("disabled", "disabled");
-        window.editable = false;
-    }
-
-    function filtrado(){
-        location.href = "/facturacion/factura/resumen";
-    }
-
-    function pendientes(){
-        location.href = "/facturacion/factura/ver_pendientes";
-    }
-
-    function fiscales(){
-        location.href = "/facturacion/factura/ver_fiscales";
-    }
-
-    function traer_cambio(){
-        n_pedido = window.codPedido
-        if (parseInt(n_pedido) <= 0 || n_pedido == "")
-        {
-            alert("No se puede procesar");
-        } else{
-            if (window.editable){
-                $('#ventana_cambio').css('display', 'block');
-            } else{
-                alert("Este pedido ya fue procesado");
-            }
-        }
-    }
-
-    function cerrar_cambio(){
-        $('#ventana_cambio').css('display', 'none');
-    }
-
-    function cargar_cambio(){
-        uri = "/facturacion/factura/traer_cambio";
-        data = {
-            "cambio": $('#nCambio').val().trim(),
-            "pedido": window.codPedido,
-            "cliente": $('#codigo_cliente').val().trim(),
-            "caja": {n_caja},
-            "serie":"{codigo_serie_factura}",
-            "pedido_r":$('#n_pedido').val().trim()
-        }
-
-        res = $.post(uri, data, function(d){
-        
-        if (d.message != null) alert(d.message);
-            cerrar_cambio();
-            var grid     = Sigma.$grid("factura_grid");
-            grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-            grid.reload();
-            cargar_totales();
-        }, "json");
-    }
-
-    function cclientef(){
-		var _cliente = $('#codigo_cliente').val().trim();
-        var uri      = '/facturacion/modulo/requiere_actualizar'
-        var data     = {
-            cliente: _cliente
-        };
-		
-        var prq = $.post(uri, data, function(d){
-            if (d.actualizar){
-				$('#wact').css('display', 'block');
-            } else{
-				obtenerDatos();
-                cargar_cliente();
-            }
-        }, "json");
-    }
-
-    var patron_dui = new Array(8, 1);
-    var patron_nit = new Array(4, 6, 3, 1);
-    var patron_telefono = new Array(4, 4);
-    var patron_fecha = new Array(4, 2, 2);
-    
-    function mascara(d, sep, pat, nums){
-        if (d.valant != d.value){
-            val = d.value
-            largo = val.length
-            val = val.split(sep)
-            val2 = ''
-            for (r = 0; r < val.length; r++){
-                val2 += val[r]
-            }
-            
-            if (nums){
-                for (z = 0; z < val2.length; z++){
-                    if (isNaN(val2.charAt(z))){
-                        letra = new RegExp(val2.charAt(z), "g")
-                        val2 = val2.replace(letra, "")
-                    }
-                }
-            }
-            
-            val = ''
-            val3 = new Array()
-        
-            for (s = 0; s < pat.length; s++){
-                val3[s] = val2.substring(0, pat[s])
-                val2 = val2.substr(pat[s])
-            }
-        
-            for (q = 0; q < val3.length; q++){
-                if (q == 0){
-                    val = val3[q]
-                }else{
-                    if (val3[q] != ""){
-                        val += sep + val3[q]
-                    }
-                }
-            }
-            
-            d.value = val
-            d.valant = val
-        }
-    }
-
-    function updateInfo(){
-        var info = [];
-        var empty = false;
-        $('.itemActUser').each(function(){
-            var _valor = $(this).val().trim();
-            var _campo = $(this).attr('id');
-            if (_valor == "") empty = true;
-            
-            var data = {
-                campo: _campo,
-                valor: _valor
-            };
-            
-            info.push(data);
-        });
-            
-        if (empty){
-
-            alert('Todos los campos son obligatorios');  
-        } 
-        else{
-            var uri = '/facturacion/modulo/efectuar_actualizacion';
-            var send = {
-                update: JSON.stringify(info),
-                cliente: $('#codigo_cliente').val().trim()
-            };
-                    
-            $.post(uri, send, function(d){
-                $('#wact').css('display', 'none');
-                $('#codigo_cliente').blur();
-            }, "json");
-        }
-    }
-
-</script>
-
-
-<!-- CUADRO DE ACTUALIZACION DE DATOS -->
-<div id="wact" style="width:100%;height:100%;position:fixed;top:0px;left:0px;background:#fff;z-index:100000;padding:60px;display:none;">
-    <i class="icon-locked" style="font-size:40px;"></i>
-    <h3>Lo sentimos, antes de poder facturar de nuevo debe actualizar la siguiente información</h3>
-    <br/>
-    <div style="width:400px;text-align:right;padding:20px;border-radius:10px 10px 10px 10px;border:solid 1px #D3D3D3;">
-        {campos_actualizables}
-        <br/>
-        <button class="primary" onclick="updateInfo();">Actualizar</button>
-    </div>
-    <h4>Gracias por su compresión!</h4>
-</div>
-<!-- FIN ACTUALIZACION -->
-
-
-<div class="window" id="ventana_cambio" style="position:fixed;margin:0 auto;z-index:10000;top:-30px;display:none;">
-    <div class="caption">
-        <span class="icon icon-windows"></span> 
-        <div class="title">Traer cambios</div> 
-        <button class="btn-close"></button> 
-    </div>
-    <div class="content" style="padding:50px;">
-        <h3>Traer Cambios</h3>
-        # Cambio <input type="text" id="nCambio" /> <button onclick="cargar_cambio();"> Aceptar </button>
-        <button onclick="cerrar_cambio();"> cancelar </button>
-    </div>
-</div>
-<section style="max-width:1100px;margin:0 auto;">
-    <!-- encabezado -->
-    <div style="text-align:right;padding-right:40px;">
-        <div class="toolbar transparent">
-            <button onclick="imprimirFactura();"><i class="icon-printer on-left"></i>Imprimir</button>
-            <button onclick="reservar();"><i class="icon-clock on-left"></i>Reservar</button>
-            <button onclick="showPane('fpendientes');"><i class="icon-search on-left"></i>Pendiente</button>
-            <button onclick="showPane('ffacturas');"><i class="icon-search on-left"></i>Facturado</button>
-            <button onclick="showPane('ffiscal');"><i class="icon-search on-left"></i>C.F</button>
-            <button onclick="showPane('freservas');"><i class="icon-search on-left"></i>Reservas</button>
-            <button onclick="traer_cambio();"><i class="icon-tab on-left"></i>Cambios</button>
-            <strong>VALE POR</strong>
-            <div class="input-control select span3">
-            <select id="descuentos">
-                
-            </select>
-            </div>
+    <div class="window" id="ventana_cambio" style="position:fixed;margin:0 auto;z-index:10000;top:-30px;display:none;">
+        <div class="caption">
+            <span class="icon icon-windows"></span>
+            <div class="title">Traer cambio</div>
+            <button class="btn-close"></button>
+        </div>
+        <div class="content" style="padding:50px;">
+            <h3>Traer Cambios</h3>
+            <p>
+                # Cambio 
+                <input type="text" ng-model="vm.nCambio" />
+                <button ng-click=""> Aceptar </button>
+            </p>
+            <button ng-click=""> Cancelar </button>
         </div>
     </div>
-    <!-- formulario de factura -->
 
-    <form>
-        <div style="display:table;">
-            <div style="width:600px;float:left;margin-right: 40px;margin-bottom: 20px;">
-                <ul style="list-style:none;display:table;text-align:left;width:550px;font-size:12px;">
-                    <li style="float:left;width:100px;">
-                        # Pedido
-                        <br/>
-                        <input type="text" value="0" id="n_pedido" style="width:90px;" onblur="setCero();" />
-                    </li>
-                    <li style="float:left;width:100px;">
-                        Fecha
-                        <br/>
-                        <input type="text" value="{fecha}" id="fecha" style="width:90px;" />
-                    </li>
-                    <li style="float:left;width:70px;">
-                        Cliente
-                        <br/>
-                        <input type="text" id="codigo_cliente" onblur="cclientef();" value="0" style="width:60px;"/>
-                    </li>
-					
-                    <li style="float:left;width:140px;">
-                        Estado
-                        <br/>
-                        <select value="" id="festado" style="width:130px;" disabled="disabled">
-                        </select>
-                    </li>
-                    <li style="float:left;width:140px;">
-                        Forma pago
-                        <br/>
-                        <select value="" id="ftipo" style="width:130px;" disabled="disabled">
-                        </select>
-                    </li>
-                </ul>
-                <hr/>
-                <table style="width:600px;">
-                    <tr>
-                        <td>
-                            <table>
-                                <tr>
-                                    <td>
-                                       Cliente &nbsp;&nbsp;&nbsp; 
-                                    </td>
-                                    <td>
-                                        <input type="text" id="nombre_cliente" style="width:100%;" readonly />
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        Direcci&oacute;n
-                                    </td>
-                                    <td>
-                                        <input type="text" id="direccion" style="width:100%;" readonly />
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        Agente
-                                    </td>
-                                    <td>
-                                        <select style="width:100%;" readonly>
-                                            <option>ND</option>
-                                        </select>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                        <td>
-                            <table>
-                                <tr>
-                                    <td>
-                                        Teléfono
-                                    </td>
-                                    <td>
-                                        <input type="text" id="telefono_cliente" style="width:100%;" readonly />
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>	
-                                        D&iacute;as cr&eacute;dito &nbsp;&nbsp;&nbsp;&nbsp;
-                                    </td>
-                                    <td>	
-                                        <input type="text" id="dias_credito" style="width:100%;" readonly />
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>
-                                        Concepto 
-                                    </td>
-                                    <td>	
-                                        <input type="text" style="width:100%;" id="concepto" value="COMPRAS" readonly />
-                                    </td>
-                                </tr>   
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-			
-            <div style="width:410px;background:#F3F3F3;padding:15px;float:left;margin-left: 20px;">
-                <div style="display:table;width:100%;">
-                    <div style="float:left;">
-                        <input type="text" id="credito" style="width:50px; margin-top: 2px;" readonly="readonly" />
-                        &nbsp;&nbsp;Límite de crédito
-						<br/>
-                        <input type="text" id="credito_usado" style="width:50px;margin-top: 2px;" readonly="readonly" />
-                        &nbsp;&nbsp;Deuda actual
-						<br/>
-                        <input type="text" id="disponible" style="width:50px;margin-top: 2px;" readonly="readonly" />
-                        &nbsp;&nbsp;Saldo disponible
-						<br/>
-                        <input type="text" id="monto_extra" style="width:50px;margin-top: 2px;" readonly="readonly" />
-                        &nbsp;&nbsp;Monto refinanciado
-						<br/>
-                    </div>
-                    <div style="float:left;width:50%;margin-left: 20px;">
-                        <input type="checkbox" id="bloqueado" disabled="disabled" />
-                        Bloqueado
-						<br/>
-                        <input type="checkbox" id="tcredito" disabled="disabled" />
-                        Tiene crédito
-						<br/>
-                        <input type="checkbox" id="extra_credito" disabled="disabled" />
-                        Refinanciamiento
-						<br/>
-                        <input type="checkbox" id="transitorio" disabled="disabled" />
-                        Transitorio
-						<br/>
-                        <input type="checkbox" id="empleado" disabled="disabled" />
-						Empleado
-					</div>
+    <section style="max-width:1100px;margin:0 auto;">
+        
+        <!-- encabezado -->
+        <div style="text-align:right;padding-right:40px;">
+            <div class="toolbar transparent">
+                <button ng-click="vm.imprimirFactura();">
+                    <i class="icon-printer on-left"></i>
+                    Imprimir
+                </button>
+                <button ng-click="vm.reservar();">
+                    <i class="icon-clock on-left"></i>
+                    Reservar
+                </button>
+                <button ng-click="vm.sPane('fpendientes');">
+                    <i class="icon-search on-left"></i>
+                    Pendiente
+                </button>
+                <button ng-click="vm.sPane('ffacturas');">
+                    <i class="icon-search on-left"></i>
+                    Facturado
+                </button>
+                <button ng-click="vm.sPane('ffiscal');">
+                    <i class="icon-search on-left"></i>
+                    C.F
+                </button>
+                <button ng-click="vm.sPane('freservas');">
+                    <i class="icon-search on-left"></i>
+                    Reservas
+                </button>
+                <button ng-click="vm.traerCambio();">
+                    <i class="icon-tab on-left"></i>
+                    Cambios
+                </button>
+                <strong>VALE POR &nbsp;&nbsp;</strong>
+                <div class="input-control select span3">
+                    <select ng-model="vm.valeActivo">
+                        <option ng-repeat="vale in vm.ValesCliente" value="{{vale.id}}"> {{vale.concepto}}</option>
+                    </select>
                 </div>
-				<br/>
-				<table>
-					<tr>
-						<td><input type="text" id="telefono_celular" style="width:100px;" readonly="readonly" /></td>
-						<td><input type="text" id="telefono_oficina" style="width:100px;" readonly="readonly" /></td>
-						<td><input type="text" id="telefono_casa" style="width:100px;" readonly="readonly" /></td>
-					</tr>
-					<tr>
-						<td>Tel. móvil</td>
-						<td>Tel. oficina</td>
-						<td>Tel. casa</td>
-					</tr>
-				</table>
             </div>
         </div>
-        <!-- busqueda del producto -->
-        <div class="input-control text" id="info-bar">
-
-            <select id="bBodega" style="width:150px;" disabled="disabled">
-                <!-- START bodegas -->
-                <option value="{id}">[{id}] | {nombre}</option>
-                <!-- END bodegas -->
-            </select>
-            <select id="bLinea" style="width:130px;" disabled="disabled" > 
-                <!-- START lineas -->
-                <option value="{id}">[{id}] | {nombre}</option>
-                <!-- END lineas -->
-            </select>
-            <input type="text" id="bEstilo" style="width:70px;padding: 0px;" onblur="verificarExistencia();" disabled="disabled" />
-
-            <input type="text" id="bColor" style="width:70px;padding: 0px;" disabled="disabled" />
-
-            <input type="text" id="bTalla" style="width:70px;padding: 0px;" onblur="consulta();" disabled="disabled" onchange="seleccionarTalla();" >
-
-            <input type="text" id="bPrecio" style="width:70px;padding: 0px;" readonly/>
-            <input type="hidden" id="bCosto" style="width:70px;padding: 0px;" readonly/>
-
-            <input type="text" id="bCantidad" style="width:70px;padding: 0px" onchange="seleccionarCantidad();"/>
-
-            <input type="text" id="bPorcentaje" style="width:70px;padding: 0px" readonly/>
-
-            <input type="text" id="bDescuento" style="width:70px;padding: 0px" readonly/>
-
-            <input type="text" id="bImporte" style="width:70px;padding: 0px" readonly/>
-
-            <input type="text" id="bSerie" style="width:70px;padding: 0px" readonly/>
-            <input type="text" id="bSerie" style="width:70px;padding: 0px" readonly/>
-
-            <button onfocus="agregarCompra(event);" onclick="agregarCompra(event);" id="Enter" disabled="disabled"><i class="icon-enter-2"></i></button>
-        </div>
-        <div id="info-titles">
-            <p style="padding-right:150px;">Bodega</p>
-            <p style="padding-right:130px;">Linea</p> 
-            <p>Estilo</p> 
-            <p>Color</p> 
-            <p>Talla</p>
-            <p>Precio</p>
-            <p>Cantidad</p> 
-            <p>%</p>
-            <p>Descuento</p> 
-            <p>Importe</p> 
-            <p>S. garant&iacute;a</p> 
-        </div>
-
-    </form>
-    <br/>
-    <div id="bigbox" style="margin-top: 10px; margin-right:25px;display:!none;float:left;">
-        <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
-
-        </div>
-    </div>
-    <div style="width:310px;float:left;text-align:right;background:#F3F3F3;padding-right:30px;margin-top:10px;margin-bottom: 5px;">
+        <hr/>
+        <!-- formulario de factura -->
         <form>
-            <div>
-                <h6>[Caja No. {n_caja} / {t_caja}]</h6>
-                <h6>Siguiente pedido: <span id="NoFactura">{numero_factura}</span> [SERIES: {codigo_serie_factura} | {codigo_serie_remision} | {codigo_serie_credito_fiscal}]</h6>
-                <div style="padding:0px;">
-                    Crédito fiscal <input type="checkbox" id="ES_CF" />
-                    (+) Flete <input type="checkbox" id="FLETE" disabled="disabled" />
+            <div style="display:table;">
+                <div style="width:600px;float:left;margin-right: 40px;margin-bottom: 20px;">
+                    <ul style="list-style:none;display:table;text-align:left;width:550px;font-size:12px;">
+                        <li style="float:left;width:100px;">
+                            <p># Pedido</p>
+                            <input type="text" ng-model="vm.nPedido" ng-blur="vm.CargarPedido();" style="width:90px;" />
+                        </li>
+                        <li style="float:left;width:100px;">
+                            <p>Cliente</p>
+                            <input type="text" ng-model="vm.codigo_cliente" ng-blur="vm.GenerarPedido();" style="width:90px;" id="idCliente" />
+                        </li>
+
+                        <li style="float:left;width:140px;">
+                            <p>Estado</p>
+                            <select value="" ng-model="vm.festado" style="width:130px;" disabled="disabled">
+                                <option></option>
+                                <option value="PENDIENTE">PENDIENTE</option>
+                            </select>
+                        </li>
+                        <li style="float:left;width:140px;">
+                            <p>Forma pago</p>
+                            <select value="" ng-model="vm.ftipo" style="width:130px;" disabled="disabled">
+                                <option></option>
+                                <option value="ND">ND</option>
+                            </select>
+                        </li>
+                    </ul>
+                    <hr />
+                    <table style="width:600px;">
+                        <tr>
+                            <td>
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <p>Cliente &nbsp;&nbsp;&nbsp;</p>
+                                        </td>
+                                        <td>
+                                            <input type="text" ng-model="vm.nombre_cliente" style="width:100%;" readonly />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <p>Direcci&oacute;n &nbsp;&nbsp;</p>
+                                        </td>
+                                        <td>
+                                            <input type="text" ng-model="vm.direccion" style="width:100%;" readonly />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <p>Agente</p>
+                                        </td>
+                                        <td>
+                                            <select style="width:100%;" readonly>
+                                                <option>ND</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                            <td>
+                                <table>
+                                    <tr>
+                                        <td>
+                                            <p>Teléfono</p>
+                                        </td>
+                                        <td>
+                                            <input type="text" ng-model="vm.telefono_cliente" style="width:100%;" readonly />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <p>D&iacute;as cr&eacute;dito &nbsp;&nbsp;&nbsp;&nbsp;</p>
+                                        </td>
+                                        <td>
+                                            <input type="text" ng-model="vm.dias_credito" style="width:100%;" readonly />
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>
+                                            <p>Concepto</p>
+                                        </td>
+                                        <td>
+                                            <input type="text" style="width:100%;" ng-model="vm.concepto" value="COMPRAS" readonly />
+                                        </td>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
-                <br/>
-                Subtotal <input type="text" id="SUBTOTAL" readonly style="width:75px; margin-bottom: 1px;" />
-                <br/>
-                (-) Descuento <input type="text" id="DESCUENTO" readonly style="width:75px; margin-bottom: 1px;" />
-                <br/>
-                (+) IVA <input type="text" id="IVA" readonly style="width:75px; margin-bottom: 1px;" />
-                <br/>
-                <strong>TOTAL A FACTURAR</strong> <input type="text" readonly id="TOTAL" style="width:75px; margin-bottom: 2px;" />
-                <br/>
-                <br/>
-                <button class="bg-color-blue fg-color-white" type="button" onclick="facturacion();" id="buy" disabled="disabled">Efectuar venta</button>
-            </div>
-        </form>   
-    </div>
 
-    <section>
-
-        <div id="resumenStock" style="display:none;background:#fff;position:fixed;top:0px;left:0px;width:100%;height:100%;z-index:100001;text-align:center;">
-            <div id="bigbox6" style="margin:15px;display:!none;">
-                <div id="gridbox6" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
-
+                <div style="width:410px;background:#F3F3F3;padding:15px;float:left;margin-left: 20px;">
+                    <div style="display:table;width:100%;">
+                        <div style="float:left;">
+                            <input type="text" ng-model="vm.credito" style="width:50px; margin-top: 2px;" readonly="readonly" />
+                            &nbsp;&nbsp;Límite de crédito
+                            <br />
+                            <input type="text" ng-model="vm.credito_usado" style="width:50px;margin-top: 2px;" readonly="readonly" />
+                            &nbsp;&nbsp;Deuda actual
+                            <br />
+                            <input type="text" ng-model="vm.disponible" style="width:50px;margin-top: 2px;" readonly="readonly" />
+                            &nbsp;&nbsp;Saldo disponible
+                            <br />
+                            <input type="text" ng-model="vm.monto_extra" style="width:50px;margin-top: 2px;" readonly="readonly" />
+                            &nbsp;&nbsp;Monto refinanciado
+                            <br />
+                        </div>
+                        <div style="float:left;width:50%;margin-left: 20px;">
+                            <input type="checkbox" ng-model="vm.bloqueado" disabled="disabled" />
+                            Bloqueado
+                            <br />
+                            <input type="checkbox" ng-model="vm.tcredito" disabled="disabled" />
+                            Tiene crédito
+                            <br />
+                            <input type="checkbox" ng-model="vm.extra_credito" disabled="disabled" />
+                            Refinanciamiento
+                            <br />
+                            <input type="checkbox" ng-model="vm.transitorio" disabled="disabled" />
+                            Transitorio
+                            <br />
+                            <input type="checkbox" ng-model="vm.empleado" disabled="disabled" />
+                            Empleado
+                        </div>
+                    </div>
+                    <br />
+                    <table>
+                        <tr>
+                            <td><input type="text" ng-model="vm.telefono_celular" style="width:100px;" readonly="readonly" /></td>
+                            <td><input type="text" ng-model="vm.telefono_oficina" style="width:100px;" readonly="readonly" /></td>
+                            <td><input type="text" ng-model="vm.telefono_casa" style="width:100px;" readonly="readonly" /></td>
+                        </tr>
+                        <tr>
+                            <td>Tel. móvil</td>
+                            <td>Tel. oficina</td>
+                            <td>Tel. casa</td>
+                        </tr>
+                    </table>
+                    <br />
                 </div>
             </div>
-            <br/>
-            <br/>
-            <button class="success large" onclick="cerrarResumen();"> <i class="icon-arrow-down-3"></i> Aceptar</button>
+            <hr />
+            <!-- busqueda del producto -->
+            <div class="input-control text" id="info-bar">
+                <select ng-model="vm.Caja.bodega_por_defecto" style="width:150px;" ng-disabled="(!vm.PedidoActivo) || (!vm.Caja.p_cambio_bodega)">
+                    <option ng-repeat="bodega in vm.ListaBodegas" value="{{bodega.id}}">{{bodega.nombre}}</option>
+                </select>
+                <select ng-model="vm.bLinea" style="width:130px;" ng-disabled="!vm.PedidoActivo">
+                    <option ng-repeat="linea in vm.ListaLineas" value="{{linea.id_categoria_especifica}}">{{linea.nombre}}</option>
+                </select>
+                <input type="text" ng-model="vm.bEstilo" style="width:70px;padding: 0px;" onblur="verificarExistencia();" ng-disabled="!vm.PedidoActivo" />
+
+                <input type="text" ng-model="vm.bColor" style="width:70px;padding: 0px;" ng-disabled="!vm.PedidoActivo" />
+
+                <input type="text" ng-model="vm.bTalla" style="width:70px;padding: 0px;" ng-blur="vm.ConsultaExistencias();" ng-disabled="!vm.PedidoActivo">
+
+                <input type="text" ng-model="vm.bPrecio" style="width:70px;padding: 0px;" readonly />
+
+                <input type="hidden" ng-model="vm.bCosto" style="width:70px;padding: 0px;" readonly />
+
+                <input type="text" ng-model="vm.bCantidad" style="width:70px;padding: 0px"  />
+
+                <input type="text" ng-model="vm.bPorcentaje" style="width:70px;padding: 0px" readonly />
+
+                <input type="text" ng-model="vm.bDescuento" style="width:70px;padding: 0px" readonly />
+
+                <input type="text" ng-model="vm.bImporte" style="width:70px;padding: 0px" readonly />
+
+                <input type="text" ng-model="vm.bSerie" style="width:70px;padding: 0px" readonly />
+
+                <input type="text" ng-model="vm.bSerie" style="width:70px;padding: 0px" readonly />
+
+                <button onfocus="agregarCompra(event);" onclick="agregarCompra(event);" id="Enter" ng-disabled="!vm.PedidoActivo"><i class="icon-enter-2"></i></button>
+            </div>
+            <div id="info-titles">
+                <p style="padding-right:150px;">Bodega</p>
+                <p style="padding-right:130px;">Linea</p>
+                <p>Estilo</p>
+                <p>Color</p>
+                <p>Talla</p>
+                <p>Precio</p>
+                <p>Cantidad</p>
+                <p>% Desc</p>
+                <p>Monto Desc</p>
+                <p>Importe</p>
+                <p>S. garant&iacute;a</p>
+            </div>
+        </form>
+        <br />
+        <hr/>
+
+        <div id="bigbox" style="margin-top: 10px; margin-right:25px;display:!none;float:left;">
+            <div id="gridbox" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;">
+
+            </div>
         </div>
-        <script type="text/javascript">
 
-            function cargarVales(){
-                var uri = '/facturacion/factura/valesCliente'; 
-                var data = {
-                        "cliente":$('#codigo_cliente').val()
-                    };
-                $.post(uri, data, function(d){
-                    $('#descuentos option').remove();
-                    for(var i = 0; i < d.descuentos.length; i++){
-                        $('#descuentos').append('<option value="'+d.descuentos[i].id+'">'+d.descuentos[i].saldo+' - '+d.descuentos[i].concepto+' </option>');
-                    }
-                }, "json");
-            }
+        <div style="width:310px;float:left;text-align:right;background:#F3F3F3;padding-right:30px;margin-top:10px;margin-bottom: 5px;">
+            <form>
+                <div>
+                    <h6>[Caja No. {{vm.Caja.id}} / {{vm.Caja.nombre}}]</h6>
+                    <h6>Siguiente pedido: <span id="NoFactura">{{vm.nPedido + 1}}</span></h6>
+                    <br />
+                    Subtotal <input type="text" ng-model="vm.SubTotal" readonly style="width:75px; margin-bottom: 1px;" />
+                    <br />
+                    (-) Descuento <input type="text" ng-model="vm.Descuento" readonly style="width:75px; margin-bottom: 1px;" />
+                    <br />
+                    (+) IVA <input type="text" ng-model="vm.Iva" readonly style="width:75px; margin-bottom: 1px;" />
+                    <br />
+                    <strong>TOTAL A FACTURAR</strong> <input type="text" readonly ng-model="vm.Total" style="width:75px; margin-bottom: 2px;" />
+                    <br />
+                    <br />
+                    <button class="bg-color-blue fg-color-white" type="button" onclick="facturacion();" id="buy" ng-disabled="!vm.PedidoActivo">Efectuar venta</button>
+                </div>
+            </form>
+        </div>
 
-            function verificarExistencia(){
-                var _linea = $('#bLinea').val().trim();
-                var _estilo = $('#bEstilo').val().trim();
-                var uri = '/facturacion/inventario/verificarExistencia';
-                var data = {
-                    linea : _linea,
-                    estilo: _estilo
-                };
-                
-                $.post(uri, data, function(d){
-                    if (!d.existe) alert("No existe el producto");
-                }, "json");
-            }
+        <section>
+            <div ng-show="vm.MostrarSelector" style="background:#fff;position:fixed;top:0px;left:0px;width:100%;height:100%;z-index:100001;text-align:center;">
+                <div id="bigbox6" style="margin:15px;display:!none;">
+                    <div id="gridbox6" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;">
 
-            function cargar_cliente(){
-
-                uri = "/facturacion/cliente/datos_credito";
-                
-                data = {
-                    "cliente" : $('#codigo_cliente').val().trim()
-                };
-                
-                $.post(uri, data, function(d){
-                    $('#telefono_celular').val(d.telefono_celular);
-                    $('#telefono_oficina').val(d.telefono_oficina);
-                    $('#telefono_casa').val(d.telefono_casa);
-                    $('#credito').val(d.credito);
-                    $('#nombre').val(d.nombre);
-                    $('#credito_usado').val(d.credito_usado);
-                    $('#disponible').val(parseFloat(d.credito - d.credito_usado).toFixed(2));
-                    $('#monto_extra').val(d.monto_extra);
-                    if (d.empleado == 1)
-                        $('#empleado').attr("checked", true);
-                    else
-                        $('#empleado').removeAttr("checked");
-                    if (d.tcredito == 1)
-                        $('#tcredito').attr("checked", true);
-                    else
-                        $('#tcredito').removeAttr("checked");
-                    if (d.transitorio == 1)
-                        $('#transitorio').attr("checked", true);
-                    else
-                        $('#transitorio').removeAttr("checked");
-                    if (d.bloqueado == 1)
-                        $('#bloqueado').attr("checked", true);
-                    else
-                        $('#bloqueado').removeAttr("checked");
-                    if (d.extra_credito == 1)
-                        $('#extra_credito').attr("checked", true);
-                    else
-                        $('#extra_credito').removeAttr("checked");
-                        
-                        
-                    cargarVales();
-                    
-                }, "json");
-            }
-
-            function facturacion()
-            {
-                var valor = -1;
-                
-                if($('#descuentos').val() != null){
-                    var desctext = $("#descuentos option:selected").text();
-                    valor = parseFloat(desctext.split("-")[0].trim());
-                }
-                
-                if(valor >= parseFloat($('#TOTAL').val().trim()) ){
-                    alert("No es posible facturar, debe superar el valor del descuento!");
-                }else{
-                 
-                    if (($('#TOTAL').val().trim() * 1) > 0){
-                        uri = "/facturacion/factura/esta_vacia/" + window.codPedido;
-                        data = { };
-                        $.post(uri, data, function(d){
-    
-                            if (d.vacia)
-                            {
-                                alert("Pedido vacio, no se puede procesar");
-                            }
-                            else
-                            {
-                                $.Dialog({
-                                    overlay: true,
-                                    shadow: true,
-                                    flat: true,
-                                    title: 'Opciones de facturacion',
-                                    content: '',
-                                    width:400,
-                                    onShow: function(_dialog){
-                                        var content = _dialog.children('.content');
-                                        htmls = [
-                                            '<br/><br/><div style="text-align:center;">',
-                                            '<button class="shortcut" onclick="facturar_credito();"><i class="icon-credit-card"></i>Crédito</button>',
-                                            '<button class="shortcut" onclick="mostrar_metodo_pago();"><i class="icon-dollar"></i>Contado</button>',
-                                            '<button class="shortcut" onclick="consignar();"><i class="icon-briefcase"></i>Consignar mercadería</button>'
-                                        ];
-                                        if (window.nt) htmls.pop();
-                                            html = htmls.join("");
-                                        content.html(html);
-                                    }
-                                });
-                            }
-    
-                        }, "json");
-                    } else{
-                        alert("No se puede procesar un saldo menor o igual a cero");
-                    }
-                }
-            }
-
-            function consignar(){
-                /* proceso de consignacion */
-
-                factura = window.codPedido; // numero de pedido
-
-                uri = "/facturacion/factura/consignar"; // url de proceso de facturacion contado
-
-                resource = [ uri, factura ].join("/");
-                request = $.post(resource, { "serie": {serie_remision} }, function(data){
-
-                      // punto de respuesta de la peticion
-                    window.editable = false;
-                    imp();
-                    window.codPedido = 0;
-                    obtenerDatosCliente(0);
-                      
-                    var grid = Sigma.$grid("factura_grid");
-                    grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-                    grid.reload();
-                    $('#n_pedido').val("0");
-                    $('#codigo_cliente').val("0");
-                    $('#codigo_cliente').removeAttr("disabled");
-                    $('#fecha').removeAttr("disabled");
-                    $('#n_pedido').focus();
-                    desHabilitar();
-                    
-                    if (window.cerrar)
-                        window.close();
-                    
-                    $.Dialog.close();
-                    $('#DESCUENTO').val("");
-                    $('#TOTAL').val("");
-                    $('#SUBTOTAL').val("");
-                   }, "json");   
-            }
-
-            function credito_fiscal(){
-                alert('actualmente este metodo de pago esta desactivado');
-				/*// verificar si cliente tiene credito fiscal
-				uri = "/facturacion/cliente/tiene_credito_fiscal";
-                    data = {
-                    "cliente" : $('#codigo_cliente').val().trim()
-                    };
-                    res = $.post(uri, data, function(d){
-
-                    if (d.estado){
-                    $.Dialog.close();
-                            $.Dialog({
-                            overlay: true,
-                                    shadow: true,
-                                    flat: true,
-                                    title: 'Opciones de credito fiscal',
-                                    content: '',
-                                    width:400,
-                                    onShow: function(_dialog){
-                                    var content = _dialog.children('.content');
-                                            html = [
-                                                    '<br/><br/><div style="text-align:center;">',
-                                                    '<button class="shortcut" onclick="cf_facturar_credito();"><i class="icon-credit-card"></i>Crédito</button>',
-                                                    '<button class="shortcut" onclick="cf_facturar_contado();"><i class="icon-dollar"></i>Contado</button>'
-                                            ].join("");
-                                            content.html(html);
-                                    }
-                            });
-                    } else{
-                    alert("No tiene credito fiscal");
-                    }
-
-                    }, "json");
-					*/
-            }
-
-            function facturar_contado()
-            {
-				/* proceso de facturacion al contado */
-
-				var factura = window.codPedido; // numero de factura a procesar
-
-                var uri = "/facturacion/factura/contado"; // url de proceso de facturacion contado
-                var es_cf = 0;
-                var serie = {serie_factura};
-                
-                var tipo  = -1;
-                        
-                if(parseFloat($('#inptEfec').val()) > 0 ){
-                    tipo = 1;
-                }
-                        
-                if(parseFloat($('#inptChec').val()) > 0 ){
-                    tipo = 2;
-                }
-                        
-                if(parseFloat($('#inptTarj').val()) > 0 ){
-                    tipo = 3;
-                }
-                        
-                if(parseFloat($('#inptDepo').val()) > 0 ){
-                    tipo = 4;
-                }
-                
-                if ($('#ES_CF').is(':checked')){
-                    es_cf = 1;
-                    serie = {serie_credito_fiscal};
-                }
-                
-                var vale = -1;
-                
-                if($('#descuentos').val()!=null){
-                    
-                    vale = $('#descuentos').val();
-                }
-               
-                var resource = [ uri, factura ].join("/");
-                if(tipo > 0){
-                    $.post(resource, { "serie": serie, "vale": vale, "CF":es_cf, "tipo":tipo,"boleta": $('#S_boleta').val().trim(),"banco": $('#S_casacredito').val().trim() }, function(data){
-    
-                    // punto de respuesta de la peticion
-                        window.editable = false;
-                        imp();
-                        window.codPedido = 0;
-                        obtenerDatosCliente(0);
-                        
-                        var grid = Sigma.$grid("factura_grid");
-                        grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-                        grid.reload();
-                        $('#n_pedido').val("0");
-                        $('#codigo_cliente').val("0");
-                        $('#codigo_cliente').removeAttr("disabled");
-                        $('#fecha').removeAttr("disabled");
-                        $('#n_pedido').focus();
-                        desHabilitar();
-                        
-                        if (window.cerrar)
-                            window.close();
-                        
-                        $.Dialog.close();
-                        $('#DESCUENTO').val("");
-                        $('#TOTAL').val("");
-                        $('#SUBTOTAL').val("");
-                    }, "json");
-                }else{
-                    alert("No se ha ingresado ningún monto");
-                }
-            }
-
-
-            function cf_facturar_contado()
-            {
-                    /* proceso de facturacion al contado */
-
-                    factura = window.codPedido; // numero de factura a procesar
-
-                    uri = "/facturacion/factura/cf_contado"; // url de proceso de facturacion contado
-
-                    resource = [ uri, factura ].join("/");
-                    $.post(resource, { "serie": {serie_credito_fiscal} }, function(data){
-                        // punto de respuesta de la peticion
-                        window.editable = false;
-                        imp();
-                        window.codPedido = 0;
-                        obtenerDatosCliente(0);
-                                //alert("No existe el pedido");
-                        var grid = Sigma.$grid("factura_grid");
-                        grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-                        grid.reload();
-                        $('#n_pedido').val("0");
-                        $('#codigo_cliente').val("0");
-                        $('#codigo_cliente').removeAttr("disabled");
-                        $('#fecha').removeAttr("disabled");
-                        $('#n_pedido').focus();
-                        desHabilitar();
-                        $.Dialog.close();
-                        $('#DESCUENTO').val("");
-                        $('#TOTAL').val("");
-                        $('#SUBTOTAL').val("");
-                    }, "json");
-            }
-
-            function facturar_credito()
-            {
-
-                /* proceso de facturacion al credito */
-
-                var factura = window.codPedido; // numero de factura a procesar
-
-                var uri = "/facturacion/factura/credito"; // url de proceso de facturacion credito
-                
-                var es_cf = 0;
-               
-                var serie = {serie_factura};
-                
-                if ($('#ES_CF').is(':checked')){
-                    es_cf = 1;
-                    serie = {serie_credito_fiscal};
-                }
-                
-                 var vale = -1;
-                
-                if($('#descuentos').val()!=null){
-                    
-                    vale = $('#descuentos').val();
-                }
-                
-                var resource = [ uri, factura ].join("/");
-                $.post(resource, { "serie": serie, "vale":vale, "CF":es_cf }, function(data){
-                    
-                    if (data.message != null) alert(data.message);
-                    // punto de respuesta de la peticion
-                    window.editable = false;
-                    imp();
-                    window.codPedido = 0;
-                    obtenerDatosCliente(0);
-                    //alert("No existe el pedido");
-                    var grid = Sigma.$grid("factura_grid");
-                    grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-                    grid.reload();
-                    $('#n_pedido').val("0");
-                    $('#codigo_cliente').val("0");
-                    $('#codigo_cliente').removeAttr("disabled");
-                    $('#fecha').removeAttr("disabled");
-                    $('#n_pedido').focus();
-                    desHabilitar();
-                    if (window.cerrar)
-                    window.close();
-                    $.Dialog.close();
-                    $('#DESCUENTO').val("");
-                    $('#TOTAL').val("");
-                    $('#SUBTOTAL').val("");
-                }, "json");
-            }
-
-            function cf_facturar_credito()
-            {
-                /* proceso de facturacion al credito */
-
-                factura = window.codPedido; // numero de factura a procesar
-
-                uri = "/facturacion/factura/cf_credito"; // url de proceso de facturacion credito
-
-                resource = [ uri, factura ].join("/");
-                request = $.post(resource, { "serie": {serie_credito_fiscal} }, function(data){
-                    if (data.message != null) alert(data.message);
-                    // punto de respuesta de la peticion
-                    window.editable = false;
-                    imp();
-                    window.codPedido = 0;
-                    obtenerDatosCliente(0);
-                    //alert("No existe el pedido");
-                    var grid = Sigma.$grid("factura_grid");
-                    grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-                    grid.reload();
-                    $('#n_pedido').val("0");
-                    $('#codigo_cliente').val("0");
-                    $('#codigo_cliente').removeAttr("disabled");
-                    $('#fecha').removeAttr("disabled");
-                    $('#n_pedido').focus();
-                    desHabilitar();
-                    $.Dialog.close();
-                    $('#DESCUENTO').val("");
-                    $('#TOTAL').val("");
-                    $('#SUBTOTAL').val("");
-                }, "json");
-            }
-
-            function nota_remision()
-            {
-                /* nt */
-
-                factura = window.codPedido; // numero de factura a procesar
-
-                uri = "/facturacion/factura/nota_remision"; // url de proceso de nota de remision
-
-                resource = [ uri, factura ].join("/");
-                request = $.post(resource, { }, function(data){
-                    if (data.message != null) alert(data.message);
-                    // punto de respuesta de la peticion
-                    window.editable = false;
-                    //imprimirFactura(); aca se imprime un documento especial
-                    window.codPedido = 0;
-                    obtenerDatosCliente(0);
-                    //alert("No existe el pedido");
-                    var grid = Sigma.$grid("factura_grid");
-                    grid.loadURL = '/facturacion/factura/cargar_detalle/' + window.codPedido;
-                    grid.reload();
-                    $('#n_pedido').val("0");
-                    $('#codigo_cliente').val("0");
-                    $('#codigo_cliente').removeAttr("disabled");
-                    $('#fecha').removeAttr("disabled");
-                    $('#n_pedido').focus();
-                    desHabilitar();
-                    $.Dialog.close();
-                    $('#DESCUENTO').val("");
-                    $('#TOTAL').val("");
-                    $('#SUBTOTAL').val("");
-                }, "json");
-            }
-
-            function cerrarResumen()
-            {
-                commit();
-                var grid = Sigma.$grid("genero3_grid");
-                grid.reload();
-                $('#resumenStock').css('display', 'none');
-            }
-
-            function consulta()
-            {
-                bodega = $('#bBodega').val().trim();
-                linea = $('#bLinea').val().trim();
-                estilo = $('#bEstilo').val().trim();
-                color = $('#bColor').val().trim();
-                talla = $('#bTalla').val().trim();
-                var filtros = [];
-                if (estilo != "") filtros.push(['estado_bodega.estilo', estilo].join(":"));
-                if (linea != "") filtros.push(['estado_bodega.linea', linea].join(":"));
-                if (color != "") filtros.push(['estado_bodega.color', color].join(":"));
-                if (talla != "") filtros.push(['estado_bodega.talla', talla].join(":"));
-                if (bodega != "") filtros.push(['bodega', bodega].join(":"));
-                if (estilo != "" && color == "" && talla == ""){
-                    var grid = Sigma.$grid("genero3_grid");
-                    grid.loadURL = '/facturacion/inventario/cargar_consulta_producto?filtros=' + filtros;
-                    grid.reload();
-                    $('#resumenStock').css('display', 'block');
-                }
-            }
-
-            function input_render(value, record, columnObj, grid, colNo, rowNo){
-                string_ = record['linea'] + '_' + record['estilo'] + '_' + record['color'] + '_' + record['talla'] + '_' + record['costo'] + '_' + record['stock'] + '_' + record['precio'];
-                return '<input type="text" value="0" class="items" id="' + string_ + '"/>';
-            }
-
-            function stock_render(value, record, columnObj, grid, colNo, rowNo){
-                if (value == "" || value == " " || value == null){
-                    return "0";
-                } else{
-                    return value;
-                }
-            }
-
-            var grid_demo_id3 = "genero3_grid";
-            
-            var dsOption3 = {
-                fields :[
-                    {name : 'linea'  },
-                    {name : 'estilo'  },
-                    {name : 'color'  },
-                    {name : 'talla'  },
-                    {name : 'bodega'  },
-                    {name : 'stock'  }
-                ],
-                recordType : 'object'
-            }
-
-            var colsOption3 = [
-                {id: 'linea', header: "Linea", width :100 },
-                {id: 'estilo', header: "Estilo", width :100},
-                {id: 'color', header: "Color", width :100, renderer: nColor_render},
-                {id: 'talla', header: "Talla", width :100},
-                {id: 'ingresan', header: "Ingresan", width :100, renderer:input_render},
-                {id: 'stock', header: "Stock", width :100, renderer:stock_render},
-                {id: 'costo', header: "Costo", width :100},
-                {id: 'precio', header: "Precio", width :100},
-                {id: 'bodega', header: "Bodega", width :100}
-            ];
-                    
-            var gridOption3 = {
-                id : grid_demo_id3,
-                loadURL : '',
-                saveURL : '',
-                width: "900", //"100%", // 700,
-                height: "320", //"100%", // 330,
-                container : 'gridbox6',
-                replaceContainer : true,
-                encoding : 'UTF-8', // Sigma.$encoding(), 
-                dataset : dsOption3,
-                columns : colsOption3,
-                clickStartEdit : true,
-                defaultRecord : {'id':"00", 'nombre':""},
-                pageSize:10,
-                remotePaging: true,
-                autoLoad: false,
-                toolbarContent : ' nav state'
-            };
-                    
-            var mygrid3 = new Sigma.Grid(gridOption3);
-            
-            Sigma.Util.onLoad(function(){
-                mygrid3.render();
-            });
-					
-			/* agrega productos a una factura de manera masiva */	
-			function commit()
-			{
-				info = [ ]; // datos de los productos a ser insertados al mismo tiempo
-					
-				$('.items').each(function(){
-					if ($(this).val().trim() != "" && $(this).val() > 0){
-						data = $(this).attr('id').split('_');
-						data_send = {
-							"linea":  	data[0],
-							"estilo": 	data[1],
-							"color": 	data[2],
-							"talla": 	data[3],
-							"costo":   	data[4],
-							"stock":   	data[5],
-							"precio":   	data[6],
-							"cantidad":   $(this).val(),
-							"total": 	parseInt($(this).val()) * parseFloat(data[4])
-						};
-							
-						PORCENTAJE  = parseFloat($('#bPorcentaje').val());
-						BODEGA 	    = $('#bBodega').val();
-						CLIENTE 	= $('#codigo_cliente').val();
-						DESCRIPCION = data_send.linea + "-" + data_send.estilo + "-" + data_send.color + "-" + data_send.talla;
-						chunck      = null;
-						chunck      = {};
-						chunck      = {
-                            bodega:BODEGA,
-                            estilo:data_send.estilo,
-							color:data_send.color,
-							linea:data_send.linea,
-							talla:data_send.talla,
-							cantidad:data_send.cantidad,
-							descripcion:DESCRIPCION,
-							cliente:CLIENTE,
-							factura:window.codPedido,
-							precio:data_send.precio,
-							porcentaje:PORCENTAJE,
-                            costo: data_send.costo
-						};
-							
-						info.push(chunck);
-						$(this).val(0);
-					}
-				});
-								
-				send = { "productos": JSON.stringify(info) };
-				
-				$.post('/facturacion/factura/insercionMultiple', send, function(dC){
-					//alert(dC.sql);
-                    var grid = Sigma.$grid("factura_grid");
-					grid.reload();
-					cargar_totales();
-					if (dC.error){ alert("No se agregaron algunos pedidos por falta de stock"); }
-				}, "json");
-			}
-
-
-            function closePane(idPane){
-                if($('#'+idPane).css('right') == '0px'){
-                  $('#'+idPane).animate({
-                    'right':'-620px'
-                  },500);
-                }
-            }
-
-             function showPane(idPane){
-                $('.sidePane').animate({
-                    'right':'-620px'
-                },500);
-                
-                if($('#'+idPane).css('right') == '-620px'){
-                    $('#'+idPane).animate({
-                        'right':'0px'
-                    },400);
-                }
-             }
-
-        </script>
+                    </div>
+                </div>
+                <br />
+                <br />
+                <button class="success large" ng-click="vm.AplicarSeleccion();"> <i class="icon-arrow-down-3"></i> Aceptar</button>
+            </div>
         </section>
+
         <!-- PANELES -->
         <div id="fpendientes" class="sidePane" style="width:600px;height:100%;background:#fff;position:fixed;top:0px;right:-620px;z-index:100000;box-shadow:-1px -1px 4px 1px #000;padding-left:20px;">
             <h3>Pedidos pendientes</h3>
             <p>Los pedidos pendientes se pierden después de 1 día sin ser facturados</p>
-            <br/>
-            <br/>
+            <br />
+            <br />
             <div id="bigbox10" style="margin:15px;display:!none;float:left;">
-                <div id="gridbox10" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+                <div id="gridbox10" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;">
 
                 </div>
             </div>
-            <br/>
+            <br />
             <button onclick="closePane('fpendientes')" class="primary">Cerrar panel</button>
         </div>
         <div id="ffacturas" class="sidePane" style="width:600px;height:100%;background:#fff;position:fixed;top:0px;right:-620px;z-index:100000;box-shadow:-1px -1px 4px 1px #000;padding-left:20px;overflow: auto;">
             <h3>Facturas</h3>
-            <br/>
-            <br/>
+            <br />
+            <br />
             <div id="bigbox11" style="margin:15px;display:!none;float:left;">
-                <div id="gridbox11" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+                <div id="gridbox11" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;">
 
                 </div>
             </div>
-            <br/>
+            <br />
             <button onclick="closePane('ffacturas')" class="primary">Cerrar panel</button>
         </div>
         <div id="ffiscal" class="sidePane" style="width:600px;height:100%;background:#fff;position:fixed;top:0px;right:-620px;z-index:100000;box-shadow:-1px -1px 4px 1px #000;padding-left:20px;overflow: auto;">
             <h3>Crédito fiscal</h3>
-            <br/>
-            <br/>
+            <br />
+            <br />
             <div id="bigbox12" style="margin:15px;display:!none;float:left;">
-                <div id="gridbox12" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+                <div id="gridbox12" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;">
 
                 </div>
             </div>
-            <br/>
+            <br />
             <button onclick="closePane('ffiscal')" class="primary">Cerrar panel</button>
         </div>
         <div id="freservas" class="sidePane" style="width:600px;height:100%;background:#fff;position:fixed;top:0px;right:-620px;z-index:100000;box-shadow:-1px -1px 4px 1px #000;padding-left:20px;overflow: auto;">
             <h3>Reservas</h3>
             <p>Las reservas se pierden de forma automática después de 3 días</p>
-            <br/>
-            <br/>
+            <br />
+            <br />
             <div id="bigbox13" style="margin:15px;display:!none;float:left;">
-                <div id="gridbox13" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;" >
+                <div id="gridbox13" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;">
 
                 </div>
             </div>
-            <br/>
+            <br />
             <button onclick="closePane('freservas')" class="primary">Cerrar panel</button>
         </div>
-<div style="clear: both;"></div>
-<div id="metodo_pago" style="display: none;padding: 30px;height:100%; z-index:1000000; background: #fff; width:100%; position: absolute; top: 0px; left: 0px;">
-    <h2>Forma de pago Factura</h2>
-    <p>
-        <br/><br/><br/>
-    </p>
-    <div class="grid">
-        <div class="row">
-            <div class="span5">
-                <table>
-                    <tr>
-                        <td><p><strong>Monto</strong> </p></td>
-                        <td>
-                            <div class="input-control text" >
-                                <input type="text" value="0.0" onkeyup="validarCantidad(event);" id="inptCbr" style="text-align: right;" readonly/>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><p>Efectivo </p></td>
-                        <td>
-                            <div class="input-control text">
-                                <input type="text" value="0.0" onchange="cEfectivo(event);" onkeyup="validarCantidad(event);" id="inptEfec" style="text-align: right;"/>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><p>Cheque </p></td>
-                        <td>
-                            <div class="input-control text">
-                                <input type="text" value="0.0" onchange="cCheque(event);" onkeyup="validarCantidad(event);" id="inptChec" style="text-align: right;"/>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><p>Tarjeta </p></td>
-                        <td>
-                            <div class="input-control text">
-                                <input type="text" value="0.0" onchange="cTarjeta(event);" onkeyup="validarCantidad(event);" id="inptTarj" style="text-align: right;"/>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td><button id="btnDep" onclick="$('#utilizar_boleta').css('display','block');">Depósito</button></td>
-                        <td>
-                            <div class="input-control text">
-                                <input type="text" value="0.0" id="inptDepo" onchange="cDeposito(event);" onkeyup="validarCantidad(event);" style="text-align: right;" readonly/>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
+        <div style="clear: both;"></div>
+        <div id="metodo_pago" style="display: none;padding: 30px;height:100%; z-index:1000000; background: #fff; width:100%; position: absolute; top: 0px; left: 0px;">
+            <h2>Forma de pago Factura</h2>
+            <p>
+                <br /><br /><br />
+            </p>
+            <div class="grid">
+                <div class="row">
+                    <div class="span5">
+                        <table>
+                            <tr>
+                                <td><p><strong>Monto</strong> </p></td>
+                                <td>
+                                    <div class="input-control text">
+                                        <input type="text" value="0.0" onkeyup="validarCantidad(event);" id="inptCbr" style="text-align: right;" readonly />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><p>Efectivo </p></td>
+                                <td>
+                                    <div class="input-control text">
+                                        <input type="text" value="0.0" onchange="cEfectivo(event);" onkeyup="validarCantidad(event);" id="inptEfec" style="text-align: right;" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><p>Cheque </p></td>
+                                <td>
+                                    <div class="input-control text">
+                                        <input type="text" value="0.0" onchange="cCheque(event);" onkeyup="validarCantidad(event);" id="inptChec" style="text-align: right;" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><p>Tarjeta </p></td>
+                                <td>
+                                    <div class="input-control text">
+                                        <input type="text" value="0.0" onchange="cTarjeta(event);" onkeyup="validarCantidad(event);" id="inptTarj" style="text-align: right;" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><button id="btnDep" onclick="$('#utilizar_boleta').css('display','block');">Depósito</button></td>
+                                <td>
+                                    <div class="input-control text">
+                                        <input type="text" value="0.0" id="inptDepo" onchange="cDeposito(event);" onkeyup="validarCantidad(event);" style="text-align: right;" readonly />
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="span6">
+                        <table>
+                            <tr>
+                                <td><p>Número</p></td>
+                                <td><p>Fecha/Vence</p></td>
+                                <td><p>Banco/Autorización</p></td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="input-control text">
+                                        <input type="text" class="chk" id="c_numero" disabled />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-control text">
+                                        <input type="text" class="chk" id="c_fecha" maxlength="10" onkeyup="mascara(this, '-', patron_fecha, true)" placeholder=" - - " disabled />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-control text">
+                                        <input type="text" class="chk" id="c_banco" disabled />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="input-control text">
+                                        <input type="text" class="tar" maxlength="19" onkeyup="mascara(this, '-', patron_tarjeta, true)" placeholder=" - - - " disabled />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-control text">
+                                        <input type="text" class="tar" onkeyup="mascara(this, '/', patron_fecha_tarjeta, true)" maxlength="5" placeholder=" / " disabled />
+                                    </div>
+                                </td>
+                                <td></td>
+                            </tr>
+                        </table>
+                        <p><br /></p>
+                        <table>
+                            <tr>
+                                <td>
+                                    <p>
+                                        Concepto
+                                        &nbsp;&nbsp;&nbsp;&nbsp;
+                                        &nbsp;&nbsp;&nbsp;&nbsp;
+                                        &nbsp;&nbsp;&nbsp;&nbsp;
+                                        &nbsp;&nbsp;&nbsp;&nbsp;
+                                    </p>
+                                </td>
+                                <td colspan="2">
+                                    <div class="input-control text span4">
+                                        <input type="text" id="nCon" readonly />
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
             </div>
-            <div class="span6">
-                <table>
-                    <tr>
-                        <td><p>Número</p></td>
-                        <td><p>Fecha/Vence</p></td>
-                        <td><p>Banco/Autorización</p></td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="input-control text">
-                                <input type="text" class="chk" id="c_numero" disabled/>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-control text">
-                                <input type="text" class="chk" id="c_fecha" maxlength="10" onkeyup="mascara(this, '-', patron_fecha, true)" placeholder=" - - " disabled/>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-control text">
-                                <input type="text" class="chk" id="c_banco" disabled/>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class="input-control text">
-                                <input type="text" class="tar" maxlength="19" onkeyup="mascara(this, '-', patron_tarjeta, true)" placeholder=" - - - " disabled/>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-control text">
-                                <input type="text" class="tar" onkeyup="mascara(this, '/', patron_fecha_tarjeta, true)" maxlength="5" placeholder=" / " disabled/>
-                            </div>
-                        </td>
-                        <td>
-                            
-                        </td>
-                    </tr>
-                </table>
-                <p><br/></p>
-                <table>
-                    <tr>
-                        <td>
-                            <p>
-                                Concepto 
-                                &nbsp;&nbsp;&nbsp;&nbsp;
-                                &nbsp;&nbsp;&nbsp;&nbsp;
-                                &nbsp;&nbsp;&nbsp;&nbsp;
-                                &nbsp;&nbsp;&nbsp;&nbsp;
-                            </p>
-                        </td>
-                        <td colspan="2">
-                            <div class="input-control text span4">
-                                <input type="text" id="nCon" readonly/>
-                            </div>
-                        </td>
-                    </tr>
-                </table>
-            </div>
+            <p>
+                <br />
+                <br />
+                <strong style="color: red;">
+                    Cambio
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                    &nbsp;&nbsp;&nbsp;&nbsp;
+                </strong>
+                $<span id="cambioCobro">0.0</span>
+                <br />
+                <br />
+            </p>
+            <button class="large" onclick="facturar_contado();$('#metodo_pago').css('display','none');" "><i class="icon-printer"></i> Imprimir</button>
+            <button class="large" id="btnClose"><i class="icon-cancel" style="color: red;"></i> Cancelar</button>
         </div>
-    </div>
-     <p>
-        <br/>
-        <br/>
-            <strong style="color: red;"> 
-                Cambio 
-                &nbsp;&nbsp;&nbsp;&nbsp;
-                &nbsp;&nbsp;&nbsp;&nbsp;
-                &nbsp;&nbsp;&nbsp;&nbsp;
-                &nbsp;&nbsp;&nbsp;&nbsp;
-                &nbsp;&nbsp;&nbsp;&nbsp;
-            </strong> 
-            $<span id="cambioCobro">0.0</span>  
-        <br/>
-        <br/>
-    </p>
-    <button class="large" onclick="facturar_contado();$('#metodo_pago').css('display','none');""><i class="icon-printer"></i> Imprimir</button>
-    <button class="large" id="btnClose"><i class="icon-cancel" style="color: red;"></i> Cancelar</button>
-</div>
-<div id="utilizar_boleta" style="display: none;padding: 30px;height:100%; z-index:10000000; background: #fff; width:100%; position: absolute; top: 0px; left: 0px;">
-    <h2>Utilizar boleta</h2>
-    <p>Código cliente-> <strong id="lblCliente"></strong><br/></p>
-    <div class="grid">
-        <div class="row">
-            <div class="span6">
-                <table style="text-align: center;">
-                    <tr>
-                        <td>
-                            <div class="input-control select span3">
-                                <select id="S_casacredito">
-                                    <!-- START bancos2 -->
-                                        <option value="{id}">{casa}</option>
-                                    <!-- END bancos2 -->
-                                </select>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-control text">
-                                <input type="text" onchange="cargarBoleta();" id="S_boleta"/>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="input-control text">
-                                <input type="text" id="S_utilizar" value="0.0" onkeyup="validarSaldo();"/>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>Banco</td>
-                        <td>Boleta #</td>
-                        <td>Utilizar</td>
-                     </tr>
-                </table>
-            </div>
-            <div class="span4">
-                <button onclick="establecerDeposito();$('#utilizar_boleta').css('display','none');"> <i class="icon-floppy"></i> Guardar </button>
-                <button> Borrar</button>
-                <button onclick="$('#utilizar_boleta').css('display','none');"> <i class="icon-cancel"></i> Cancelar</button>
-            </div>
-        </div>
-        <div class="row">
-            <div class="span3">
-                Banco
-                <div class="input-control select">
-                    <select id="M_banco" disabled>
-                        <!-- START bancos -->
-                            <option value="{id}">{casa}</option>
-                        <!-- END bancos -->
-                    </select>
+        <div id="utilizar_boleta" style="display: none;padding: 30px;height:100%; z-index:10000000; background: #fff; width:100%; position: absolute; top: 0px; left: 0px;">
+            <h2>Utilizar boleta</h2>
+            <p>Código cliente-> <strong id="lblCliente"></strong><br /></p>
+            <div class="grid">
+                <div class="row">
+                    <div class="span6">
+                        <table style="text-align: center;">
+                            <tr>
+                                <td>
+                                    <div class="input-control select span3">
+                                        <select id="S_casacredito">
+                                            <!-- START bancos2 -->
+                                            <option value="{id}">{casa}</option>
+                                            <!-- END bancos2 -->
+                                        </select>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-control text">
+                                        <input type="text" onchange="cargarBoleta();" id="S_boleta" />
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="input-control text">
+                                        <input type="text" id="S_utilizar" value="0.0" onkeyup="validarSaldo();" />
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Banco</td>
+                                <td>Boleta #</td>
+                                <td>Utilizar</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="span4">
+                        <button onclick="establecerDeposito();$('#utilizar_boleta').css('display','none');"> <i class="icon-floppy"></i> Guardar </button>
+                        <button> Borrar</button>
+                        <button onclick="$('#utilizar_boleta').css('display','none');"> <i class="icon-cancel"></i> Cancelar</button>
+                    </div>
                 </div>
-                # Boleta
-                <div class="input-control text">
-                    <input type="text" id="M_boleta" disabled/>
-                </div>
-                Cliente
-                <div class="input-control text">
-                    <input type="text" id="m_codigo_cliente" disabled/>
-                </div>
-                Fecha boleta
-                <div id="fecha" class="input-control text">
-                    <input type="text" id="M_fecha" disabled/>
-                    <button type="button" class="btn-date"></button>
-                </div>
-                Monto original
-                <div class="input-control text">
-                    <input type="text" value="0.0" id="M_monto" disabled/>
-                </div>
-                Saldo
-                <div class="input-control text">
-                    <input type="text" value="0.0" id="M_saldo" disabled/>
-                </div>
-            </div>
-            <div class="span3">
-                Solicitado por
-                <div class="input-control select" >
-                    <select id="M_solicitado_por" disabled>
-                    </select>
-                </div>
-                Fecha solicitud
-                <div class="input-control text">
-                    <input type="text" id="M_fecha_solicitud" value="" disabled/>
-                </div>
-                Autorizado por
-                <div class="input-control select">
-                    <select id="M_autorizado_por" disabled>
-                    </select>
-                </div>
-                Fecha autorización
-                <div class="input-control text">
-                    <input type="text" id="M_fecha_autorizacion" disabled/>
-                </div>
-                Estatus
-                <div class="input-control select">
-                    <select id="M_estatus" disabled>
-                        <option value="1">
-                            Pendiente
-                        </option>
-                        <option value="2">
-                            Aprobado
-                        </option>
-                    </select>
+                <div class="row">
+                    <div class="span3">
+                        Banco
+                        <div class="input-control select">
+                            <select id="M_banco" disabled>
+                                <!-- START bancos -->
+                                <option value="{id}">{casa}</option>
+                                <!-- END bancos -->
+                            </select>
+                        </div>
+                        # Boleta
+                        <div class="input-control text">
+                            <input type="text" id="M_boleta" disabled />
+                        </div>
+                        Cliente
+                        <div class="input-control text">
+                            <input type="text" id="m_codigo_cliente" disabled />
+                        </div>
+                        Fecha boleta
+                        <div id="fecha" class="input-control text">
+                            <input type="text" id="M_fecha" disabled />
+                            <button type="button" class="btn-date"></button>
+                        </div>
+                        Monto original
+                        <div class="input-control text">
+                            <input type="text" value="0.0" id="M_monto" disabled />
+                        </div>
+                        Saldo
+                        <div class="input-control text">
+                            <input type="text" value="0.0" id="M_saldo" disabled />
+                        </div>
+                    </div>
+                    <div class="span3">
+                        Solicitado por
+                        <div class="input-control select">
+                            <select id="M_solicitado_por" disabled></select>
+                        </div>
+                        Fecha solicitud
+                        <div class="input-control text">
+                            <input type="text" id="M_fecha_solicitud" value="" disabled />
+                        </div>
+                        Autorizado por
+                        <div class="input-control select">
+                            <select id="M_autorizado_por" disabled></select>
+                        </div>
+                        Fecha autorización
+                        <div class="input-control text">
+                            <input type="text" id="M_fecha_autorizacion" disabled />
+                        </div>
+                        Estatus
+                        <div class="input-control select">
+                            <select id="M_estatus" disabled>
+                                <option value="1">
+                                    Pendiente
+                                </option>
+                                <option value="2">
+                                    Aprobado
+                                </option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>        
-<script type="text/javascript">
-    function mostrar_metodo_pago(){
-        if ($('#concepto').val().trim() != "" && window.FacTotal > 0) {
-            $('#inptCbr').val(window.FacTotal);
-            $('#nCon').val($('#concepto').val().trim());
-            $('#metodo_pago').css('display', 'block');
-        }else{
-            alert("No se puede facturar");
-        }
-    }
-    
-    function validarSaldo(){
-        var value = $('#S_utilizar').val();
-        if(isNaN(value)){
-            $('#S_utilizar').val("0.0");
-        }else{
-            if(parseFloat(value) > parseFloat(window._max)){
-                $('#S_utilizar').val(window._max);
-            }
-        }
-    }
-    
-    function establecerDeposito(){
-        if(parseFloat($('#S_utilizar').val())< parseFloat(window.FacTotal)){
-            alert("El depósito no cumple con el monto solicitado");
-        }else{
-            
-            if(parseFloat($('#S_utilizar').val())>window.FacTotal){
-                $('#S_utilizar').val(window.FacTotal);
-            }
-            
-            $('#inptDepo').val($('#S_utilizar').val());
-            $('#inptDepo').change();
-        }
-    }
-    
-    function cargarBoleta(){
-        var v_casacredito = $('#S_casacredito').val();
-        var v_boleta = $('#S_boleta').val();
-        
-        var data = {
-            casacredito : v_casacredito,
-            boleta : v_boleta    
-        };
-        
-        var uri = "/cobros/credito/cargar_boleta";
-        
-        $.post(uri, data, function(response){
-            if(response.exists){
-                if(response.estado == 2){
-                    if(response.saldo > 0){
-                        $('#M_banco').val(response.banco);
-                        $('#M_boleta').val(response.id);
-                        $('#m_codigo_cliente').val(response.cliente);
-                        $('#M_fecha').val(response.fecha);
-                        $('#M_monto').val(response.monto);
-                        $('#M_saldo').val(response.saldo);
-                        $('#M_solicitado_por').append('<option>'+response.solicitado_por+'</option>');
-                        $('#M_fecha_solicitud').val(response.fecha_solicitud);
-                        $('#M_autorizado_por').append('<option>'+response.autorizado_por+'</option>');
-                        $('#M_fecha_autorizacion').val(response.fecha_autorizacion);
-                        $('#M_estatus').val(response.estado);
-                        window._max = response.saldo;
-                        $('#S_utilizar').val(response.saldo);
-                    }else{
-                        alert("El saldo de esta boleta es insuficiente, se ha agotado completamente");
-                    }
-                }else{
-                    alert("Error: Esta boleta aún no ha sido autorizada y por lo tanto no se puede utilizar");
-                }
-            }else{
-                alert("Error:\n\nLa boleta indicada no se ha registrado en el sistema! ");
-            }
-        },"json");
-        
-    }
-    
-    function cEfectivo(event){
-        var valor = $('#inptEfec').val();
-        
-        if(valor > 0){
-            $('#cambioCobro').html( (valor - $('#inptCbr').val()).toFixed(2) );
-            $('#inptChec').attr('readonly', true);
-            $('#btnDep').attr('disabled', true);
-            $('#inptTarj').attr('readonly', true);
-            $('#inptChec').val("0.0");
-            $('#inptDepo').val("0.0");
-            $('#inptTarj').val("0.0");
-        }else{
-            $('#cambioCobro').html("0.0");
-            $('#inptChec').removeAttr('readonly');
-            $('#btnDep').removeAttr('disabled');
-            $('#inptTarj').removeAttr('readonly');
-        }
-    }
-    
-    function cCheque(event){
-        var valor = $('#inptChec').val();
-        
-        if(valor > 0){
-            $('#cambioCobro').html((valor - $('#inptCbr').val()).toFixed(2));
-            $('#inptEfec').attr('readonly', true);
-            $('#btnDep').attr('disabled', true);
-            $('#inptTarj').attr('readonly', true);
-            $('#inptEfec').val("0.0");
-            $('#inptDepo').val("0.0");
-            $('#inptTarj').val("0.0");
-            $('.chk').removeAttr("disabled");
-        }else{
-            $('#cambioCobro').html("0.0");
-            $('#inptEfec').removeAttr('readonly');
-            $('#btnDep').removeAttr('disabled');
-            $('#inptTarj').removeAttr('readonly');
-            $('.chk').attr("disabled", true);
-        }
-    }
-    
-    function cTarjeta(event){
-        var valor = $('#inptTarj').val();
-        
-        if(valor > 0){
-            $('#cambioCobro').html((valor - $('#inptCbr').val()).toFixed(2));
-            $('#inptEfec').attr('readonly', true);
-            $('#btnDep').attr('disabled', true);
-            $('#inptChec').attr('readonly', true);
-            $('#inptEfec').val("0.0");
-            $('#inptDepo').val("0.0");
-            $('#inptChec').val("0.0");
-            $('.tar').removeAttr("disabled");
-        }else{
-            $('#cambioCobro').html("0.0");
-            $('#inptEfec').removeAttr('readonly');
-            $('#btnDep').removeAttr('disabled');
-            $('#inptChec').removeAttr('readonly');
-            $('.tar').attr("disabled", true);
-        }
-    }
-    
-    function cDeposito(event){
-        var valor = $('#inptDepo').val();
-        
-        if(valor > 0){
-            $('#cambioCobro').html((valor - $('#inptCbr').val()).toFixed(2));
-            $('#inptEfec').attr('readonly', true);
-            $('#inptTarj').attr('readonly', true);
-            $('#inptChec').attr('readonly', true);
-            $('#inptEfec').val("0.0");
-            $('#inptTarj').val("0.0");
-            $('#inptChec').val("0.0");
-        }else{
-            $('#cambioCobro').html("0.0");
-            $('#inptEfec').removeAttr('readonly');
-            $('#inptTarj').removeAttr('readonly');
-            $('#inptChec').removeAttr('readonly');
-        }
-    }
-</script>
-
+    </section>
+</section>
 <script type="text/javascript" >
-
-
 
     var pendientes_grid = "pendientes_grid";
 
@@ -2265,7 +642,7 @@
 
     var gridOptionPendientes = {
         id: pendientes_grid,
-        loadURL: '/facturacion/factura/cargarPendientes',
+        loadURL: '',
         saveURL: '',
         width: "543", //"100%", // 700,
         height: "360", //"100%", // 330,
@@ -2321,7 +698,7 @@
 
     var gridOptionReservas = {
         id: reservas_grid,
-        loadURL: '/facturacion/factura/cargarReservas',
+        loadURL: '',
         saveURL: '',
         width: "543", //"100%", // 700,
         height: "360", //"100%", // 330,
@@ -2391,7 +768,7 @@
 
     var gridOptionFacturas = {
         id: facturas_grid,
-        loadURL: '/facturacion/factura/resumenFacturas',
+        loadURL: '',
         saveURL: '',
         width: "810", //"100%", // 700,
         height: "360", //"100%", // 330,
@@ -2455,7 +832,7 @@
 
     var gridOptionCF = {
         id: creditofiscal_grid,
-        loadURL: '/facturacion/factura/resumenFiscal',
+        loadURL: '',
         saveURL: '',
         width: "880", //"100%", // 700,
         height: "360", //"100%", // 330,
@@ -2479,5 +856,128 @@
     Sigma.Util.onLoad(function() {
         mygridCF.render();
     });    
+
+    var grid_demo_id = "factura_grid";
+
+    var dsOption = {
+        fields: [
+            { name: 'descripcion' },
+            { name: 'precio' },
+            { name: 'cantidad' },
+            { name: 'porcentaje' },
+            { name: 'descuento' },
+            { name: 'importe' },
+            { name: 'id_factura' },
+            { name: 'id' }
+        ],
+        recordType: 'object'
+    }
+
+    var colsOption = [
+        { id: 'descripcion', header: "Descripcion", width: 250 },
+        { id: 'precio', header: "Precio", width: 80 },
+        { id: 'cantidad', header: "Cantidad", width: 80 },
+        { id: 'porcentaje', header: "%", width: 80 },
+        { id: 'descuento', header: "Descuento", width: 80 },
+        { id: 'importe', header: "Importe", width: 80 },
+        { id: 'opt', header: "Opciones", width: 80, renderer: del_render }
+    ];
+
+    var gridOption = {
+        id: grid_demo_id,
+        loadURL: '',
+        saveURL: '',
+        width: "732", //"100%", // 700,
+        height: "320", //"100%", // 330,
+        container: 'gridbox',
+        replaceContainer: true,
+        encoding: 'UTF-8', // Sigma.$encoding(), 
+        dataset: dsOption,
+        columns: colsOption,
+        allowCustomSkin: true,
+        skin: 'mac',
+        clickStartEdit: true,
+        defaultRecord: { 'id': "00", 'nombre': "" },
+        remotePaging: true,
+        autoLoad: true,
+        pageSize: 10,
+        toolbarContent: 'nav state'
+    };
+
+    var mygrid = new Sigma.Grid(gridOption);
+    Sigma.Util.onLoad(function () {
+        mygrid.render();
+    });
+
+
+    /* renderizado para el grid, permite la eliminacion de elementos en las facturas */
+    function del_render(value, record, columnObj, grid, colNo, rowNo) {
+        return '<a href="javascript:void(0);" onclick="delete_item(' + record['id'] + ', ' + record['precio'] + ')">Eliminar</a>';
+    }
+
+
+    var ResumenStock = "stock_grid";
+
+    var dsOptionResumenStock = {
+        fields: [
+            { name: 'linea' },
+            { name: 'estilo' },
+            { name: 'color' },
+            { name: 'talla' },
+            { name: 'bodega' },
+            { name: 'stock' }
+        ],
+        recordType: 'object'
+    }
+    var colsOptionResumenStock = [
+        { id: 'linea', header: "Linea", width: 100 },
+        { id: 'estilo', header: "Estilo", width: 100 },
+        { id: 'color', header: "Color", width: 100 },
+        { id: 'talla', header: "Talla", width: 100 },
+        { id: 'ingresan', header: "Ingresan", width: 100, renderer: input_render },
+        { id: 'stock', header: "Stock", width: 100, renderer: stock_render },
+        { id: 'costo', header: "Costo", width: 100 },
+        { id: 'precio', header: "Precio", width: 100 },
+        { id: 'bodega', header: "Bodega", width: 100 }
+    ];
+
+    var gridOption3 = {
+        id: ResumenStock,
+        loadURL: '',
+        saveURL: '',
+        width: "900", //"100%", // 700,
+        height: "320", //"100%", // 330,
+        container: 'gridbox6',
+        replaceContainer: true,
+        encoding: 'UTF-8', // Sigma.$encoding(), 
+        dataset: dsOptionResumenStock,
+        columns: colsOptionResumenStock,
+        clickStartEdit: true,
+        defaultRecord: { 'id': "00", 'nombre': "" },
+        pageSize: 10,
+        remotePaging: true,
+        autoLoad: false,
+        toolbarContent: ' nav state'
+    };
+
+
+    function input_render(value, record, columnObj, grid, colNo, rowNo) {
+        string_ = record['linea'] + '_' + record['estilo'] + '_' + record['color'] + '_' + record['talla'] + '_' + record['costo'] + '_' + record['stock'] + '_' + record['precio'];
+        return '<input type="text" value="0" class="items" id="' + string_ + '"/>';
+    }
+
+    function stock_render(value, record, columnObj, grid, colNo, rowNo) {
+        if (value == "" || value == " " || value == null) {
+            return "0";
+        } else {
+            return value;
+        }
+    }
+
+    var mygrid3 = new Sigma.Grid(gridOption3);
+
+    Sigma.Util.onLoad(function () {
+        mygrid3.render();
+    });
 
 </script>

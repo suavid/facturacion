@@ -15,24 +15,11 @@
         </noscript>
         <script>
 
-            $(document).ready(function ()
-            {
-                var messages_handler = new url_handler();
-                messages_handler.initialize();
-                if (messages_handler.isKey('success'))
-                {
-
-                    if (messages_handler.getValue('success'))
-                    {
-                        var not = $.Notify({
-                            caption: "Transacción correcta",
-                            style: {background:'green', color:'white'},
-                            content: "Los cambios se han guardado correctamente",
-                            timeout: 5000 // 10 seconds
-                        });
-                    }
+            function VerificarEntero(a) {
+                if (isNaN($(a).val())) {
+                    $(a).val("0");
                 }
-            });
+            }
         </script>
         <div>
             <nav class="navigation-bar light fixed-top shadow" >
@@ -63,25 +50,25 @@
                             <li>
                                 <a href="/facturacion/factura/nuevo"><i class="icon-cart"></i> Facturar</a>
                             </li>
-                            <li>
+                            <!--<li>
                                 <a href="/facturacion/factura/cambios"><i class="icon-tab"></i> Cambios</a>            
                             </li>
                             <li>
                                 <a href="/facturacion/factura/notas_remision"><i class="icon-briefcase"></i> Notas de remisión</a>
-                            </li>
+                            </li>-->
                         </ul>
                     </div>
                     
-                    <div class="element">
+                    <!--<div class="element">
                         <a class="dropdown-toggle" href="#"><i class="icon-remove"></i> Anulaciones</a>
                         <ul class="dropdown-menu" data-role="dropdown">
 							<li>
                                 <a href="/facturacion/factura/anular"> Anular factura</a>
 							</li>
                         </ul>
-                    </div>
+                    </div>-->
    
-                    <div class="element">
+                    <!--<div class="element">
                         <a class="dropdown-toggle" href="#"><i class="icon-search"></i> Consultas</a>
                         <ul class="dropdown-menu" data-role="dropdown">
                             <li>
@@ -95,9 +82,9 @@
                                 </a>
                             </li>
                         </ul>
-                    </div>
+                    </div>-->
                     
-                    <div class="element">
+                    <!--<div class="element">
                         <a class="dropdown-toggle" href="#"><i class="icon-clipboard"></i> Reportes</a>
                         <ul class="dropdown-menu" data-role="dropdown">
                             <li>
@@ -106,7 +93,7 @@
                                 </a>
                             </li>
                         </ul>
-                    </div>
+                    </div>-->
                     
                     <div class="element place-right">
                         <a class="dropdown-toggle" href="#">

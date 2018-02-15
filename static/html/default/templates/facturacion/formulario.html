@@ -28,8 +28,8 @@
         margin-bottom: 0px;
     }
 </style>
-<section ng-controller="PedidoController as vm">
-
+<section id="facturadiv" ng-controller="PedidoController as vm" ng-init="vm.ReportServerURL = '{REPORT_SERVER_URL}'">
+    
     <div class="window" id="ventana_cambio" style="position:fixed;margin:0 auto;z-index:10000;top:-30px;display:none;">
         <div class="caption">
             <span class="icon icon-windows"></span>
@@ -56,36 +56,36 @@
                     <i class="icon-printer on-left"></i>
                     Imprimir
                 </button>
-                <button ng-click="vm.reservar();">
+                <button ng-click="vm.ReservarPedido();">
                     <i class="icon-clock on-left"></i>
                     Reservar
                 </button>
-                <button ng-click="vm.sPane('fpendientes');">
-                    <i class="icon-search on-left"></i>
-                    Pendiente
-                </button>
-                <button ng-click="vm.sPane('ffacturas');">
-                    <i class="icon-search on-left"></i>
-                    Facturado
-                </button>
-                <button ng-click="vm.sPane('ffiscal');">
+                <a href="{REPORT_URL}Facturacion/ReporteDePedidosPendientes" target="_blank">
+                    <button>
+                        <i class="icon-search on-left"></i>
+                        Pendiente
+                    </button>
+                </a>
+                <!--<button ng-click="vm.sPane('ffiscal');">
                     <i class="icon-search on-left"></i>
                     C.F
-                </button>
-                <button ng-click="vm.sPane('freservas');">
-                    <i class="icon-search on-left"></i>
-                    Reservas
-                </button>
-                <button ng-click="vm.traerCambio();">
+                </button>-->
+                <a href="{REPORT_URL}Facturacion/ReporteDeReservas" target="_blank">
+                    <button ng-click="vm.sPane('freservas');">
+                        <i class="icon-search on-left"></i>
+                        Reservas
+                    </button>
+                </a>
+                <!--<button ng-click="vm.traerCambio();">
                     <i class="icon-tab on-left"></i>
                     Cambios
-                </button>
-                <strong>VALE POR &nbsp;&nbsp;</strong>
+                </button>-->
+                <!--<strong>VALE POR &nbsp;&nbsp;</strong>
                 <div class="input-control select span3">
                     <select ng-model="vm.valeActivo">
                         <option ng-repeat="vale in vm.ValesCliente" value="{{vale.id}}"> {{vale.concepto}}</option>
                     </select>
-                </div>
+                </div>-->
             </div>
         </div>
         <hr/>
@@ -241,42 +241,34 @@
                 <select ng-model="vm.bLinea" style="width:130px;" ng-disabled="!vm.PedidoActivo">
                     <option ng-repeat="linea in vm.ListaLineas" value="{{linea.id_categoria_especifica}}">{{linea.nombre}}</option>
                 </select>
-                <input type="text" ng-model="vm.bEstilo" style="width:70px;padding: 0px;" onblur="verificarExistencia();" ng-disabled="!vm.PedidoActivo" />
+                <input type="text" ng-model="vm.bEstilo" style="width:170px;padding: 0px;" ng-blur="vm.ConsultaExistencias();" ng-disabled="!vm.PedidoActivo" />
 
-                <input type="text" ng-model="vm.bColor" style="width:70px;padding: 0px;" ng-disabled="!vm.PedidoActivo" />
+                <input type="hidden" ng-model="vm.bColor" style="width:70px;padding: 0px;" ng-disabled="!vm.PedidoActivo" />
 
-                <input type="text" ng-model="vm.bTalla" style="width:70px;padding: 0px;" ng-blur="vm.ConsultaExistencias();" ng-disabled="!vm.PedidoActivo">
+                <input type="hidden" ng-model="vm.bTalla" style="width:70px;padding: 0px;" ng-disabled="!vm.PedidoActivo">
 
-                <input type="text" ng-model="vm.bPrecio" style="width:70px;padding: 0px;" readonly />
+                <input type="hidden" ng-model="vm.bPrecio" style="width:70px;padding: 0px;" readonly />
 
                 <input type="hidden" ng-model="vm.bCosto" style="width:70px;padding: 0px;" readonly />
 
-                <input type="text" ng-model="vm.bCantidad" style="width:70px;padding: 0px"  />
+                <input type="hidden" ng-model="vm.bCantidad" style="width:70px;padding: 0px" />
 
-                <input type="text" ng-model="vm.bPorcentaje" style="width:70px;padding: 0px" readonly />
+                <input type="hidden" ng-model="vm.bPorcentaje" style="width:70px;padding: 0px" readonly />
 
-                <input type="text" ng-model="vm.bDescuento" style="width:70px;padding: 0px" readonly />
+                <input type="hidden" ng-model="vm.bDescuento" style="width:70px;padding: 0px" readonly />
 
-                <input type="text" ng-model="vm.bImporte" style="width:70px;padding: 0px" readonly />
+                <input type="hidden" ng-model="vm.bImporte" style="width:70px;padding: 0px" readonly />
 
-                <input type="text" ng-model="vm.bSerie" style="width:70px;padding: 0px" readonly />
+                <input type="hidden" ng-model="vm.bSerie" style="width:70px;padding: 0px" readonly />
 
-                <input type="text" ng-model="vm.bSerie" style="width:70px;padding: 0px" readonly />
+                <input type="hidden" ng-model="vm.bSerie" style="width:70px;padding: 0px" readonly />
 
-                <button onfocus="agregarCompra(event);" onclick="agregarCompra(event);" id="Enter" ng-disabled="!vm.PedidoActivo"><i class="icon-enter-2"></i></button>
+                <!--<button onfocus="agregarCompra(event);" onclick="agregarCompra(event);" id="Enter" ng-disabled="!vm.PedidoActivo"><i class="icon-enter-2"></i></button>-->
             </div>
             <div id="info-titles">
-                <p style="padding-right:150px;">Bodega</p>
-                <p style="padding-right:130px;">Linea</p>
-                <p>Estilo</p>
-                <p>Color</p>
-                <p>Talla</p>
-                <p>Precio</p>
-                <p>Cantidad</p>
-                <p>% Desc</p>
-                <p>Monto Desc</p>
-                <p>Importe</p>
-                <p>S. garant&iacute;a</p>
+                <p style="padding-left:50px;">Bodega</p>
+                <p style="padding-left:130px;">Linea</p>
+                <p style="padding-left:130px;">Estilo</p>
             </div>
         </form>
         <br />
@@ -309,7 +301,8 @@
         </div>
 
         <section>
-            <div ng-show="vm.MostrarSelector" style="background:#fff;position:fixed;top:0px;left:0px;width:100%;height:100%;z-index:100001;text-align:center;">
+            <div ng-show="vm.MostrarSelector" style="background:#fff;position:fixed;top:0px;left:0px;width:100%;height:100%;z-index:100001;padding: 100px;">
+                <h3>Resumen de existencias</h3>
                 <div id="bigbox6" style="margin:15px;display:!none;">
                     <div id="gridbox6" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;">
 
@@ -317,64 +310,14 @@
                 </div>
                 <br />
                 <br />
-                <button class="success large" ng-click="vm.AplicarSeleccion();"> <i class="icon-arrow-down-3"></i> Aceptar</button>
+                <button class="success large" ng-click="vm.AplicarSeleccion();" style="margin-left:30px;"> <i class="icon-arrow-down-3"></i> Aceptar</button>
             </div>
         </section>
 
-        <!-- PANELES -->
-        <div id="fpendientes" class="sidePane" style="width:600px;height:100%;background:#fff;position:fixed;top:0px;right:-620px;z-index:100000;box-shadow:-1px -1px 4px 1px #000;padding-left:20px;">
-            <h3>Pedidos pendientes</h3>
-            <p>Los pedidos pendientes se pierden después de 1 día sin ser facturados</p>
-            <br />
-            <br />
-            <div id="bigbox10" style="margin:15px;display:!none;float:left;">
-                <div id="gridbox10" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;">
-
-                </div>
-            </div>
-            <br />
-            <button onclick="closePane('fpendientes')" class="primary">Cerrar panel</button>
-        </div>
-        <div id="ffacturas" class="sidePane" style="width:600px;height:100%;background:#fff;position:fixed;top:0px;right:-620px;z-index:100000;box-shadow:-1px -1px 4px 1px #000;padding-left:20px;overflow: auto;">
-            <h3>Facturas</h3>
-            <br />
-            <br />
-            <div id="bigbox11" style="margin:15px;display:!none;float:left;">
-                <div id="gridbox11" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;">
-
-                </div>
-            </div>
-            <br />
-            <button onclick="closePane('ffacturas')" class="primary">Cerrar panel</button>
-        </div>
-        <div id="ffiscal" class="sidePane" style="width:600px;height:100%;background:#fff;position:fixed;top:0px;right:-620px;z-index:100000;box-shadow:-1px -1px 4px 1px #000;padding-left:20px;overflow: auto;">
-            <h3>Crédito fiscal</h3>
-            <br />
-            <br />
-            <div id="bigbox12" style="margin:15px;display:!none;float:left;">
-                <div id="gridbox12" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;">
-
-                </div>
-            </div>
-            <br />
-            <button onclick="closePane('ffiscal')" class="primary">Cerrar panel</button>
-        </div>
-        <div id="freservas" class="sidePane" style="width:600px;height:100%;background:#fff;position:fixed;top:0px;right:-620px;z-index:100000;box-shadow:-1px -1px 4px 1px #000;padding-left:20px;overflow: auto;">
-            <h3>Reservas</h3>
-            <p>Las reservas se pierden de forma automática después de 3 días</p>
-            <br />
-            <br />
-            <div id="bigbox13" style="margin:15px;display:!none;float:left;">
-                <div id="gridbox13" style="border:0px solid #cccccc;background-color:#f3f3f3;padding:5px;height:200px;width:700px;">
-
-                </div>
-            </div>
-            <br />
-            <button onclick="closePane('freservas')" class="primary">Cerrar panel</button>
-        </div>
         <div style="clear: both;"></div>
-        <div id="metodo_pago" style="display: none;padding: 30px;height:100%; z-index:1000000; background: #fff; width:100%; position: absolute; top: 0px; left: 0px;">
+        <div id="formapago" style="display:none; padding: 30px;height:100%; z-index:1000000; background: #fff; width:100%; position: absolute; top: 0px; left: 0px;">
             <h2>Forma de pago Factura</h2>
+            <hr/>
             <p>
                 <br /><br /><br />
             </p>
@@ -383,104 +326,24 @@
                     <div class="span5">
                         <table>
                             <tr>
-                                <td><p><strong>Monto</strong> </p></td>
+                                <td><p><strong>Monto</strong> </p>&nbsp;&nbsp;</td>
                                 <td>
                                     <div class="input-control text">
-                                        <input type="text" value="0.0" onkeyup="validarCantidad(event);" id="inptCbr" style="text-align: right;" readonly />
+                                        <input type="text" onkeyup="VerificarEntero(this);" id="inptCbr" ng-model="vm.Total" style="text-align: right;" readonly />
                                     </div>
                                 </td>
                             </tr>
                             <tr>
-                                <td><p>Efectivo </p></td>
+                                <td><p>Efectivo </p>&nbsp;&nbsp;</td>
                                 <td>
                                     <div class="input-control text">
-                                        <input type="text" value="0.0" onchange="cEfectivo(event);" onkeyup="validarCantidad(event);" id="inptEfec" style="text-align: right;" />
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><p>Cheque </p></td>
-                                <td>
-                                    <div class="input-control text">
-                                        <input type="text" value="0.0" onchange="cCheque(event);" onkeyup="validarCantidad(event);" id="inptChec" style="text-align: right;" />
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><p>Tarjeta </p></td>
-                                <td>
-                                    <div class="input-control text">
-                                        <input type="text" value="0.0" onchange="cTarjeta(event);" onkeyup="validarCantidad(event);" id="inptTarj" style="text-align: right;" />
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td><button id="btnDep" onclick="$('#utilizar_boleta').css('display','block');">Depósito</button></td>
-                                <td>
-                                    <div class="input-control text">
-                                        <input type="text" value="0.0" id="inptDepo" onchange="cDeposito(event);" onkeyup="validarCantidad(event);" style="text-align: right;" readonly />
+                                        <input type="text"  onchange="cEfectivo(event);" ng-model="vm.MontoPagoEfectivo" onkeyup="VerificarEntero(this);" id="inptEfec" style="text-align: right;" />
                                     </div>
                                 </td>
                             </tr>
                         </table>
                     </div>
                     <div class="span6">
-                        <table>
-                            <tr>
-                                <td><p>Número</p></td>
-                                <td><p>Fecha/Vence</p></td>
-                                <td><p>Banco/Autorización</p></td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="input-control text">
-                                        <input type="text" class="chk" id="c_numero" disabled />
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="input-control text">
-                                        <input type="text" class="chk" id="c_fecha" maxlength="10" onkeyup="mascara(this, '-', patron_fecha, true)" placeholder=" - - " disabled />
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="input-control text">
-                                        <input type="text" class="chk" id="c_banco" disabled />
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class="input-control text">
-                                        <input type="text" class="tar" maxlength="19" onkeyup="mascara(this, '-', patron_tarjeta, true)" placeholder=" - - - " disabled />
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="input-control text">
-                                        <input type="text" class="tar" onkeyup="mascara(this, '/', patron_fecha_tarjeta, true)" maxlength="5" placeholder=" / " disabled />
-                                    </div>
-                                </td>
-                                <td></td>
-                            </tr>
-                        </table>
-                        <p><br /></p>
-                        <table>
-                            <tr>
-                                <td>
-                                    <p>
-                                        Concepto
-                                        &nbsp;&nbsp;&nbsp;&nbsp;
-                                        &nbsp;&nbsp;&nbsp;&nbsp;
-                                        &nbsp;&nbsp;&nbsp;&nbsp;
-                                        &nbsp;&nbsp;&nbsp;&nbsp;
-                                    </p>
-                                </td>
-                                <td colspan="2">
-                                    <div class="input-control text span4">
-                                        <input type="text" id="nCon" readonly />
-                                    </div>
-                                </td>
-                            </tr>
-                        </table>
                     </div>
                 </div>
             </div>
@@ -495,12 +358,12 @@
                     &nbsp;&nbsp;&nbsp;&nbsp;
                     &nbsp;&nbsp;&nbsp;&nbsp;
                 </strong>
-                $<span id="cambioCobro">0.0</span>
+                $<span id="cambioCobro">{{vm.MontoPagoEfectivo - vm.Total}}</span>
                 <br />
                 <br />
             </p>
-            <button class="large" onclick="facturar_contado();$('#metodo_pago').css('display','none');" "><i class="icon-printer"></i> Imprimir</button>
-            <button class="large" id="btnClose"><i class="icon-cancel" style="color: red;"></i> Cancelar</button>
+            <button class="large" >Facturar</button>
+            <button class="large" onclick="ocultarMetodoPago();"><i class="icon-cancel" style="color: red;"></i> Cancelar</button>
         </div>
         <div id="utilizar_boleta" style="display: none;padding: 30px;height:100%; z-index:10000000; background: #fff; width:100%; position: absolute; top: 0px; left: 0px;">
             <h2>Utilizar boleta</h2>
@@ -609,253 +472,50 @@
         </div>
     </section>
 </section>
-<script type="text/javascript" >
+<script type="text/javascript" >  
 
-    var pendientes_grid = "pendientes_grid";
-
-
-    var dsOptionPendientes = {
-        fields: [
-            {name: 'serie'},
-            {name: 'pedido'},
-            {name: 'caja'},
-            {name: 'pedido'},
-            {name: 'fecha'},
-            {name: 'subtotal'},
-            {name: 'descuento'},
-            {name: 'total'}
-        ],
-        recordType: 'object'
+    function facturacion() {
+        $.Dialog({
+            overlay: true,
+            shadow: true,
+            flat: true,
+            title: 'Opciones de facturacion',
+            content: '',
+            width: 400,
+            onShow: function (_dialog) {
+                var content = _dialog.children('.content');
+                htmls = [
+                    '<br/><br/><div style="text-align:center;">',
+                    '<button class="shortcut" onclick="facturarCredito();"><i class="icon-credit-card"></i>Crédito</button>',
+                    '<button class="shortcut" onclick="facturarContado();"><i class="icon-dollar"></i>Contado</button>'
+                    //'<button class="shortcut" onclick="consignar();"><i class="icon-briefcase"></i>Consignar mercadería</button>'
+                ];
+                if (window.nt) htmls.pop();
+                html = htmls.join("");
+                content.html(html);
+            }
+        });
     }
 
-    var colsOptionPendientes = [
-        {id: 'codigo_factura', header: "Serie ", width: 50},
-        {id: 'pedido', header: "No.Pedido", width: 80},
-        {id: 'caja', header: "Caja", width: 40},
-        {id: 'fecha', header: "Fecha emision", width: 100},
-        {id: 'subtotal', header: "Subtotal", width: 90},
-        {id: 'descuento', header: "Descuento", width: 90},
-        {id: 'total', header: "Total", width: 90}
-
-    ];
-
-
-    var gridOptionPendientes = {
-        id: pendientes_grid,
-        loadURL: '',
-        saveURL: '',
-        width: "543", //"100%", // 700,
-        height: "360", //"100%", // 330,
-        container: 'gridbox10',
-        replaceContainer: true,
-        encoding: 'UTF-8', // Sigma.$encoding(), 
-        dataset: dsOptionPendientes,
-        columns: colsOptionPendientes,
-        clickStartEdit: true,
-        allowCustomSkin: true,
-        skin: 'mac',
-        remotePaging: true,
-        autoLoad: true,
-        defaultRecord: {'id': "00", 'nombre': ""},
-        pageSize: 30,
-        toolbarContent: 'reload | filter | nav state'
-    };
-
-
-    var mygridPendientes = new Sigma.Grid(gridOptionPendientes);
-        Sigma.Util.onLoad(function() {
-        mygridPendientes.render();
-    });
-    
-    var reservas_grid = "reservas_grid";
-
-
-    var dsOptionReservas = {
-        fields: [
-            {name: 'serie'},
-            {name: 'pedido'},
-            {name: 'caja'},
-            {name: 'pedido'},
-            {name: 'fecha'},
-            {name: 'subtotal'},
-            {name: 'descuento'},
-            {name: 'total'}
-        ],
-        recordType: 'object'
+    function facturarCredito() {
+        angular.element('#facturadiv').scope().vm.facturarCredito();
+        angular.element('#facturadiv').scope().vm.$apply();
     }
 
-    var colsOptionReservas = [
-        {id: 'codigo_factura', header: "Serie ", width: 50},
-        {id: 'pedido', header: "No.Pedido", width: 80},
-        {id: 'caja', header: "Caja", width: 40},
-        {id: 'fecha', header: "Fecha emision", width: 100},
-        {id: 'subtotal', header: "Subtotal", width: 90},
-        {id: 'descuento', header: "Descuento", width: 90},
-        {id: 'total', header: "Total", width: 90}
 
-    ];
-
-
-    var gridOptionReservas = {
-        id: reservas_grid,
-        loadURL: '',
-        saveURL: '',
-        width: "543", //"100%", // 700,
-        height: "360", //"100%", // 330,
-        container: 'gridbox13',
-        replaceContainer: true,
-        encoding: 'UTF-8', // Sigma.$encoding(), 
-        dataset: dsOptionReservas,
-        columns: colsOptionReservas,
-        clickStartEdit: true,
-        allowCustomSkin: true,
-        skin: 'mac',
-        remotePaging: true,
-        autoLoad: true,
-        defaultRecord: {'id': "00", 'nombre': ""},
-        pageSize: 30,
-        toolbarContent: 'reload | filter | nav state'
-    };
-
-
-    var mygridReservas = new Sigma.Grid(gridOptionReservas);
-        Sigma.Util.onLoad(function() {
-        mygridReservas.render();
-    });
-
-     var facturas_grid = "facturas_grid";
-
-
-    var dsOptionFacturas = {
-        fields: [
-            {name: 'serie'},
-            {name: 'nofac'},
-            {name: 'caja'},
-            {name: 'noped'},
-            {name: 'fefac'},
-            {name: 'formapago'},
-            {name: 'rd_cod'},
-            {name: 'anulado'},
-            {name: 'venta_b'},
-            {name: 'descuento'},
-            {name: 'total'}
-        ],
-        recordType: 'object'
+    function facturarContado() {
+        angular.element('#facturadiv').scope().vm.facturarContado();
+        angular.element('#facturadiv').scope().vm.$apply();
     }
 
-    function tipo_render(value, record, columnObj, grid, colNo, rowNo){
-        if(record['formapago']==2) return 'CREDITO';
-        if(record['formapago']==1) return 'CONTADO';
-        
-        return 'INDEFINIDO';
-    }
-    
-    var colsOptionFacturas = [
-        {id: 'serie', header: "Serie ", width: 50},
-        {id: 'nofac', header: "No. Factura", width: 80},
-        {id: 'caja', header: "Caja", width: 40},
-        {id: 'noped', header: "# Pedido", width: 70},
-        {id: 'rd_cod', header: "Cliente", width: 75},
-        {id: 'fefac', header: "Fecha emision", width: 100},
-        {id: 'formapago', header: "Forma pago", width: 100, renderer:tipo_render},
-        {id: 'anulado', header: "Anulado", width: 70},
-        {id: 'venta_b', header: "Subtotal", width: 70},
-        {id: 'descuento', header: "Descuento", width: 80},
-        {id: 'total', header: "Total", width: 70}
 
-    ];
-
-
-    var gridOptionFacturas = {
-        id: facturas_grid,
-        loadURL: '',
-        saveURL: '',
-        width: "810", //"100%", // 700,
-        height: "360", //"100%", // 330,
-        container: 'gridbox11',
-        replaceContainer: true,
-        encoding: 'UTF-8', // Sigma.$encoding(), 
-        dataset: dsOptionFacturas,
-        columns: colsOptionFacturas,
-        clickStartEdit: true,
-        allowCustomSkin: true,
-        remotePaging: true,
-        autoLoad: true,
-        skin: 'mac',
-        defaultRecord: {'id': "00", 'nombre': ""},
-        pageSize: 10,
-        toolbarContent: 'reload | filter | nav state'
-    };
-
-
-    var mygridFacturas = new Sigma.Grid(gridOptionFacturas);
-        Sigma.Util.onLoad(function() {
-        mygridFacturas.render();
-    });    
-
-
-    var creditofiscal_grid = "creditofiscal_grid";
-
-
-    var dsOptionCF = {
-        fields: [
-            {name: 'serie'},
-            {name: 'id'},
-            {name: 'caja'},
-            {name: 'pedido'},
-            {name: 'fecha'},
-            {name: 'tipo'},
-            {name: 'estado'},
-            {name: 'subtotal'},
-            {name: 'descuento'},
-            {name: 'total'}
-        ],
-        recordType: 'object'
+    function mostrarMetodoPago() {
+        $("#formapago").css('display', 'block');
     }
 
-    var colsOptionCF = [
-        {id: 'serie', header: "Serie ", width: 50},
-        {id: 'nofac', header: "No. Factura", width: 80},
-        {id: 'caja', header: "Caja", width: 40},
-        {id: 'noped', header: "# Pedido", width: 70},
-        {id: 'rd_cod', header: "Cliente", width: 75},
-        {id: 'fefac', header: "Fecha emision", width: 100},
-        {id: 'formapago', header: "Forma pago", width: 100, renderer:tipo_render},
-        {id: 'anulado', header: "Anulado", width: 70},
-        {id: 'monto', header: "Subtotal", width: 70},
-        {id: 'iva', header: "IVA", width: 70},
-        {id: 'descuento', header: "Descuento", width: 80},
-        {id: 'total', header: "Total", width: 70}
-
-    ];
-
-
-    var gridOptionCF = {
-        id: creditofiscal_grid,
-        loadURL: '',
-        saveURL: '',
-        width: "880", //"100%", // 700,
-        height: "360", //"100%", // 330,
-        container: 'gridbox12',
-        replaceContainer: true,
-        encoding: 'UTF-8', // Sigma.$encoding(), 
-        dataset: dsOption,
-        allowCustomSkin: true,
-        skin: 'mac',
-        remotePaging: true,
-        autoLoad: true,
-        columns: colsOptionCF,
-        clickStartEdit: true,
-        defaultRecord: {'id': "00", 'nombre': ""},
-        pageSize: 30,
-        toolbarContent: 'reload | filter | nav state'
-    };
-
-
-    var mygridCF = new Sigma.Grid(gridOptionCF);
-    Sigma.Util.onLoad(function() {
-        mygridCF.render();
-    });    
+    function ocultarMetodoPago() {
+        $("#formapago").css('display', 'none');
+    }
 
     var grid_demo_id = "factura_grid";
 
@@ -912,9 +572,29 @@
 
     /* renderizado para el grid, permite la eliminacion de elementos en las facturas */
     function del_render(value, record, columnObj, grid, colNo, rowNo) {
-        return '<a href="javascript:void(0);" onclick="delete_item(' + record['id'] + ', ' + record['precio'] + ')">Eliminar</a>';
+
+        var data = {
+            "id": record['id']
+        };
+
+        return '<a href="javascript:void(0);" onclick="delete_item(' + data.id + ')">Eliminar</a>';
     }
 
+    function delete_item(id) {
+
+        var data = {
+            "id": id
+        }
+
+        var uri = "/facturacion/factura/EliminarDetallePedido";
+
+        if (confirm("Quiere eliminar el registro?")) {
+            var jqr = $.post(uri, data, function (data) {
+                angular.element('#facturadiv').scope().vm.ActualizarPedido();
+                angular.element('#facturadiv').scope().vm.$apply();
+            }, "json");
+        }
+    }
 
     var ResumenStock = "stock_grid";
 
@@ -929,23 +609,23 @@
         ],
         recordType: 'object'
     }
+
     var colsOptionResumenStock = [
-        { id: 'linea', header: "Linea", width: 100 },
+        { id: 'desclinea', header: "Linea", width: 100 },
         { id: 'estilo', header: "Estilo", width: 100 },
-        { id: 'color', header: "Color", width: 100 },
+        { id: 'desccolor', header: "Color", width: 100 },
         { id: 'talla', header: "Talla", width: 100 },
         { id: 'ingresan', header: "Ingresan", width: 100, renderer: input_render },
         { id: 'stock', header: "Stock", width: 100, renderer: stock_render },
         { id: 'costo', header: "Costo", width: 100 },
-        { id: 'precio', header: "Precio", width: 100 },
-        { id: 'bodega', header: "Bodega", width: 100 }
+        { id: 'precio', header: "Precio", width: 100 }
     ];
 
     var gridOption3 = {
         id: ResumenStock,
         loadURL: '',
         saveURL: '',
-        width: "900", //"100%", // 700,
+        width: "910", //"100%", // 700,
         height: "320", //"100%", // 330,
         container: 'gridbox6',
         replaceContainer: true,
@@ -954,7 +634,7 @@
         columns: colsOptionResumenStock,
         clickStartEdit: true,
         defaultRecord: { 'id': "00", 'nombre': "" },
-        pageSize: 10,
+        pageSize: 300,
         remotePaging: true,
         autoLoad: false,
         toolbarContent: ' nav state'
@@ -962,7 +642,7 @@
 
 
     function input_render(value, record, columnObj, grid, colNo, rowNo) {
-        string_ = record['linea'] + '_' + record['estilo'] + '_' + record['color'] + '_' + record['talla'] + '_' + record['costo'] + '_' + record['stock'] + '_' + record['precio'];
+        var string_ = record['linea'] + '_' + record['estilo'] + '_' + record['color'] + '_' + record['talla'];
         return '<input type="text" value="0" class="items" id="' + string_ + '"/>';
     }
 

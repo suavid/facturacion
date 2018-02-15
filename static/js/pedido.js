@@ -9,6 +9,8 @@
 
     function pedido($location, $http, notificationService) {
         var vm = this;
+
+        vm.ReportServerURL = "";
        
         // init setup
         inicializarVariables();
@@ -91,10 +93,34 @@
                     vm.nPedido = response.data[0].id_factura;
                     vm.codigo_cliente = response.data[0].id_cliente;
                     angular.element('#idCliente').triggerHandler('blur');
-                    vm.PedidoActivo = true;
+                    vm.PedidoActivo = true && response.data[0].editable;
+                    actualizarDatosPedido(response.data[0]);
                     notificationService.notifySuccess("Pedido cargado con éxito!");
                 } else {
                     notificationService.notifyError("Número de pedido no válido");
+                    vn.nPedido = 0;
+                }
+            });
+        }
+
+        vm.ActualizarPedido = function () {
+            $http.post('/facturacion/factura/CargarPedidoExistente', { id_pedido: vm.nPedido }, {
+                headers: {
+                    "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8'
+                },
+                transformRequest: [function (data) {
+                    return angular.isObject(data) ?
+                        jQuery.param(data) :
+                        data;
+                }]
+            }).then(function (response) {
+                if (response.data.length > 0) {
+                    vm.nPedido = response.data[0].id_factura;
+                    vm.codigo_cliente = response.data[0].id_cliente;
+                    angular.element('#idCliente').triggerHandler('blur');
+                    vm.PedidoActivo = true && response.data[0].editable;
+                    actualizarDatosPedido(response.data[0]);
+                } else {
                     vn.nPedido = 0;
                 }
             });
@@ -121,6 +147,151 @@
             grid.reload();
         }
 
+        vm.AplicarSeleccion = function () {
+            vm.MostrarSelector = false;
+            var result = document.getElementsByClassName("items");
+            var sendData = {data:[]};
+
+            for (var element in result) {
+                var parts = String(result[element].id).split("_");
+                var linea = parts[0];
+                var estilo = parts[1];
+                var color = parts[2];
+                var talla = parts[3];
+                var cantidad = result[element].value;
+                var bodega = vm.Caja.bodega_por_defecto;
+                var pedido = vm.nPedido;
+
+                if (cantidad > 0) {
+                    sendData.data.push({ "linea": linea, "estilo": estilo, "color": color, "talla": talla, "cantidad": cantidad, "bodega": bodega, "pedido": pedido });
+                }
+            }
+
+            $http.post('/facturacion/factura/InsertarDetallePedido', sendData, {
+                headers: {
+                    "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8'
+                },
+                transformRequest: [function (data) {
+                    return angular.isObject(data) ?
+                        jQuery.param(data) :
+                        data;
+                }]
+            }).then(function (response) {
+                if (response.data.error) {
+                    notificationService.notifyError(response.data.message);
+                }
+
+                vm.ActualizarPedido();
+            });
+        }
+
+        vm.facturarCredito = function () {
+            vm.DatosFacturacion.id_factura = vm.nPedido;
+            vm.DatosFacturacion.tipo_pago = 1;
+            vm.DatosFacturacion.credito_fiscal = false;
+            vm.DatosFacturacion.monto_credito = vm.Total;
+            if (confirm("Esta seguro que desea facturar al crédito?")) {
+                $http.post('/facturacion/factura/Facturar', vm.DatosFacturacion, {
+                    headers: {
+                        "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8'
+                    },
+                    transformRequest: [function (data) {
+                        return angular.isObject(data) ?
+                            jQuery.param(data) :
+                            data;
+                    }]
+                }).then(function (response) {
+                    if (response.data.error) {
+                        notificationService.notifyError(response.data.message);
+                    } else {
+                        if (response.data.FacturarResult > 0) {
+                            notificationService.notifySuccess("Pedido facturado con éxito");
+                            vm.imprimirFactura();
+                            location.href = location.href;
+                        } else {
+                            notificationService.notifyError("Ha ocurrido un error inesperado");
+                        }
+                    }
+                });
+            }
+        }
+
+        vm.facturarContado = function () {
+            vm.DatosFacturacion.id_factura = vm.nPedido;
+            vm.DatosFacturacion.tipo_pago = 0;
+            vm.DatosFacturacion.credito_fiscal = false;
+            vm.DatosFacturacion.monto_en_efectivo = vm.Total;
+            if (confirm("Esta seguro que desea facturar al crédito?")) {
+                $http.post('/facturacion/factura/Facturar', vm.DatosFacturacion, {
+                    headers: {
+                        "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8'
+                    },
+                    transformRequest: [function (data) {
+                        return angular.isObject(data) ?
+                            jQuery.param(data) :
+                            data;
+                    }]
+                }).then(function (response) {
+                    if (response.data.error) {
+                        notificationService.notifyError(response.data.message);
+                    } else {
+                        if (response.data.FacturarResult > 0) {
+                            notificationService.notifySuccess("Pedido facturado con éxito");
+                            vm.imprimirFactura();
+                            location.href = location.href;
+                        } else {
+                            notificationService.notifyError("Ha ocurrido un error inesperado");
+                        }
+                    }
+                });
+            }
+        }
+
+        vm.setMostrarFormaPago = function () {
+            vm.MostrarFormaPago = true;
+        }
+
+        vm.ReservarPedido = function () {
+            if (vm.PedidoActivo) {
+                if (confirm("Esta seguro que desea realizar esta reserva?")) {
+                    $http.post('/facturacion/factura/ReservarPedido', { id: vm.nPedido }, {
+                        headers: {
+                            "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8'
+                        },
+                        transformRequest: [function (data) {
+                            return angular.isObject(data) ?
+                                jQuery.param(data) :
+                                data;
+                        }]
+                    }).then(function (response) {
+                        if (response.data.error) {
+                            notificationService.notifyError(response.data.message);
+                        } else {
+                            notificationService.notifySuccess("Pedido reservado con éxito!");
+                        }
+                    });
+                }
+            } else {
+                notificationService.notifyError("No se ha cargado ningún pedido");
+            }
+        }
+
+        vm.imprimirFactura = function () {
+            var url = vm.ReportServerURL + '?/Facturacion/facturacomercial&rs:Command=Render&id_factura=' + vm.nPedido;
+            window.open(url, '_blank');
+        }
+
+        function actualizarDatosPedido(pedido) {
+            var UpdateUri = '/facturacion/factura/CargarDetallePedido?idPedido=' + vm.nPedido;
+            var grid = Sigma.$grid("factura_grid");
+            grid.loadURL = UpdateUri;
+            grid.reload();
+
+            vm.SubTotal = pedido.subtotal;
+            vm.Iva = pedido.iva;
+            vm.Total = pedido.total;
+            vm.Descuento = pedido.descuento;
+        }
 
         function establecerInformacionCrediticia(data) {
             //montos
@@ -180,15 +351,30 @@
             vm.Descuento = 0;
             vm.Iva = 0;
 
+            vm.MontoPagoEfectivo = 0.0;
+
             vm.Flete = false;
             vm.CF = false;
 
             vm.MostrarSelector = false;
+            vm.MostrarFormaPago = false;
 
             vm.bLinea = null;
             vm.bEstilo = null;
             vm.bColor = null;
             vm.bTalla = null;
+
+            vm.DatosFacturacion = {
+                id_factura: 0
+                , tipo_pago: 0
+                , credito_fiscal: false
+                , id_boleta_pago: 0
+                , monto_en_tarjeta: 0.0
+                , monto_en_efectivo: 0.0
+                , monto_por_deposito: 0.0
+                , monto_por_cheque: 0.0
+                , monto_credito: 0.0
+            };
         }
 
         function ObtenerDatosCaja() {
@@ -239,6 +425,7 @@
         }
 
         function StrTrim(x) {
+            if (x === null) return "";
             return x.replace(/^\s+|\s+$/gm, '');
         }
 

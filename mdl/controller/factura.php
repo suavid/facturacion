@@ -290,14 +290,162 @@ class facturaController extends controller
     public function CargarStock()
     {
         header('Content-type:text/javascript;charset=UTF-8');
+        $this->ValidateSession();
         $json = json_decode(stripslashes($_POST["_gt_json"]));
-       
-        $temp = explode(',', $filtros);
+        $temp = explode(',', $_POST["filtros"]);
         $filtros = array();
         foreach ($temp as $parts) {
             $tt = explode(':', $parts);
             $filtros[$tt[0]] = $tt[1];
         }
+
+        $params = array(
+            "estilo"=>(isset($filtros["estilo"]))?$filtros["estilo"]:null,
+            "linea"=>(isset($filtros["linea"]))?$filtros["linea"]:null,
+            "color"=>(isset($filtros["color"]))?$filtros["color"]:null,
+            "talla"=>(isset($filtros["talla"]))?$filtros["talla"]:null,
+            "bodega"=>(isset($filtros["bodega"]))?$filtros["bodega"]:null,
+            "idcolor"=>COLOR
+        );
+
+        $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+        $result = $client->CargarStock($params);
+        $data = json_decode($result->{"CargarStockResult"});
+
+        $ret = "{data:" . $result->{"CargarStockResult"} . ",\n";
+        $ret .= "pageInfo:{totalRowNum:" . count($data) . "},\n";
+        $ret .= "recordType : 'object'}";
+
+        echo  $ret;
+    }
+
+    public function InsertarDetallePedido()
+    {
+         if(isset($_POST) && !empty($_POST))
+        {
+            $this->ValidateSession();
+            $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+            
+            $detalle = $_POST["data"];
+
+            for($i = 0; $i < count($detalle);  $i++){
+                $result = $client->InsertarDetallePedido(
+                    array(
+                        "id_factura" => $detalle[$i]["pedido"]
+                        , "cantidad" => $detalle[$i]["cantidad"]
+                        , "bodega" => $detalle[$i]["bodega"]
+                        , "linea" => $detalle[$i]["linea"]
+                        , "estilo" => $detalle[$i]["estilo"]
+                        , "color" => $detalle[$i]["color"]
+                        , "talla" => $detalle[$i]["talla"]
+                    )
+                );
+            }
+
+            echo  $result->{"InsertarDetallePedidoResult"};
+        }
+    }
+
+    public function CargarDetallePedido()
+    {
+        header('Content-type:text/javascript;charset=UTF-8');
+        $this->ValidateSession();
+        $json = json_decode(stripslashes($_POST["_gt_json"]));
+        $idPedido = $_POST["idPedido"];
+
+        $params = array(
+            "idPedido"=>$idPedido
+        );
+
+        $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+        $result = $client->ObtenerDetallePedido($params);
+        $data = json_decode($result->{"ObtenerDetallePedidoResult"});
+
+        $ret = "{data:" . $result->{"ObtenerDetallePedidoResult"} . ",\n";
+        $ret .= "pageInfo:{totalRowNum:" . count($data) . "},\n";
+        $ret .= "recordType : 'object'}";
+
+        echo  $ret;
+    }
+
+    public function EliminarDetallePedido()
+    {
+        $this->ValidateSession();
+        $data = $_POST;
+
+        $client = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+
+        try
+        {
+            $result = $client->EliminarDetallePedido(array(
+                    "id"=>$data["id"]
+            ));
+
+            $data = json_decode($result->{"EliminarDetallePedidoResult"});
+
+        }
+        catch(Exception $e)
+        {
+            $result["message"] = $e->getMessage();
+        }
+
+        echo json_encode($result);
+    }
+
+    public function ReservarPedido()
+    {
+        $this->ValidateSession();
+        $data = $_POST;
+
+        $client = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+
+        try
+        {
+            $result = $client->ReservarPedido(array(
+                    "id"=>$data["id"]
+            ));
+
+            $data = json_decode($result->{"ReservarPedidoResult"});
+
+        }
+        catch(Exception $e)
+        {
+            $result["message"] = $e->getMessage();
+        }
+
+        echo json_encode($result);
+    }
+
+    public function Facturar()
+    {
+        $this->ValidateSession();
+        $data = $_POST;
+
+        $client = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+
+        try
+        {
+            $result = $client->Facturar(array(
+                "id_factura"=>$data["id_factura"]
+                , "tipo_pago"=>$data["tipo_pago"]
+                , "credito_fiscal"=>$data["credito_fiscal"]
+                , "id_boleta_pago"=>$data["id_boleta_pago"]
+                , "monto_en_tarjeta"=>$data["monto_en_tarjeta"]
+                , "monto_en_efectivo"=>$data["monto_en_efectivo"]
+                , "monto_por_deposito"=>$data["monto_por_deposito"]
+                , "monto_por_cheque"=>$data["monto_por_cheque"]
+                , "monto_credito"=>$data["monto_credito"]
+            ));
+
+            $data = json_decode($result->{"FacturarResult"});
+
+        }
+        catch(Exception $e)
+        {
+            $result["message"] = $e->getMessage();
+        }
+
+        echo json_encode($result);
     }
 
     // SIN VALIDAR

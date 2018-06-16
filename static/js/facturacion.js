@@ -30,44 +30,40 @@ var AplicacionDeFacturacion = angular.module('ERPapp');
 });
 
     function PrincipalController($http, $sce) {
-    var vm = this;
+        var vm = this;
+        vm.Banners = [];
+        vm.Organizacion = {};
 
-    // Informacion de banners de la pantalla principal
-    vm.Banners = {
-        "b1": {},
-        "b2": {}
-    };
+        $http.post('/facturacion/factura/ObtenerBanner', { modulo: "VENTAS" }, {
+            headers: {
+                "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8'
+            },
+            transformRequest: [function (data) {
+                return angular.isObject(data) ?
+                    jQuery.param(data) :
+                    data;
+            }]
+        }).then(function (response) {
+            vm.Banners = response.data;
 
-    // Obtener los banners para mostrar en la pantalla principal
-    $http.post('/facturacion/factura/ObtenerBanner', { id: 5 }, {
-        headers: {
-            "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8'
-        },
-        transformRequest: [function(data) {
-            return angular.isObject(data) ?
-                jQuery.param(data) :
-                data;
-        }]
-    }).then(function(response) {
-        vm.Banners.b1 = response.data[0];
-        vm.Banners.b1.descripcion = $sce.trustAsHtml(vm.Banners.b1.descripcion);
-    });
+            for (var i = 0; i < vm.Banners.length; i++) {
+                vm.Banners[i].descripcion = $sce.trustAsHtml(vm.Banners[i].descripcion);
+            }
+        });
 
-    // Obtener los banners para mostrar en la pantalla principal
-    $http.post('/facturacion/factura/ObtenerBanner', { id: 6 }, {
-        headers: {
-            "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8'
-        },
-        transformRequest: [function(data) {
-            return angular.isObject(data) ?
-                jQuery.param(data) :
-                data;
-        }]
-    }).then(function(response) {
-        vm.Banners.b2 = response.data[0];
-        vm.Banners.b2.descripcion = $sce.trustAsHtml(vm.Banners.b2.descripcion);
-    });
-}
+        $http.post('/facturacion/factura/ObtenerInformacionDelSistema', {}, {
+            headers: {
+                "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8'
+            },
+            transformRequest: [function (data) {
+                return angular.isObject(data) ?
+                    jQuery.param(data) :
+                    data;
+            }]
+        }).then(function (response) {
+            vm.Organizacion = response.data[0];
+        });
+    }
 
     function SeriesController($http, $sce) {
     var vm = this;

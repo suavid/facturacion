@@ -1,31 +1,30 @@
 <div ng-controller="PrincipalController as vm">
-    <style type="text/css">
-        body {
-            background: url(../static/img/banner.jpg) no-repeat;
-            background-position: bottom right;
-        }
-    </style>
-    <div class="panel span10" data-role="panel">
-        <div class="panel-header">
-            {{vm.Banners.b1.titulo}}
-        </div>
-        <div class="panel-content">
-            <p ng-bind-html="vm.Banners.b1.descripcion">
+    <div class="grid">
+        <div class="row">
+            <div class="span10">
+                <div ng-repeat="banner in vm.Banners">
+                    <div class="panel" data-role="panel">
+                        <div class="panel-header">
+                            {{banner.titulo}}
+                        </div>
+                        <div class="panel-content">
+                            <p ng-bind-html="banner.descripcion">
 
-            </p>
-        </div>
-    </div>
-    <p>
-        <br/>
-    </p>
-    <div class="panel span10" data-role="panel">
-        <div class="panel-header bg-lightBlue fg-white">
-            {{vm.Banners.b2.titulo}}
-        </div>
-        <div class="panel-content">
-            <p ng-bind-html="vm.Banners.b2.descripcion">
-
-            </p>
+                            </p>
+                        </div>
+                    </div>
+                    <p>
+                        <br />
+                    </p>
+                </div>
+            </div>
+            <div class="span10" style="text-align:right">
+                <h1>{{vm.Organizacion.nombre_comercial}}</h1>
+                <h2>{{vm.Organizacion.direccion}}</h2>
+                <p>{{vm.Organizacion.telefono}}</p>
+                <p>{{vm.Organizacion.fax}}</p>
+                <img src="../static/img/banner_{{vm.Organizacion.id}}.jpg" style="width:300px;height: auto;" />
+            </div>
         </div>
     </div>
 </div>

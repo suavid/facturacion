@@ -94,13 +94,13 @@
             <div style="display:table;">
                 <div style="width:600px;float:left;margin-right: 40px;margin-bottom: 20px;">
                     <ul style="list-style:none;display:table;text-align:left;width:550px;font-size:12px;">
-                        <li style="float:left;width:100px;">
+                        <li style="float:left;width:160px;">
                             <p># Pedido</p>
-                            <input type="text" ng-model="vm.nPedido" ng-blur="vm.CargarPedido();" style="width:90px;" />
+                            <input type="text" ng-model="vm.nPedido" style="width:150px;" />
                         </li>
                         <li style="float:left;width:100px;">
                             <p>Cliente</p>
-                            <input type="text" ng-model="vm.codigo_cliente" ng-blur="vm.GenerarPedido();" style="width:90px;" id="idCliente" />
+                            <input type="text" ng-model="vm.codigo_cliente" style="width:90px;" id="idCliente" />
                         </li>
 
                         <li style="float:left;width:140px;">
@@ -118,6 +118,10 @@
                             </select>
                         </li>
                     </ul>
+                    <div style="text-align:right; padding-right: 50px;">
+                        <button ng-click="vm.CargarPedido();"><i class="icon-search"></i> Buscar pedido</button>
+                        <button ng-click="vm.GenerarPedido();" class="primary"><i class="icon-enter-2"></i> Generar pedido</button>
+                    </div>
                     <hr />
                     <table style="width:600px;">
                         <tr>
@@ -241,7 +245,7 @@
                 <select ng-model="vm.bLinea" style="width:130px;" ng-disabled="!vm.PedidoActivo">
                     <option ng-repeat="linea in vm.ListaLineas" value="{{linea.id_categoria_especifica}}">{{linea.nombre}}</option>
                 </select>
-                <input type="text" ng-model="vm.bEstilo" style="width:170px;padding: 0px;" ng-blur="vm.ConsultaExistencias();" ng-disabled="!vm.PedidoActivo" />
+                <input type="text" ng-model="vm.bEstilo" style="width:170px;padding: 0px;" ng-disabled="!vm.PedidoActivo" />
 
                 <input type="hidden" ng-model="vm.bColor" style="width:70px;padding: 0px;" ng-disabled="!vm.PedidoActivo" />
 
@@ -263,7 +267,7 @@
 
                 <input type="hidden" ng-model="vm.bSerie" style="width:70px;padding: 0px" readonly />
 
-                <!--<button onfocus="agregarCompra(event);" onclick="agregarCompra(event);" id="Enter" ng-disabled="!vm.PedidoActivo"><i class="icon-enter-2"></i></button>-->
+                <button ng-click="vm.ConsultaExistencias();"  ng-disabled="!vm.PedidoActivo"><i class="icon-search"></i> Buscar producto</button>
             </div>
             <div id="info-titles">
                 <p style="padding-left:50px;">Bodega</p>
@@ -284,7 +288,6 @@
             <form>
                 <div>
                     <h6>[Caja No. {{vm.Caja.id}} / {{vm.Caja.nombre}}]</h6>
-                    <h6>Siguiente pedido: <span id="NoFactura">{{vm.nPedido + 1}}</span></h6>
                     <br />
                     Subtotal <input type="text" ng-model="vm.SubTotal" readonly style="width:75px; margin-bottom: 1px;" />
                     <br />

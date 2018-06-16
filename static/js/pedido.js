@@ -19,6 +19,8 @@
         vm.ListaBodegas = [];
         vm.ListaLineas = [];
 
+        vm.idPedido = 0;
+
         $http.post('/facturacion/factura/ListaBodegas', {}, {
             headers: {
                 "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8'
@@ -90,8 +92,9 @@
                 }]
             }).then(function (response) {
                 if (response.data.length > 0) {
-                    vm.nPedido = response.data[0].id_factura;
-                    vm.codigo_cliente = response.data[0].id_cliente;
+                    vm.nPedido = response.data[0].fac_serialnumber;
+                    vm.idPedido = response.data[0].id_factura;
+                    vm.codigo_cliente = response.data[0].client_serialnumber;
                     angular.element('#idCliente').triggerHandler('blur');
                     vm.PedidoActivo = true && response.data[0].editable;
                     actualizarDatosPedido(response.data[0]);
@@ -115,8 +118,9 @@
                 }]
             }).then(function (response) {
                 if (response.data.length > 0) {
-                    vm.nPedido = response.data[0].id_factura;
-                    vm.codigo_cliente = response.data[0].id_cliente;
+                    vm.nPedido = response.data[0].fac_serialnumber;
+                    vm.idPedido = response.data[0].id_factura;
+                    vm.codigo_cliente = response.data[0].client_serialnumber;
                     angular.element('#idCliente').triggerHandler('blur');
                     vm.PedidoActivo = true && response.data[0].editable;
                     actualizarDatosPedido(response.data[0]);
@@ -160,7 +164,7 @@
                 var talla = parts[3];
                 var cantidad = result[element].value;
                 var bodega = vm.Caja.bodega_por_defecto;
-                var pedido = vm.nPedido;
+                var pedido = vm.idPedido;
 
                 if (cantidad > 0) {
                     sendData.data.push({ "linea": linea, "estilo": estilo, "color": color, "talla": talla, "cantidad": cantidad, "bodega": bodega, "pedido": pedido });
@@ -254,7 +258,7 @@
         vm.ReservarPedido = function () {
             if (vm.PedidoActivo) {
                 if (confirm("Esta seguro que desea realizar esta reserva?")) {
-                    $http.post('/facturacion/factura/ReservarPedido', { id: vm.nPedido }, {
+                    $http.post('/facturacion/factura/ReservarPedido', { id: vm.idPedido }, {
                         headers: {
                             "Content-Type": 'application/x-www-form-urlencoded;charset=utf-8'
                         },
@@ -277,12 +281,12 @@
         }
 
         vm.imprimirFactura = function () {
-            var url = vm.ReportServerURL + '?/Facturacion/facturacomercial&rs:Command=Render&id_factura=' + vm.nPedido;
+            var url = vm.ReportServerURL + '?/Facturacion/facturacomercial&rs:Command=Render&id_factura=' + vm.idPedido;
             window.open(url, '_blank');
         }
 
         function actualizarDatosPedido(pedido) {
-            var UpdateUri = '/facturacion/factura/CargarDetallePedido?idPedido=' + vm.nPedido;
+            var UpdateUri = '/facturacion/factura/CargarDetallePedido?idPedido=' + vm.idPedido;
             var grid = Sigma.$grid("factura_grid");
             grid.loadURL = UpdateUri;
             grid.reload();
@@ -409,7 +413,8 @@
                 if (response.data.id_pedido) {
                     if (response.data.id_pedido > 0) {
                         notificationService.notifySuccess("Pedido generado con éxito!");
-                        vm.nPedido = response.data.id_pedido;
+                        vm.nPedido = response.data.serial_number;
+                        vm.idPedido = response.data.id_pedido;
                         vm.PedidoActivo = true;
                     } else {
                         notificationService.notifyError(response.data.ErrorMessage);

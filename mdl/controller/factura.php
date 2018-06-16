@@ -25,12 +25,24 @@ class facturaController extends controller
         $this->ValidateSession();
         if(isset($_POST) && !empty($_POST))
         {
-            $id = $_POST['id'];
+            $modulo = $_POST['modulo'];
             $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
-            $result = $client->VerMensajesBienvenida(array("id"=>$id));
+            $params = array('modulo'=>$modulo, 'username'=>Session::singleton()->getUser());
+            $result = $client->VerMensajesBienvenida($params);
 
             echo  $result->{"VerMensajesBienvenidaResult"};
         }
+    }
+
+    public function ObtenerInformacionDelSistema()
+    {
+        $this->ValidateSession();
+
+        $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
+        $params = array('username'=>Session::singleton()->getUser());
+        $result = $client->GetOrganizationInformation($params);
+
+        echo  $result->{"GetOrganizationInformationResult"};
     }
 
     public function series() 
@@ -80,6 +92,7 @@ class facturaController extends controller
                     , "resolucion" => $resolucion
                     , "del" => $del
                     , "al" => $al
+                    , "username"=>Session::singleton()->getUser()
                 )
             );
 
@@ -92,7 +105,8 @@ class facturaController extends controller
         $this->ValidateSession();
 
         $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
-        $result = $client->ObtenerSeries();
+        $params = array("username"=>Session::singleton()->getUser());
+        $result = $client->ObtenerSeries($params);
         echo  $result->{"ObtenerSeriesResult"};
     }
 
@@ -113,7 +127,8 @@ class facturaController extends controller
         $this->ValidateSession();
 
         $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
-        $result = $client->ObtenerSeries();
+        $params = array("username"=>Session::singleton()->getUser());
+        $result = $client->ObtenerSeries($params);
         $data = json_decode($result->{"ObtenerSeriesResult"});
 
         $ret = "{data:" . $result->{"ObtenerSeriesResult"} . ",\n";
@@ -143,7 +158,7 @@ class facturaController extends controller
         $this->ValidateSession();
 
         $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
-        $result = $client->ObtenerBodegas(array("tipo_vista"=>0));
+        $result = $client->ObtenerBodegas(array("tipo_vista"=>0, "username"=>Session::singleton()->getUser()));
         echo $result->{"ObtenerBodegasResult"};
     }
 
@@ -151,7 +166,7 @@ class facturaController extends controller
     {
         $this->ValidateSession();
         $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
-        $result = $client->ObtenerEmpleados(array());
+        $result = $client->ObtenerEmpleados(array("username"=>Session::singleton()->getUser()));
 
         echo  $result->{"ObtenerEmpleadosResult"};
     }
@@ -224,7 +239,8 @@ class facturaController extends controller
             $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
             $result = $client->ObtenerInformacionDelCliente(
                 array(
-                      "id" => $idCliente
+                      "id" => $idCliente,
+                      "username" => Session::singleton()->getUser()
                 )
             );
 
@@ -255,7 +271,7 @@ class facturaController extends controller
 
             $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
 
-            $result = $client->GenerarPedido(array("idCliente"=>$id_cliente, "concepto"=>$concepto, "idCaja"=>$id_caja));
+            $result = $client->GenerarPedido(array("idCliente"=>$id_cliente, "concepto"=>$concepto, "idCaja"=>$id_caja, "username"=>Session::singleton()->getUser()));
 
             echo  $result->{"GenerarPedidoResult"};
         }
@@ -271,7 +287,7 @@ class facturaController extends controller
 
             $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
 
-            $result = $client->CargarPedido(array("idPedido"=>$id_pedido));
+            $result = $client->CargarPedido(array("idPedido"=>$id_pedido, "username"=>Session::singleton()->getUser()));
 
             echo  $result->{"CargarPedidoResult"};
         }
@@ -282,9 +298,9 @@ class facturaController extends controller
         $this->ValidateSession();
 
         $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
-        $result = $client->VerDetalleCategoria(array("id"=>LINEA));
+        $result = $client->CargarLineas(array("username"=>Session::singleton()->getUser()));
 
-        echo  $result->{"VerDetalleCategoriaResult"};
+        echo  $result->{"CargarLineasResult"};
     }
 
     public function CargarStock()
@@ -305,7 +321,7 @@ class facturaController extends controller
             "color"=>(isset($filtros["color"]))?$filtros["color"]:null,
             "talla"=>(isset($filtros["talla"]))?$filtros["talla"]:null,
             "bodega"=>(isset($filtros["bodega"]))?$filtros["bodega"]:null,
-            "idcolor"=>COLOR
+            "username"=>Session::singleton()->getUser()
         );
 
         $client  = new SoapClient(SERVICE_URL, self::$SOAP_OPTIONS);
